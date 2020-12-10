@@ -7,11 +7,7 @@ import sys
 import numpy as np
 from matplotlib import pyplot as plt
 
-curdir = os.path.dirname(__file__)
-cdir = os.path.abspath(os.path.join(curdir,'../../python/'))
-sys.path.append(cdir)
-
-from dynamics.centroidal import CentroidalDynamics
+from py_biconvex_mpc.dynamics.centroidal import CentroidalDynamics
 
 
 m = 2

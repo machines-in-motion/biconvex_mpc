@@ -71,6 +71,42 @@ class BiConvexMP(CentroidalDynamics):
         self.cnt_arr = cnt_arr
         self.r_arr = r_arr
 
+    def create_bound_constraints(self, bx, by, bz, fx_max, fy_max, fz_max):
+        '''
+        Creates arrays that are needed for ensuring kinematic constraints
+        Input:
+            bx : maximum dispacement of x from the center of the kinematic box
+            by : maximum dispacement of y from the center of the kinematic box
+            bz : maximum dispacement of z from ground
+            fx_max : max force in x
+            fy_max : max force in y
+            fz_max : max_force in z
+        '''
+        # shape the arrays properly at once
+        self.F_low = np.tile([-fx_max, -fy_max, 0.0], self.n_eff*self.n_col)
+        self.F_high = np.tile([fx_max, fy_max, fz_max], self.n_eff*self.n_col)
+        
+        self.X_low = -999999*np.ones(9*self.n_col + 9)
+        self.X_high = 999999*np.ones(9*self.n_col + 9)
+
+        for i in range(len(self.r_arr)):
+            if np.sum(self.cnt_arr[i]) > 0:
+                self.X_low[9*i:9*i+3] = [-bx, -by, 0]
+                self.X_high[9*i:9*i+3] = [bx, by, bz]
+            for n in range(self.n_eff):
+                if np.sum(self.cnt_arr[i]) > 0:
+                    self.X_low[9*i:9*i+3] += self.cnt_arr[i,n]*self.r_arr[i,n]/np.sum(self.cnt_arr[i]) 
+                    self.X_high[9*i:9*i+3] += self.cnt_arr[i,n]*self.r_arr[i,n]/np.sum(self.cnt_arr[i]) 
+        self.X_low[-9:] = self.X_low[-18:-9]
+        self.X_high[-9:] = self.X_high[-18:-9]
+
+        self.F_low = np.reshape(self.F_low, (len(self.F_low), 1))
+        self.F_high = np.reshape(self.F_high, (len(self.F_high), 1))
+        
+        self.X_low = np.reshape(self.X_low, (len(self.X_low), 1))
+        self.X_high = np.reshape(self.X_high, (len(self.X_high), 1))
+
+
     def create_cost_X(self, W_X, W_X_ter, X_ter):
         '''
         Creates the cost matrix Q_X and q_X for the X optimization
@@ -147,10 +183,9 @@ class BiConvexMP(CentroidalDynamics):
             # gradient of the objective function that optimizes for f 
             grad_obj_f = lambda f: 2*self.Q_F*f + self.q_F + 2*self.rho*A_x.T*(A_x*f - b_x + P_k)
             # projection of f into constraint space (friction cone and max f)
-            proj_f = lambda f, L : f
+            proj_f = lambda f, L : np.clip(f, self.F_low, self.F_high)
             F_k_1 = self.fista.optimize(obj_f, grad_obj_f, proj_f, F_k, self.maxit, self.tol)
 
-            # print(A_x[0:9,0:6])
             # assert False
             self.fista.reset()
             # optimizing for x
@@ -159,7 +194,7 @@ class BiConvexMP(CentroidalDynamics):
             # gradient of the objective function that optimizes for f 
             grad_obj_x = lambda x: 2*self.Q_X*x + self.q_X + 2*self.rho*A_f.T*(A_f*x - b_f + P_k)
             # projection of f into constraint space (friction cone and max f)
-            proj_x = lambda x, L : x
+            proj_x = lambda x, L : np.clip(x, self.X_low, self.X_high)
             X_k_1 = self.fista.optimize(obj_x, grad_obj_x, proj_x, X_k, self.maxit, self.tol)
 
             # update of P_k

@@ -42,6 +42,7 @@ class CentroidalDynamics:
         '''
         self.block_A_f[6:9,0:3] = np.zeros((3,3))
         self.block_b_f[3:] = 0
+        self.block_b_f[5] += self.g*self.dt
 
         for ee in range(self.n_eff):
             self.block_A_f[6,1] -= cnt[ee]*F_t[3*ee +2]*self.dt
@@ -60,8 +61,6 @@ class CentroidalDynamics:
             self.block_b_f[6] += (cnt[ee]*F_t[3*ee+1]*r_t[ee,2] - cnt[ee]*F_t[3*ee+2]*r_t[ee,1])*self.dt
             self.block_b_f[7] += (cnt[ee]*F_t[3*ee+2]*r_t[ee,0] - cnt[ee]*F_t[3*ee+0]*r_t[ee,2])*self.dt
             self.block_b_f[8] += (cnt[ee]*F_t[3*ee+0]*r_t[ee,1] - cnt[ee]*F_t[3*ee+1]*r_t[ee,0])*self.dt
-
-        self.block_b_f[5] += self.g*self.dt
 
     def create_block_x(self, X_t, r_t, cnt):
         '''

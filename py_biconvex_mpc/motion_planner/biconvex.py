@@ -10,7 +10,7 @@ from ..solvers.fista import FISTA
 
 class BiConvexMP(CentroidalDynamics):
 
-    def __init__(self, m, dt, T, n_eff, rho = 1e+1, L0 = 0.001, beta = 1.1, maxit = 500, tol = 1e-3):
+    def __init__(self, m, dt, T, n_eff, rho = 2e+3, L0 = 0.001, beta = 1.1, maxit = 500, tol = 1e-3):
         '''
         This is the Bi Convex motion planner
         Input:
@@ -44,6 +44,7 @@ class BiConvexMP(CentroidalDynamics):
         # arrays to store statistics
         self.f_all = [] # history of cost of force optimization
         self.x_all = [] # history of cost of state optimization
+        self.dyn_all = [] # history of dynamics constraint violation
         self.total_all = [] # history of total cost
 
     def create_contact_array(self, cnt_plan):
@@ -149,6 +150,8 @@ class BiConvexMP(CentroidalDynamics):
             proj_f = lambda f, L : f
             F_k_1 = self.fista.optimize(obj_f, grad_obj_f, proj_f, F_k, self.maxit, self.tol)
 
+            # print(A_x[0:9,0:6])
+            # assert False
             self.fista.reset()
             # optimizing for x
             A_f, b_f = self.compute_F_mat(F_k_1, self.r_arr, self.cnt_arr, X_init)
@@ -160,7 +163,7 @@ class BiConvexMP(CentroidalDynamics):
             X_k_1 = self.fista.optimize(obj_x, grad_obj_x, proj_x, X_k, self.maxit, self.tol)
 
             # update of P_k
-            P_k_1 = P_k + np.abs(A_f*X_k_1 - b_f)
+            P_k_1 = P_k + A_f*X_k_1 - b_f
 
             # preparing for next iteration
             X_k = X_k_1
@@ -168,12 +171,14 @@ class BiConvexMP(CentroidalDynamics):
             P_k = P_k_1
             
             # computing cost of total optimization problem
-            dyn_violation = self.rho*np.linalg.norm(A_f*X_k - b_f)**2
+            dyn_violation = np.linalg.norm(A_f*X_k - b_f)**2
             cost_x = X_k.T *self.Q_X*X_k + self.q_X.T*X_k + dyn_violation
             cost_f = F_k.T *self.Q_F*F_k + self.q_F.T*F_k + dyn_violation
+
             total_cost = cost_x + cost_f - dyn_violation
-            self.f_all.append(float(cost_x))            
-            self.x_all.append(float(cost_f))            
+            self.x_all.append(float(cost_x))            
+            self.f_all.append(float(cost_f)) 
+            self.dyn_all.append(float(dyn_violation))           
             self.total_all.append(float(total_cost))            
 
             # if k > 2 and np.abs(self.f_all[-2] - self.f_all[-1]) < self.tol:
@@ -208,13 +213,13 @@ class BiConvexMP(CentroidalDynamics):
 
         fig, ax_f = plt.subplots(self.n_eff,1)
         for n in range(self.n_eff):
-            ax_f[n].plot(self.F_opt[3*n::3], label = "ee: " + str(n) + "Fx")
-            ax_f[n].plot(self.F_opt[3*n+1::3], label = "ee: " + str(n) + "Fy")
-            ax_f[n].plot(self.F_opt[3*n+2::3], label = "ee: " + str(n) + "Fz")
+            ax_f[n].plot(self.F_opt[3*n::3*self.n_eff], label = "ee: " + str(n) + "Fx")
+            ax_f[n].plot(self.F_opt[3*n+1::3*self.n_eff], label = "ee: " + str(n) + "Fy")
+            ax_f[n].plot(self.F_opt[3*n+2::3*self.n_eff], label = "ee: " + str(n) + "Fz")
             ax_f[n].grid()
             ax_f[n].legend()
 
-        fig, ax_cost = plt.subplots(3,1)
+        fig, ax_cost = plt.subplots(4,1)
         ax_cost[0].plot(self.x_all, label = "cost_x")
         ax_cost[0].grid()
         ax_cost[0].legend()
@@ -223,8 +228,12 @@ class BiConvexMP(CentroidalDynamics):
         ax_cost[1].grid()
         ax_cost[1].legend()
 
-        ax_cost[2].plot(self.total_all, label = "cost_total")
+        ax_cost[2].plot(self.dyn_all, label = "dynamics_violation")
         ax_cost[2].grid()
         ax_cost[2].legend()
+
+        ax_cost[3].plot(self.total_all, label = "cost_total")
+        ax_cost[3].grid()
+        ax_cost[3].legend()
 
         plt.show()

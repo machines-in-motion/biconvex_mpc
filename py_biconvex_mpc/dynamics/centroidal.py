@@ -28,9 +28,7 @@ class CentroidalDynamics:
 
         self.block_b_f = np.zeros(9)
 
-        self.block_A_x = np.zeros((9,3*self.n_eff))
-        for ee in range(self.n_eff):
-            self.block_A_x[3:6, 3*ee:3*ee+3] = (self.dt/self.m)*np.identity(3)
+        self.block_A_x = np.zeros((9,3*self.n_eff))            
         
         self.block_b_x = np.zeros(9)
 
@@ -57,11 +55,13 @@ class CentroidalDynamics:
             
             self.block_b_f[3] -= cnt[ee]*F_t[3*ee+0]*self.dt/self.m
             self.block_b_f[4] -= cnt[ee]*F_t[3*ee+1]*self.dt/self.m
-            self.block_b_f[5] -= cnt[ee]*F_t[3*ee+2]*self.dt/self.m - self.g*self.dt/self.n_eff
+            self.block_b_f[5] -= cnt[ee]*F_t[3*ee+2]*self.dt/self.m 
             
             self.block_b_f[6] += (cnt[ee]*F_t[3*ee+1]*r_t[ee,2] - cnt[ee]*F_t[3*ee+2]*r_t[ee,1])*self.dt
             self.block_b_f[7] += (cnt[ee]*F_t[3*ee+2]*r_t[ee,0] - cnt[ee]*F_t[3*ee+0]*r_t[ee,2])*self.dt
             self.block_b_f[8] += (cnt[ee]*F_t[3*ee+0]*r_t[ee,1] - cnt[ee]*F_t[3*ee+1]*r_t[ee,0])*self.dt
+
+        self.block_b_f[5] += self.g*self.dt
 
     def create_block_x(self, X_t, r_t, cnt):
         '''
@@ -72,14 +72,17 @@ class CentroidalDynamics:
             cnt : contact array (1 if in contact, 0 otherwise)
         '''
         self.block_b_x[3:] = np.reshape(X_t[12:] - X_t[3:9], (6,))
+        self.block_b_x[5] += self.g*self.dt
 
         for ee in range(self.n_eff):
+            self.block_A_x[3:6, 3*ee:3*ee+3] = cnt[ee]*(self.dt/self.m)*np.identity(3)
+
             self.block_A_x[6,3*ee+1] = cnt[ee]*(X_t[2] - r_t[ee,2])*self.dt
             self.block_A_x[6,3*ee+2] = -cnt[ee]*(X_t[1] - r_t[ee,1])*self.dt
 
             self.block_A_x[7,3*ee+0] = -cnt[ee]*(X_t[2] - r_t[ee,2])*self.dt
             self.block_A_x[7,3*ee+2] = cnt[ee]*(X_t[0] - r_t[ee,0])*self.dt
-
+            
             self.block_A_x[8,3*ee+0] = cnt[ee]*(X_t[1] - r_t[ee,1])*self.dt
             self.block_A_x[8,3*ee+1] = -cnt[ee]*(X_t[0] - r_t[ee,0])*self.dt
 
@@ -100,7 +103,6 @@ class CentroidalDynamics:
             A_x[t*9:(t+1)*9, 3*self.n_eff*t:3*self.n_eff*(t+1)] = self.block_A_x.copy()
             b_x[t*9:(t+1)*9, 0] = self.block_b_x.copy()
 
-        
         return np.matrix(A_x), np.matrix(b_x)
 
     def compute_F_mat(self, F, r, cnt_plan, X_init):

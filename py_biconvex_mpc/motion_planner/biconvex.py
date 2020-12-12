@@ -224,7 +224,7 @@ class BiConvexMP(CentroidalDynamics):
         return X_k, F_k
 
     def stats(self):
-        print("solver terminated in {} iterations", len(self.f_all))
+        print("solver terminated in {} iterations".format(len(self.f_all)))
 
         fig, ax = plt.subplots(3,1)
         ax[0].plot(self.X_opt[0::9], label = "Cx")

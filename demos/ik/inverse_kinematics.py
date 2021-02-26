@@ -9,8 +9,9 @@ import crocoddyl
 from action_model import DifferentialFwdKinematics
 from end_effector_tasks import EndEffectorTasks
 from regularization_costs import RegularizationCosts
+from com_tasks import CenterOfMassTasks
 
-class InverseKinematics(EndEffectorTasks, RegularizationCosts):
+class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks):
 
     def __init__(self, rmodel, dt, T):
         """
@@ -21,6 +22,8 @@ class InverseKinematics(EndEffectorTasks, RegularizationCosts):
             T : horizon of plan in seconds
         """
         self.state = crocoddyl.StateMultibody(rmodel)
+        self.actuation = crocoddyl.ActuationModelFloatingBase(self.state)
+
         self.dt = dt
         self.T = T
         self.N = int(T/dt)

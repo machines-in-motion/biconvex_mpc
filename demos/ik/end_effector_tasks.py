@@ -1,7 +1,7 @@
 ## This file contains apis to create different end effector tasks
 ## for the inverse kinematics problem
 ## Author : Avadesh Meduri
-## Date : 24/02/2020
+## Date : 24/02/2021
 
 import numpy as np
 import pinocchio as pin

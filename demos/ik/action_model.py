@@ -22,6 +22,7 @@ class DifferentialFwdKinematics(crocoddyl.DifferentialActionModelAbstract):
                     
         pinocchio.forwardKinematics(self.state.pinocchio, data.pinocchio, q, v)
         pinocchio.updateFramePlacements(self.state.pinocchio, data.pinocchio)
+        pinocchio.centerOfMass(self.state.pinocchio, data.pinocchio, q, v)
         data.xout = u
         self.costs.calc(data.costs, x, u)
         data.cost = data.costs.cost
@@ -34,6 +35,7 @@ class DifferentialFwdKinematics(crocoddyl.DifferentialActionModelAbstract):
             self.calc(data, x, u)
             
         pinocchio.computeForwardKinematicsDerivatives(self.state.pinocchio, data.pinocchio, q, v, u)
+        pinocchio.jacobianCenterOfMass(self.state.pinocchio, data.pinocchio)
         data.Fx = self.dynamics_x(q,v,u)
         data.Fu = self.dynamics_u(q,v,u)
         # Computing the cost derivatives

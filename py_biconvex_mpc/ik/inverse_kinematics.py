@@ -6,10 +6,10 @@ import numpy as np
 
 import pinocchio as pin
 import crocoddyl
-from action_model import DifferentialFwdKinematics
-from end_effector_tasks import EndEffectorTasks
-from regularization_costs import RegularizationCosts
-from com_tasks import CenterOfMassTasks
+from . action_model import DifferentialFwdKinematics
+from . end_effector_tasks import EndEffectorTasks
+from . regularization_costs import RegularizationCosts
+from . com_tasks import CenterOfMassTasks
 
 class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks):
 

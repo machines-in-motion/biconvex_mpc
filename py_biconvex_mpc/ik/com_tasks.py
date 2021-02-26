@@ -29,3 +29,20 @@ class CenterOfMassTasks:
         for i in range(sn, en):
             comTrack = crocoddyl.CostModelCoMPosition(self.state, traj[i-sn], self.state.nv)
             self.rcost_model_arr[i].addCost(cost_name, comTrack, wt)
+
+
+    def add_centroidal_momentum_tracking_task(self, st, et, traj, wt, cost_name):
+        """
+        This function creates a centroidal momentum tracking task in the ddp
+        using the centroidal momentum matrix
+        Input:
+            st : start time (sec)
+            et : end time (sec)
+            traj : the trajectory to be tracked (must have shape ((en - sn)/dt, 3))
+            wt : weight of the cost
+            cost_name : name of the cost
+        """
+        sn, en = int(st/self.dt), int(et/self.dt)
+        for i in range(sn, en):
+            cmomTrack = crocoddyl.CostModelCentroidalMomentum(self.state, traj[i-sn], self.state.nv)
+            self.rcost_model_arr[i].addCost(cost_name, cmomTrack, wt)

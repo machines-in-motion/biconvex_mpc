@@ -17,7 +17,7 @@ class EndEffectorTasks:
             ## class
         pass
 
-    def add_trajectory_tracking_task(self, fid, st, et, traj, wt, cost_name):
+    def add_position_tracking_task(self, fid, st, et, traj, wt, cost_name):
         """
         This function creates a end effector tracking task in the ddp
         Input:
@@ -34,7 +34,7 @@ class EndEffectorTasks:
             goalTrackingCost = crocoddyl.CostModelFrameTranslation(self.state, Mref)
             self.rcost_model_arr[i].addCost(cost_name, goalTrackingCost, wt)
             
-    def add_velocity_tracking_cost(self, fid, st, et, traj, wt, cost_name):
+    def add_velocity_tracking_task(self, fid, st, et, traj, wt, cost_name):
         """
         This function creates a task for the end effector to track a desired velocity
         Input:
@@ -50,3 +50,21 @@ class EndEffectorTasks:
             Vref = crocoddyl.FrameMotion(fid, pin.Motion(traj[i - sn]))
             velTrackingCost = crocoddyl.CostModelFrameVelocity(self.state, Vref)
             self.rcost_model_arr[i].addCost(cost_name, velTrackingCost, wt)
+
+    def add_orientation_tracking_task(self, fid, st, et, traj, wt, cost_name):
+        """
+        This function creates a task for the given frame to track a given orientation
+        Input:
+            fid : the frame id of the frame that should track the trajectory
+            st : start time (sec)
+            et : end time (sec)
+            traj : the orientation trajectory to be tracked (must have shape ((en - sn)/dt, 3,3))
+            wt : weight of the cost
+            cost_name : name of the cost
+        """
+
+        sn, en = int(st/self.dt), int(et/self.dt)
+        for i in range(sn, en):
+            Oref = crocoddyl.FrameRotation(fid, traj[i-sn])
+            oriTrackingCost = crocoddyl.CostModelFrameRotation(self.state, Oref)
+            self.rcost_model_arr[i].addCost(cost_name, oriTrackingCost, wt)

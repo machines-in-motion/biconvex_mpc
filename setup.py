@@ -18,7 +18,6 @@ package_name = "biconvex_mpc"
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-
 # Install the package.xml.
 data_files_to_install = [(path.join("share", package_name), ["package.xml"])]
 

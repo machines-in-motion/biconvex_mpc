@@ -61,11 +61,11 @@ mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
 
 X_opt, F_opt = mp.optimize(X_init, X_ter, W_X, W_F, W_X_ter, 20)
 # print(F_opt[2::3])
-# mp.stats()
+mp.stats()
 
 ## creating bullet env
-env = Solo12Env(X_init, T, dt, [100,100,500], [5.0,5.0,5.0], [100,100,100], [5,5,5],\
-                [100,100,100], [1,1,1])
+# env = Solo12Env(X_init, T, dt, [100,100,500], [5.0,5.0,5.0], [100,100,100], [5,5,5],\
+#                 [100,100,100], [1,1,1])
 
-env.motion_plan(X_opt, F_opt, mp.cnt_arr, mp.r_arr)
-env.sim(st, n_steps)
+# env.motion_plan(X_opt, F_opt, mp.cnt_arr, mp.r_arr)
+# env.sim(st, n_steps)

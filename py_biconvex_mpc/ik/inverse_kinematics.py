@@ -64,5 +64,8 @@ class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks
         # # Solving it with the DDP algorithm
         ddp.solve()
 
-        return ddp.xs
+        self.opt_sol = ddp.xs
+
+        return self.opt_sol
+
         

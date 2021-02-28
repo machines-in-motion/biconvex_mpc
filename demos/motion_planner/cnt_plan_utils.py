@@ -2,21 +2,42 @@
 # Author : Avadesh Meduri
 # Date : 11/12/2020
 
+
 import numpy as np
+import pinocchio as pin
+import crocoddyl
+
+from robot_properties_solo.config import Solo12Config
+from py_biconvex_mpc.ik_utils.gait_generator import GaitGenerator
+
 
 class SoloCntGen:
 
-    def __init__(self, l, b):
+    def __init__(self, T, dt):
         '''
         Input:
-            l : length of base from center
-            b : breadth of base from center
+            T : horizon of plan
+            dt : discretization
         '''
+
+        robot = Solo12Config.buildRobotWrapper()
+        self.rmodel = robot.model
+        self.rdata = robot.data 
+        self.f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
+        q0 = np.array(Solo12Config.initial_configuration)
         
-        self.init_arr =np.array([[[1,l,b, 0.0,0, 0], [1,l,-b,0.0,0, 0]\
-                                ,[1,-l,b,0.0,0,0], [1,-l,-b,0.0,0,0]]])
+        pin.forwardKinematics(robot.model, robot.data, q0, pin.utils.zero(robot.model.nv))
+        pin.updateFramePlacements(robot.model, robot.data)
+
+        self.init_arr =np.array([[[1,0,0, 0.0,0, 0], [1,0,0,0.0,0, 0]\
+                                ,[1,0,0,0.0,0,0], [1,0,0,0.0,0,0]]])
+
+        for i in range(len(self.f_arr)):
+            f_loc = robot.data.oMf[robot.model.getFrameId(self.f_arr[i])].translation
+            self.init_arr[0][i][1:4] = f_loc
         
-        
+        self.gg = GaitGenerator(robot, T, dt)
+
     def return_trot_cnt_plan(self, st, sl, i, c_r):
         '''
         Computes contact plan for trot motion for one step
@@ -54,3 +75,15 @@ class SoloCntGen:
         cnt_plan = np.concatenate((cnt_plan, cnt_plan_n), axis = 0)
 
         return cnt_plan
+
+    def create_ik_step_costs(self, cnt_plan):
+
+        for t in range(len(cnt_plan)-1):
+            for i in range(len(self.f_arr)):
+                if cnt_plan[t][i][0] == 0:
+                    f_loc = cnt_plan[t][i][1:4]
+                    f_loc_next = cnt_plan[t+1][i][1:4]
+                    gg.create_swing_foot_task(f_loc, fl_loc_next, 0.0, 0.5, 0.1, "FL_FOOT", "FL_ftc1", 1e2)
+
+        gg.create_contact_task(fr_loc, 0.0, 0.5, "FR_FOOT", "FR_ctc1", 1e3)
+        gg.create_contact_task(hl_loc, 0.0, 0.5, "HL_FOOT", "HL_ctc1", 1e3)

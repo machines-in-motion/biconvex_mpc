@@ -171,7 +171,7 @@ class BiConvexMP(CentroidalDynamics):
             F_k = np.zeros((3*self.n_col*self.n_eff,1))
             F_k[2::3,0] = self.m*9.81
 
-        # penalty of dyannic constraint violation from ADMM
+        # penalty of dynamic constraint violation from ADMM
         P_k = np.zeros((9*self.n_col + 9, 1))
 
         for k in range(no_iters):

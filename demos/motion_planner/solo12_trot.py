@@ -26,29 +26,29 @@ X_ter = X_init.copy()
 # contact plan
 st = 0.2 # step time 
 sh = 0.1 # step height
-sl = np.array([0.0,0.0,0]) # step length
+sl = np.array([0.05,0.0,0]) # step length
 n_steps = 4 # number of steps
 T = st*(n_steps + 2)
 dt = 5e-2
 
 X_ter[0:3] += sl*(n_steps)
 
-cnt_planner = SoloCntGen(T, dt, gait = 4)
+cnt_planner = SoloCntGen(T, dt, gait = 1)
 cnt_plan = cnt_planner.create_trot_plan(st, sl, n_steps)
 ik_solver = cnt_planner.create_ik_step_costs(cnt_plan, sh, [1e2, 1e3])
 
 # weights
-W_X = np.array([1e-5, 1e-5, 1e-5, 1e+2, 1e+2, 1e+2, 1e+2, 1e+2, 1e+2])
+W_X = np.array([1e-5, 1e-5, 1e-5, 1e+1, 2e+4, 2e+4, 1e+3, 1e+3, 1e+3])
 W_X_ter = np.array([1e+5, 1e+5, 1e+5, 1e+4, 1e+4, 1e+4, 1e+4, 1e+4, 1e+4])
 
 W_F = np.array(4*[1e-1, 1e-1, 1e-1])
 
-rho = 1e+3 # penalty on dynamic constraint violation
+rho = 5e+2 # penalty on dynamic constraint violation
 
 # constraints 
-bx = 0.2
-by = 0.2
-bz = 0.32
+bx = 0.25
+by = 0.25
+bz = 0.25
 fx_max = 15
 fy_max = 15
 fz_max = 15
@@ -58,7 +58,7 @@ mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
 mp.create_contact_array(cnt_plan)
 mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
 
-X_opt, F_opt, mom_opt = mp.optimize(X_init, X_ter, W_X, W_F, W_X_ter, 20)
+X_opt, F_opt, mom_opt = mp.optimize(X_init, X_ter, W_X, W_F, W_X_ter, 30)
 # print(F_opt[2::3])
 mp.stats()
 

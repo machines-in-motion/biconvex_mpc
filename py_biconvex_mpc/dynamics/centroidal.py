@@ -87,7 +87,7 @@ class CentroidalDynamics:
 
     def compute_X_mat(self, X, r, cnt_plan):
         '''
-        Creates the A(x), b(F) matrix of the entire problem
+        Creates the A(x), b(x) matrix of the entire problem
         Input:
             X : state vector 9*(n_col + 1)
             r : end effector locations (n_col + 1,n_eff, 3)

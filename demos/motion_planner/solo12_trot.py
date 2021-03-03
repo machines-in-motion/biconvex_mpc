@@ -38,12 +38,12 @@ cnt_plan = cnt_planner.create_trot_plan(st, sl, n_steps)
 ik_solver = cnt_planner.create_ik_step_costs(cnt_plan, sh, [1e2, 1e3])
 
 # weights
-W_X = np.array([1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5])
+W_X = np.array([1e-5, 1e-5, 1e-5, 1e+2, 1e+2, 1e+2, 1e+2, 1e+2, 1e+2])
 W_X_ter = np.array([1e+5, 1e+5, 1e+5, 1e+4, 1e+4, 1e+4, 1e+4, 1e+4, 1e+4])
 
 W_F = np.array(4*[1e-1, 1e-1, 1e-1])
 
-rho = 1e+8 # penalty on dynamic constraint violation
+rho = 1e+3 # penalty on dynamic constraint violation
 
 # constraints 
 bx = 0.2
@@ -58,7 +58,7 @@ mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
 mp.create_contact_array(cnt_plan)
 mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
 
-X_opt, F_opt, mom_opt = mp.optimize(X_init, X_ter, W_X, W_F, W_X_ter, 50)
+X_opt, F_opt, mom_opt = mp.optimize(X_init, X_ter, W_X, W_F, W_X_ter, 20)
 # print(F_opt[2::3])
 mp.stats()
 

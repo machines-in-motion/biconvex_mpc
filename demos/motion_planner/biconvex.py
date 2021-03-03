@@ -59,7 +59,7 @@ mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
 mp.create_contact_array(cnt_plan)
 mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
 
-X_opt, F_opt = mp.optimize(X_init, X_ter, W_X, W_F, W_X_ter, 20)
+X_opt, F_opt, mom_opt = mp.optimize(X_init, X_ter, W_X, W_F, W_X_ter, 20)
 # print(F_opt[2::3])
 mp.stats()
 

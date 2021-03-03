@@ -27,7 +27,7 @@ class BiConvexMP(CentroidalDynamics):
         
         self.dt = dt
         self.m = m
-        self.n_col = int(np.round(T/self.dt))
+        self.n_col = int(np.round(T/self.dt, 2))
         self.n_eff = n_eff
         self.rho = rho
         self.maxit = maxit
@@ -221,7 +221,13 @@ class BiConvexMP(CentroidalDynamics):
         self.X_opt = X_k
         self.F_opt = F_k
         
-        return X_k, F_k
+        self.mom_opt = np.zeros((self.n_col + 1, 6))
+        for i in range(6):
+            self.mom_opt[:,i] = self.X_opt[i+3::9].T
+
+        self.mom_opt[:,0:3] = self.m*self.mom_opt[:,0:3]
+
+        return X_k, F_k, self.mom_opt
 
     def stats(self):
         print("solver terminated in {} iterations".format(len(self.f_all)))
@@ -244,6 +250,19 @@ class BiConvexMP(CentroidalDynamics):
         ax[2].plot(self.X_opt[8::9], label = "ang_z")
         ax[2].grid()
         ax[2].legend()
+
+        fig, ax_mom = plt.subplots(3,1)
+        ax_mom[0].plot(self.mom_opt[:,0], label = "lmom_x")
+        ax_mom[0].grid()
+        ax_mom[0].legend()
+
+        ax_mom[1].plot(self.mom_opt[:,1], label = "lmom_y")
+        ax_mom[1].grid()
+        ax_mom[1].legend()
+        
+        ax_mom[2].plot(self.mom_opt[:,2], label = "lmom_z")
+        ax_mom[2].grid()
+        ax_mom[2].legend()
 
 
         fig, ax_f = plt.subplots(self.n_eff,1)

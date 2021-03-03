@@ -43,13 +43,12 @@ class GaitGenerator:
             cname : cost name
             wt : weight of cost
         """
-        N = int((et - st)/self.dt)
+        N = int(np.round(((et - st)/self.dt),2))
         xMid = 0.5*(xT + x0)
         xMid[2] = sh
 
         traj = np.linspace(x0, xMid, int(N/2))
         traj = np.concatenate((traj, np.linspace(xMid, xT, int(N/2))))
-
         self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
                             st, et, traj, wt, cname)
         
@@ -65,7 +64,7 @@ class GaitGenerator:
             wt : weight of cost
         """
 
-        N = int((et - st)/self.dt)
+        N = int(np.round(((et - st)/self.dt),2))
         pos_traj = np.tile(x0, (N,1))
         vel_traj = np.zeros((N, 6))
         self.ik.add_velocity_tracking_task(self.rmodel.getFrameId(fname)\

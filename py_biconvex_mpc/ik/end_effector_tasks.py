@@ -28,7 +28,7 @@ class EndEffectorTasks:
             wt : weight of the cost
             cost_name : name of the cost
         """
-        sn, en = int(st/self.dt), int(et/self.dt)
+        sn, en = int(np.round(st/self.dt, 2)), int(np.round(et/self.dt, 2))
         for i in range(sn, en):
             Mref = crocoddyl.FrameTranslation(fid, traj[i - sn])
             goalTrackingCost = crocoddyl.CostModelFrameTranslation(self.state, Mref)
@@ -45,7 +45,7 @@ class EndEffectorTasks:
             wt : weight of the cost
             cost_name : name of the cost
         """
-        sn, en = int(st/self.dt), int(et/self.dt)
+        sn, en = int(np.round(st/self.dt, 2)), int(np.round(et/self.dt, 2))
         for i in range(sn, en):
             Vref = crocoddyl.FrameMotion(fid, pin.Motion(traj[i - sn]))
             velTrackingCost = crocoddyl.CostModelFrameVelocity(self.state, Vref)
@@ -63,7 +63,7 @@ class EndEffectorTasks:
             cost_name : name of the cost
         """
 
-        sn, en = int(st/self.dt), int(et/self.dt)
+        sn, en = int(np.round(st/self.dt, 2)), int(np.round(et/self.dt, 2))
         for i in range(sn, en):
             Oref = crocoddyl.FrameRotation(fid, traj[i-sn])
             oriTrackingCost = crocoddyl.CostModelFrameRotation(self.state, Oref)

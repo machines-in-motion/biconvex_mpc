@@ -85,17 +85,21 @@ class GaitGenerator:
         """
         self.ik.add_centroidal_momentum_tracking_task(st, et, traj, wt, cname)
 
-    def optimize(self, x0):
+    def optimize(self, x0, wt_xreg = 1e-4, wt_ureg = 1e-5):
 
-        self.ik.add_state_regularization_cost(0, self.T, 1e-4, "xReg")
-        self.ik.add_ctrl_regularization_cost(0, self.T, 1e-7, "uReg")
+        self.ik.add_state_regularization_cost(0, self.T, wt_xreg, "xReg")
+        self.ik.add_ctrl_regularization_cost(0, self.T, wt_ureg, "uReg")
 
         # setting up terminal cost model
+        # xRegCost = crocoddyl.CostModelState(self.ik.state, self.ik.actuation.nu)
+        # uRegCost = crocoddyl.CostModelControl(self.ik.state, self.ik.actuation.nu)
+
         xRegCost = crocoddyl.CostModelState(self.ik.state)
         uRegCost = crocoddyl.CostModelControl(self.ik.state)
 
-        self.ik.terminalCostModel.addCost("stateReg", xRegCost, 1e-4)
-        self.ik.terminalCostModel.addCost("ctrlReg", uRegCost, 1e-7) 
+
+        self.ik.terminalCostModel.addCost("stateReg", xRegCost, wt_xreg)
+        self.ik.terminalCostModel.addCost("ctrlReg", uRegCost, wt_ureg) 
 
         self.ik.setup_costs()
 

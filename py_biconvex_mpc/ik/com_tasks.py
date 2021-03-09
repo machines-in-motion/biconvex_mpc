@@ -27,7 +27,8 @@ class CenterOfMassTasks:
         """
         sn, en = int(np.round(st/self.dt, 2)), int(np.round(et/self.dt, 2))
         for i in range(sn, en):
-            comTrack = crocoddyl.CostModelCoMPosition(self.state, traj[i-sn], self.state.nv)
+            # comTrack = crocoddyl.CostModelCoMPosition(self.state, traj[i-sn], self.actuation.nu)
+            comTrack = crocoddyl.CostModelCoMPosition(self.state, traj[i-sn])
             self.rcost_model_arr[i].addCost(cost_name, comTrack, wt)
 
 
@@ -44,5 +45,6 @@ class CenterOfMassTasks:
         """
         sn, en = int(np.round(st/self.dt, 2)), int(np.round(et/self.dt, 2))
         for i in range(sn, en):
-            cmomTrack = crocoddyl.CostModelCentroidalMomentum(self.state, traj[i-sn], self.state.nv)
+            # cmomTrack = crocoddyl.CostModelCentroidalMomentum(self.state, traj[i-sn], self.actuation.nu)
+            cmomTrack = crocoddyl.CostModelCentroidalMomentum(self.state, traj[i-sn])
             self.rcost_model_arr[i].addCost(cost_name, cmomTrack, wt)

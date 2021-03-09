@@ -31,6 +31,7 @@ class EndEffectorTasks:
         sn, en = int(np.round(st/self.dt, 2)), int(np.round(et/self.dt, 2))
         for i in range(sn, en):
             Mref = crocoddyl.FrameTranslation(fid, traj[i - sn])
+            # goalTrackingCost = crocoddyl.CostModelFrameTranslation(self.state, Mref, self.actuation.nu)
             goalTrackingCost = crocoddyl.CostModelFrameTranslation(self.state, Mref)
             self.rcost_model_arr[i].addCost(cost_name, goalTrackingCost, wt)
             
@@ -48,7 +49,9 @@ class EndEffectorTasks:
         sn, en = int(np.round(st/self.dt, 2)), int(np.round(et/self.dt, 2))
         for i in range(sn, en):
             Vref = crocoddyl.FrameMotion(fid, pin.Motion(traj[i - sn]))
+            # velTrackingCost = crocoddyl.CostModelFrameVelocity(self.state, Vref, self.actuation.nu)
             velTrackingCost = crocoddyl.CostModelFrameVelocity(self.state, Vref)
+
             self.rcost_model_arr[i].addCost(cost_name, velTrackingCost, wt)
 
     def add_orientation_tracking_task(self, fid, st, et, traj, wt, cost_name):
@@ -66,5 +69,6 @@ class EndEffectorTasks:
         sn, en = int(np.round(st/self.dt, 2)), int(np.round(et/self.dt, 2))
         for i in range(sn, en):
             Oref = crocoddyl.FrameRotation(fid, traj[i-sn])
+            # oriTrackingCost = crocoddyl.CostModelFrameRotation(self.state, Oref, self.actuation.nu)
             oriTrackingCost = crocoddyl.CostModelFrameRotation(self.state, Oref)
             self.rcost_model_arr[i].addCost(cost_name, oriTrackingCost, wt)

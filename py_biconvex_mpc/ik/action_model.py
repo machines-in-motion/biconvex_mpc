@@ -8,7 +8,7 @@ import pinocchio
 import crocoddyl
 
 class DifferentialFwdKinematics(crocoddyl.DifferentialActionModelAbstract):
-    def __init__(self, state, costModel):
+    def __init__(self, state, actuation, costModel):
         crocoddyl.DifferentialActionModelAbstract.__init__(self, state, state.nv, costModel.nr)
         self.costs = costModel
         self.enable_force = True
@@ -25,6 +25,7 @@ class DifferentialFwdKinematics(crocoddyl.DifferentialActionModelAbstract):
         pinocchio.centerOfMass(self.state.pinocchio, data.pinocchio, q, v)
         pinocchio.computeCentroidalMomentum(self.state.pinocchio, data.pinocchio)
         data.xout = u
+        # print(np.shape(u))
         self.costs.calc(data.costs, x, u)
         data.cost = data.costs.cost
 
@@ -34,7 +35,8 @@ class DifferentialFwdKinematics(crocoddyl.DifferentialActionModelAbstract):
             u = self.unone
         if True:
             self.calc(data, x, u)
-            
+        
+        # u_a = np.concatenate((np.zeros(6), u))
         pinocchio.computeForwardKinematicsDerivatives(self.state.pinocchio, data.pinocchio, q, v, u)
         pinocchio.jacobianCenterOfMass(self.state.pinocchio, data.pinocchio)
         pinocchio.computeCentroidalDynamicsDerivatives(self.state.pinocchio, data.pinocchio, q, v, u)

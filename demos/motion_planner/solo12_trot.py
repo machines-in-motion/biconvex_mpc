@@ -17,7 +17,7 @@ robot = Solo12Config.buildRobotWrapper()
 n_eff = 4
 m = pin.computeTotalMass(robot.model)
 q0 = np.array(Solo12Config.initial_configuration)
-
+x0 = np.concatenate([q0, pin.utils.zero(robot.model.nv)])
 # initial and ter state
 X_init = np.zeros(9)
 X_init[0:3] = q0[0:3]
@@ -58,9 +58,12 @@ mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
 mp.create_contact_array(cnt_plan)
 mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
 
-X_opt, F_opt, mom_opt = mp.optimize(X_init, X_ter, W_X, W_F, W_X_ter, 30)
+# X_opt, F_opt, mom_opt = mp.optimize(X_init, X_ter, W_X, W_F, W_X_ter, 3)
 # print(F_opt[2::3])
-mp.stats()
+# mp.stats()
 
 # ik_solver.create_centroidal_task(mom_opt, 0, T, "mom_track_cost", 1e3)
-# xs = ik_solver.optimize(x0)
+xs = ik_solver.optimize(x0)
+
+# for i in range(len(xs)):
+#     print(np.round(xs[i][-6:],2))

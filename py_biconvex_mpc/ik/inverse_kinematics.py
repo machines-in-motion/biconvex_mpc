@@ -23,19 +23,21 @@ class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks
         """
         self.state = crocoddyl.StateMultibody(rmodel)
         self.actuation = crocoddyl.ActuationModelFloatingBase(self.state)
-
         self.dt = dt
         self.T = T
         self.N = int(T/dt)
         # This is the array to which all costs in each time step is added
         self.rcost_model_arr = []
         for n in range(self.N):
+            # rCostModel = crocoddyl.CostModelSum(self.state, self.actuation.nu)
             rCostModel = crocoddyl.CostModelSum(self.state)
+
             self.rcost_model_arr.append(rCostModel)
         # This is the cost array that is passed into ddp solver
         self.rcost_arr = []
 
         # terminal cost model
+        # self.terminalCostModel = crocoddyl.CostModelSum(self.state, self.actuation.nu)
         self.terminalCostModel = crocoddyl.CostModelSum(self.state)
 
     def setup_costs(self):
@@ -47,11 +49,11 @@ class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks
         """
         for n in range(self.N):
             runningModel = crocoddyl.IntegratedActionModelEuler(
-                DifferentialFwdKinematics(self.state, self.rcost_model_arr[n]), self.dt)
+                DifferentialFwdKinematics(self.state, self.actuation, self.rcost_model_arr[n]), self.dt)
             self.rcost_arr.append(runningModel)
 
         self.terminalModel = crocoddyl.IntegratedActionModelEuler(
-            DifferentialFwdKinematics(self.state, self.terminalCostModel), 0.)
+            DifferentialFwdKinematics(self.state, self.actuation, self.terminalCostModel), 0.)
 
     def optimize(self, x0):
 

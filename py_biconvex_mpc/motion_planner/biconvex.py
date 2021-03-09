@@ -221,13 +221,16 @@ class BiConvexMP(CentroidalDynamics):
         self.X_opt = X_k
         self.F_opt = F_k
         
+        com_opt = np.zeros((self.n_col + 1, 3))
         self.mom_opt = np.zeros((self.n_col + 1, 6))
         for i in range(6):
+            if i < 3:
+                com_opt[:,i] = self.X_opt[i::9].T
             self.mom_opt[:,i] = self.X_opt[i+3::9].T
 
         self.mom_opt[:,0:3] = self.m*self.mom_opt[:,0:3]
 
-        return X_k, F_k, self.mom_opt
+        return com_opt, F_k, self.mom_opt
 
     def stats(self):
         print("solver terminated in {} iterations".format(len(self.f_all)))

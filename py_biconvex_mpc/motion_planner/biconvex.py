@@ -107,7 +107,7 @@ class BiConvexMP(CentroidalDynamics):
         self.X_high = np.reshape(self.X_high, (len(self.X_high), 1))
 
 
-    def create_cost_X(self, W_X, W_X_ter, X_ter):
+    def create_cost_X(self, W_X, W_X_ter, X_ter, X_nom = None):
         '''
         Creates the cost matrix Q_X and q_X for the X optimization
         Input:
@@ -117,12 +117,16 @@ class BiConvexMP(CentroidalDynamics):
         assert len(W_X) == len(W_X_ter)
         assert len(W_X) == 9
 
+        if isinstance(X_nom, np.ndarray) == None:
+            X_nom = np.zeros(9*(self.n_col))
+
         self.Q_X = np.zeros((9*(self.n_col + 1), 9*(self.n_col + 1)))    
         np.fill_diagonal(self.Q_X, W_X)
         np.fill_diagonal(self.Q_X[-9:, -9:], W_X_ter)
-        # self.q = np.repeat(W_X, self.n_col + 1)
-        self.q_X = np.zeros(((self.n_col+1)*9,1))
-        self.q_X[-9:,0] = -2*W_X_ter*X_ter
+        self.q_X = np.zeros((self.n_col+1)*9)
+        self.q_X[:-9] = -2* np.tile(W_X, (self.n_col)) * X_nom
+        self.q_X[-9:] = -2*W_X_ter*X_ter
+        self.q_X = np.reshape(self.q_X, (len(self.q_X), 1))
 
         self.Q_X = np.matrix(self.Q_X)
         self.q_X = np.matrix(self.q_X)
@@ -143,7 +147,7 @@ class BiConvexMP(CentroidalDynamics):
         self.q_F = np.matrix(self.q_F)
 
 
-    def optimize(self, X_init, X_ter, W_X, W_F, W_X_ter, no_iters, X_wm = None, F_wm = None):
+    def optimize(self, X_init, no_iters, X_wm = None, F_wm = None):
         '''
         This function optimizes the centroidal dynamics trajectory
         Input:
@@ -157,8 +161,8 @@ class BiConvexMP(CentroidalDynamics):
             F_wm : starting F to warm start X optimization
         '''
         # creating cost matrices
-        self.create_cost_X(W_X, W_X_ter, X_ter)
-        self.create_cost_F(W_F)
+        # self.create_cost_X(W_X, W_X_ter, X_ter)
+        # self.create_cost_F(W_F)
 
         if X_wm:
             X_k = X_wm

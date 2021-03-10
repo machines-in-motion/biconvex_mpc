@@ -28,7 +28,7 @@ class SoloCntGen:
         self.f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
         q0 = np.array(Solo12Config.initial_configuration)
         
-        
+        self.foot_size = 0.025 #foot size        
 
         pin.forwardKinematics(robot.model, robot.data, q0, pin.utils.zero(robot.model.nv))
         pin.updateFramePlacements(robot.model, robot.data)
@@ -39,7 +39,8 @@ class SoloCntGen:
         for i in range(len(self.f_arr)):
             f_loc = robot.data.oMf[robot.model.getFrameId(self.f_arr[i])].translation
             self.init_arr[0][i][1:4] = f_loc
-        
+            self.init_arr[0][i][3] = 0
+
         self.gg = GaitGenerator(robot, T, dt)
 
         if gait == 1:
@@ -108,8 +109,11 @@ class SoloCntGen:
                 et = np.round(cnt_plan[t][i][5],2)
                 e_name = self.f_arr[i]
                 if int(cnt_plan[t][i][0]) == 0:
-                    f_loc = cnt_plan[t-1][i][1:4]
-                    f_loc_next = cnt_plan[t][i][1:4]
+                    f_loc = cnt_plan[t-1][i][1:4].copy()
+                    f_loc[2] += self.foot_size 
+                    f_loc_next = cnt_plan[t][i][1:4].copy()
+                    f_loc_next[2] += self.foot_size 
+
                     self.gg.create_swing_foot_task(f_loc, \
                         f_loc_next, st, et, sh, e_name, e_name + "_ftc_" + str(t), wt_arr[0])
                 

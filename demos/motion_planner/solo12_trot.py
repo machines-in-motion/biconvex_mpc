@@ -26,7 +26,7 @@ X_ter = X_init.copy()
 st = 0.2 # step time 
 sh = 0.1 # step height
 sl = np.array([0.1,0.0,0]) # step length
-n_steps = 6 # number of steps
+n_steps = 3 # number of steps
 T = st*(n_steps + 2)
 dt = 5e-2
 
@@ -40,7 +40,7 @@ cnt_plan = cnt_planner.create_trot_plan(st, sl, n_steps)
 ik_solver = cnt_planner.create_ik_step_costs(cnt_plan, sh, [1e2, 1e3])
 
 # weights
-W_X = np.array([1e-5, 1e-5, 1e-5, 1e-4, 1e-4, 1e-4, 1e5, 1e5, 1e5])
+W_X = np.array([1e-5, 1e-5, 1e-5, 1e-4, 1e-4, 1e-4, 3e3, 3e3, 3e3])
 W_X_ter = 10*np.array([1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5])
 
 W_F = np.array(4*[1e+1, 1e+1, 1e+1])
@@ -61,9 +61,17 @@ mp.create_contact_array(cnt_plan)
 mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
 mp.create_cost_X(W_X, W_X_ter, X_ter, X_nom)
 mp.create_cost_F(W_F)
-X_opt, F_opt, mom_opt = mp.optimize(X_init, 35)
+com_opt, F_opt, mom_opt = mp.optimize(X_init, 30)
 # print(F_opt[2::3])
 mp.stats()
+
+tmp = np.array(com_opt[0])
+s = 0
+for i in range(1, len(com_opt)):
+    tmp += dt*mom_opt[i][0:3]/m
+    s += np.linalg.norm(tmp - com_opt[i][2])/(len(com_opt)-1)
+    # print(com_opt[i][2], tmp)
+print(s)
 
 # ik_solver.create_centroidal_task(mom_opt, 0, T, "mom_track_cost", 1e3)
 # xs = ik_solver.optimize(x0)

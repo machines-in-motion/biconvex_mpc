@@ -10,7 +10,7 @@ from ..solvers.fista import FISTA
 
 class BiConvexMP(CentroidalDynamics):
 
-    def __init__(self, m, dt, T, n_eff, rho = 2e+3, L0 = 0.001, beta = 1.1, maxit = 500, tol = 1e-3):
+    def __init__(self, m, dt, T, n_eff, rho = 2e+3, L0 = 0.001, beta = 1.1, maxit = 1000, tol = 1e-5):
         '''
         This is the Bi Convex motion planner
         Input:
@@ -202,15 +202,15 @@ class BiConvexMP(CentroidalDynamics):
             X_k_1 = self.fista.optimize(obj_x, grad_obj_x, proj_x, X_k, self.maxit, self.tol)
 
             # update of P_k
-            P_k_1 = P_k + A_f*X_k_1 - b_f
-
+            P_k_1 = P_k + (A_f*X_k_1 - b_f)
             # preparing for next iteration
             X_k = X_k_1
             F_k = F_k_1
             P_k = P_k_1
             
             # computing cost of total optimization problem
-            dyn_violation = np.linalg.norm(A_f*X_k - b_f)**2
+            dyn_violation = np.linalg.norm(A_f*X_k - b_f)
+            print(dyn_violation)
             cost_x = X_k.T *self.Q_X*X_k + self.q_X.T*X_k + dyn_violation
             cost_f = F_k.T *self.Q_F*F_k + self.q_F.T*F_k + dyn_violation
 

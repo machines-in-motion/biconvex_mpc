@@ -127,6 +127,7 @@ class BiConvexMP(CentroidalDynamics):
         self.q_X[:-9] = -2* np.tile(W_X, (self.n_col)) * X_nom
         self.q_X[-9:] = -2*W_X_ter*X_ter
         self.q_X = np.reshape(self.q_X, (len(self.q_X), 1))
+        
 
         self.Q_X = np.matrix(self.Q_X)
         self.q_X = np.matrix(self.q_X)
@@ -173,7 +174,6 @@ class BiConvexMP(CentroidalDynamics):
             F_k = F_wm
         else:
             F_k = np.zeros((3*self.n_col*self.n_eff,1))
-            F_k[2::3,0] = self.m*9.81
 
         # penalty of dynamic constraint violation from ADMM
         P_k = np.zeros((9*self.n_col + 9, 1))

@@ -25,7 +25,8 @@ data_files_to_install = [(path.join("share", package_name), ["package.xml"])]
 scripts_list = []
 for (root, _, files) in walk(path.join("demos")):
     for demo_file in files:
-        scripts_list.append(path.join(root, demo_file))
+        if demo_file[-2:] == "py":
+            scripts_list.append(path.join(root, demo_file))
 
 # Final setup.
 setup(

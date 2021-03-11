@@ -33,7 +33,7 @@ class RegularizationCosts:
             # xRegCost = crocoddyl.CostModelState(self.state)
             if state_weights == None:
                 stateWeights = np.array([0.] * 3 + [500.] * 3 + [0.01] * (self.state.nv - 6) \
-                    + [10.] * 6 + [0.1] *(self.state.nv - 6))
+                    + [10.] * 6 + [5.0] *(self.state.nv - 6))
 
             q0 = np.array(Solo12Config.initial_configuration)
             x0 = np.concatenate([q0, pin.utils.zero(self.state.nv)])

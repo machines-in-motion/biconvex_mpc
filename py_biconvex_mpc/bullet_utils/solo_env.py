@@ -2,9 +2,11 @@
 # Author : Avadesh Meduri
 # Date : 11/12/2020
 
+import time
 import numpy as np
 from matplotlib import pyplot as plt
 
+import pinocchio as pin
 
 from blmc_controllers.robot_impedance_controller import RobotImpedanceController
 from blmc_controllers.robot_centroidal_controller import RobotCentroidalController
@@ -30,8 +32,12 @@ class Solo12Env:
 
         self.env = BulletEnvWithGround()
         self.robot = self.env.add_robot(Solo12Robot)
-        initial_configuration = [x_init[0], x_init[1],x_init[2], 0., 0., 0., 1.] + self.robot.nb_ee * [0., 0.9, -1.8]
-        Solo12Config.initial_configuration = initial_configuration
+        self.rmass = pin.computeTotalMass(self.robot.pin_robot.model)
+        self.f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
+        self.h_arr = ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]
+
+        # initial_configuration = [x_init[0], x_init[1],x_init[2], 0., 0., 0., 1.] + self.robot.nb_ee * [0., 0.9, -1.8]
+        # Solo12Config.initial_configuration = initial_configuration
 
         self.q0 = np.matrix(Solo12Config.initial_configuration).T
         dq0 = np.matrix(Solo12Config.initial_velocity).T
@@ -46,105 +52,145 @@ class Solo12Env:
                 mu=0.6, kc=kc, dc=dc, kb=kb, db=db)
         self.robot_leg_ctrl = RobotImpedanceController(self.robot, config_file)
 
-        # swing foot trajectory generator
-        self.trj_arr = [TrajGenerator(self.robot.pin_robot), TrajGenerator(self.robot.pin_robot), TrajGenerator(self.robot.pin_robot), TrajGenerator(self.robot.pin_robot)]
-        self.f_lift = 0.1
-        
         # state estimator
         self.sse = SoloStateEstimator(self.robot.pin_robot)
         # creating arrays
-        self.x_com = np.zeros((self.n_col, 3))
-        self.xd_com = np.zeros((self.n_col, 3))
-        self.x_ori = np.zeros((self.n_col, 4))
-        self.x_ori[:,3] = 1
-        self.xd_ori = np.zeros((self.n_col, 3))
+        self.x_com = np.zeros((self.n_col+1, 3))
+        self.xd_com = np.zeros((self.n_col+1, 3))
+        self.x_ori = np.zeros((self.n_col+1, 4))
+        self.xd_ori = np.zeros((self.n_col+1, 3))
+
+        self.fff = np.zeros((self.n_col, 12))
+
+        self.x_foot = np.zeros((self.n_col + 1, 12))
+        self.xd_foot = np.zeros((self.n_col + 1, 12))
+
+        self.plt_x_foot = np.zeros((self.n_col + 1, 12)) # for ploting
 
         self.cnt_array = np.zeros((self.n_col, 4))
         self.r_arr_array = np.zeros((self.n_col, 4, 3))
 
-    def motion_plan(self, X_opt, F_opt, cnt_plan, r_arr):
+    def generate_motion_plan(self, com_opt, mom_opt, F_opt, cnt_plan, r_arr):
         '''
         This function transforms the output from the solver into arrays that can be tracked
         Input:
             F_opt : optimal force profile
-            X_opt : optimal ceneter of mass profile
+            com_opt : optimal ceneter of mass profile
+            mom_opt : optimal momentum profile
             cnt_plan : contact plan
             r_arr : location of contact points throughout the motion
         '''
         for n in range(int(np.round(self.T/self.dt,2))):
-            for j in range(3):
-                self.x_com[n*self.ratio:(n+1)*self.ratio,j] = np.linspace(X_opt[9*n+j,0],X_opt[9*n+9+j,0], self.ratio, endpoint = True)
-                self.xd_com[n*self.ratio:(n+1)*self.ratio,j] = np.linspace(X_opt[9*n+j+3,0],X_opt[9*n+12+j,0],self.ratio)
-                self.xd_ori[n*self.ratio:(n+1)*self.ratio,j] = np.linspace(X_opt[9*n+j+6,0],X_opt[9*n+15+j,0],self.ratio)
-            
+            self.x_com[n*self.ratio:(n+1)*self.ratio] = np.linspace(com_opt[n],com_opt[n+1], self.ratio, endpoint = True)
+            self.xd_com[n*self.ratio:(n+1)*self.ratio] = np.linspace(mom_opt[n,0:3]/self.rmass,mom_opt[n+1,0:3]/self.rmass,self.ratio)
+            # self.xd_ori[n*self.ratio:(n+1)*self.ratio] = np.linspace(mom_opt[n,3:],mom_opt[n+1,3:],self.ratio)
             self.cnt_array[n*self.ratio:(n+1)*self.ratio] = cnt_plan[n]
             self.r_arr_array[n*self.ratio:(n+1)*self.ratio] = r_arr[n]
-        
-        self.xd_ori = np.divide(self.xd_ori, np.diag(self.robot.pin_robot.mass(self.q0)[3:6, 3:6]))
 
-    def generate_end_eff_plan(self, q, dq, foot_loc, foot_arr, cnt_plan, x_com, t, step_time):
+            if n < int(np.round(self.T/self.dt,2))-1:
+                self.fff[n*self.ratio:(n+1)*self.ratio] = np.linspace(F_opt[12*n:12*(n+1)], F_opt[12*(n+1):12*(n+2)], self.ratio)[:,:,0]
+        self.fff[n*self.ratio:] = self.fff[(n)*self.ratio-1]
+
+    def generate_end_eff_plan(self, xs):
         '''
         This function creates swing foot trajectories for solo given the plan
         Input:
-            q, dq : joint configuration and velocity
-            foot_loc : foot location
-            foot_arr : contains 4*3 array of desired next foot locations
-            cnt_plan : contains the contact plan of next foot location
-            x_com : current desired com location
-            t : duration within the step
-            step_time : duration of step time
+            xs : joint configuration and velocity from ddp plan
         '''
+        for n in range(len(xs)):
+            q = xs[n][:self.robot.pin_robot.model.nq]
+            v = xs[n][self.robot.pin_robot.model.nq:]
+            pin.forwardKinematics(self.robot.pin_robot.model, self.robot.pin_robot.data, q, v)
+            pin.updateFramePlacements(self.robot.pin_robot.model, self.robot.pin_robot.data) 
+            self.x_ori[n*self.ratio] = q[3:7]           
+            self.xd_ori[n*self.ratio] = v[3:6]
+            for i in range(len(self.f_arr)):
+                f_id = self.robot.pin_robot.model.getFrameId(self.f_arr[i])
+                h_id = self.robot.pin_robot.model.getFrameId(self.h_arr[i])
+                f_loc = self.robot.pin_robot.data.oMf[f_id].translation
+                h_loc = self.robot.pin_robot.data.oMf[h_id].translation
+                f_vel = pin.getFrameVelocity(self.robot.pin_robot.model, self.robot.pin_robot.data, f_id, pin.LOCAL_WORLD_ALIGNED)
+                h_vel = pin.getFrameVelocity(self.robot.pin_robot.model, self.robot.pin_robot.data, h_id, pin.LOCAL_WORLD_ALIGNED)
+                self.x_foot[n*self.ratio][3*i:3*i+3] = f_loc - h_loc
+                self.xd_foot[n*self.ratio][3*i:3*i+3] = np.array(f_vel)[0:3] - np.array(h_vel)[0:3]
+                self.plt_x_foot[n*self.ratio][3*i:3*i+3] = f_loc
 
-        x_des = 4*[0.0, 0.0, 0.0]
-        xd_des = 4*[0.0, 0.0, 0]
-        
-        hip_loc = self.off.copy() + np.array([0,0,0.2])
-        for n in range(4):
-            foot_loc[n][2] = 0.0
-            if cnt_plan[n] == 0.0:
-                x_des[n*3:n*3+3], xd_des[n*3:n*3+3] = self.trj_arr[n].generate_foot_traj(foot_loc[n].copy(), \
-                                       foot_arr[n] , [0.0, 0.0, self.f_lift], step_time,t)
-            elif cnt_plan[n] == 1.0:
-                x_des[n*3:n*3+3], xd_des[n*3:n*3+3] = self.trj_arr[n].generate_foot_traj(foot_loc[n].copy(), \
-                                       foot_loc[n].copy() , [0.0, 0.0, 0.0], step_time,t)
-            
-            x_des[n*3:n*3+3] = np.subtract(x_des[n*3:n*3+3],hip_loc[n])
-        return x_des, xd_des
+        for n in range(len(xs)-1):
+            self.x_foot[n*self.ratio: (n+1)*self.ratio] = np.linspace(self.x_foot[n*self.ratio], self.x_foot[(n+1)*self.ratio], self.ratio, endpoint=True)
+            self.xd_foot[n*self.ratio: (n+1)*self.ratio] = np.linspace(self.xd_foot[n*self.ratio], self.xd_foot[(n+1)*self.ratio], self.ratio, endpoint=True)
 
-    def sim(self, st, n_steps):
+            self.plt_x_foot[n*self.ratio: (n+1)*self.ratio] = np.linspace(self.plt_x_foot[n*self.ratio], self.plt_x_foot[(n+1)*self.ratio], self.ratio, endpoint=True)
+
+            self.x_ori[n*self.ratio: (n+1)*self.ratio] = np.linspace(self.x_ori[n*self.ratio], self.x_ori[(n+1)*self.ratio], self.ratio, endpoint=True)
+            self.xd_ori[n*self.ratio: (n+1)*self.ratio] = np.linspace(self.xd_ori[n*self.ratio], self.xd_ori[(n+1)*self.ratio], self.ratio, endpoint=True)
+
+    def sim(self, vname = None):
         '''
         This function simulates the motion plan
         Input: 
             st : step time
             n_steps : number of steps in plan
         '''
-        step_time = int(st/0.001)
-        k = 0
+
         q, dq = self.robot.get_state()
         fl_off, fr_off, hl_off, hr_off = self.sse.return_hip_offset(q, dq)
         self.off = [fl_off, fr_off, hl_off, hr_off]
 
+        if vname:
+            self.robot.start_recording(vname)
         for i in range(self.n_col):
+            # time.sleep(0.0)
             self.env.step(sleep=True) # You can sleep here if you want to slow down the replay
             q, dq = self.robot.get_state()
+            # fl_hip, fr_hip, hl_hip, hr_hip = self.sse.return_hip_locations(q,dq)
             w_com = self.robot_cent_ctrl.compute_com_wrench(q, dq, self.x_com[i], self.xd_com[i], self.x_ori[i], self.xd_ori[i])
-            tmp = (int(i//step_time))
-            if k == 0:
-                fl_foot, fr_foot, hl_foot, hr_foot = self.sse.return_foot_locations(q, dq) ## computing current location of the feet
-                foot_loc = [fl_foot, fr_foot, hl_foot, hr_foot]
 
-            # F = self.robot_cent_ctrl.compute_force_qp(q, dq, self.cnt_array[tmp*step_time], w_com)
-            x_des_tmp, xd_des_tmp = self.generate_end_eff_plan(q, dq, foot_loc, self.r_arr_array[tmp*step_time], \
-                                self.cnt_array[tmp*step_time], self.x_com[i], 0.001*k, st)
-            F = np.zeros(12)
-            x_des = 12*[0,]
-            x_des[2] = x_des_tmp[2]
-            x_des[5] = -0.25
-            x_des[8] = x_des_tmp[8]
-            x_des[11] = -0.25
-            xd_des = 12*[0,]
+            F = self.robot_cent_ctrl.compute_force_qp(q, dq, self.cnt_array[i], w_com)
+            x_des = self.x_foot[i]
+            xd_des = self.xd_foot[i]
             tau = self.robot_leg_ctrl.return_joint_torques(q,dq,self.kp,self.kd, x_des, xd_des,F)
 
             self.robot.send_joint_command(tau)
-            k += 1
-            k = k%step_time
+           
+        if vname:
+            self.robot.stop_recording()
+
+    def plot(self):
+
+        fig, ax = plt.subplots(3,1)
+        ax[0].plot(self.x_com[:,0], label = "Cx")
+        ax[0].plot(self.x_com[:,1], label = "Cy")
+        ax[0].plot(self.x_com[:,2], label = "Cz")
+        ax[0].grid()
+        ax[0].legend()
+
+        ax[1].plot(self.xd_com[:,0], label = "Vx")
+        ax[1].plot(self.xd_com[:,1], label = "Vy")
+        ax[1].plot(self.xd_com[:,2], label = "Vz")
+        ax[1].grid()
+        ax[1].legend()
+
+        ax[2].plot(self.xd_ori[:,0], label = "ang_vel_x")
+        ax[2].plot(self.xd_ori[:,1], label = "ang_vel_y")
+        ax[2].plot(self.xd_ori[:,2], label = "ang_vel_z")
+        ax[2].grid()
+        ax[2].legend()
+
+        fig, ax_f = plt.subplots(4,1)
+        for n in range(4):
+            ax_f[n].plot(self.fff[:,3*n], label = "ee: " + str(n) + "Fx")
+            ax_f[n].plot(self.fff[:,3*n+1], label = "ee: " + str(n) + "Fy")
+            ax_f[n].plot(self.fff[:,3*n+2], label = "ee: " + str(n) + "Fz")
+            ax_f[n].grid()
+            ax_f[n].legend()
+
+        fig, ax_foot = plt.subplots(4,1)
+        for n in range(4):
+            ax_foot[n].plot(self.plt_x_foot[:,3*n], label = "ee: " + str(n) + "foot_x")
+            ax_foot[n].plot(self.plt_x_foot[:,3*n+1], label = "ee: " + str(n) + "foot_y")
+            ax_foot[n].plot(self.plt_x_foot[:,3*n+2], label = "ee: " + str(n) + "foot_z")
+            ax_foot[n].grid()
+            ax_foot[n].legend()
+
+
+        plt.show()

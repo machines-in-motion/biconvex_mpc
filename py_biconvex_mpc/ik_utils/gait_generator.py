@@ -43,24 +43,15 @@ class GaitGenerator:
             cname : cost name
             wt : weight of cost
         """
-        N = int(np.round(((et - st)/self.dt),2))
         xMid = 0.5*(xT + x0)
         xMid[2] = sh
 
         self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
                             st, st, x0, wt, cname)
         
-        # traj = np.linspace(x0, xMid, int(N/2))
-        # self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
-        #                     st, 0.5*(st + et), traj, wt, cname)
         self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
                             0.5*(st + et), 0.5*(st + et), xMid, 1e-1*wt, cname)
         
-        # traj = np.concatenate((traj, np.linspace(xMid, xT, int(N/2))))
-        
-        # self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
-        #                     0.5*(st + et), et, traj, wt, cname)
-
         self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
         et, et, xT, wt, cname)
         
@@ -78,9 +69,6 @@ class GaitGenerator:
 
         N = int(np.round(((et - st)/self.dt),2))
         pos_traj = np.tile(x0, (N,1))
-        vel_traj = np.zeros((N, 6))
-        # self.ik.add_velocity_tracking_task(self.rmodel.getFrameId(fname)\
-        #         , st, et, vel_traj, 1e-2*wt, cname + "_vel")
         self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
                             st, et, pos_traj, wt, cname + "_pos")
 
@@ -96,15 +84,20 @@ class GaitGenerator:
         """
         self.ik.add_centroidal_momentum_tracking_task(st, et, traj, wt, cname)
 
-    def optimize(self, x0, wt_xreg = 1e-4, wt_ureg = 1e-5):
-
-        self.ik.add_state_regularization_cost(0, self.T, wt_xreg, "xReg")
+    def optimize(self, x0, wt_xreg = 1e-4, wt_ureg = 1e-5, state_wt = None):
+        """
+        This function optimizes the Ik motion
+        Input:
+            x0 : initial configuration (q , v)
+            wt_reg : regularization of the weights
+            wt_ureg : control regularization
+            state_wt : regularization of the states variables 
+                        (look at add state regularization cost for more details)
+        """
+        self.ik.add_state_regularization_cost(0, self.T, wt_xreg, "xReg", state_wt)
         self.ik.add_ctrl_regularization_cost(0, self.T, wt_ureg, "uReg")
 
         # setting up terminal cost model
-        # xRegCost = crocoddyl.CostModelState(self.ik.state, self.ik.actuation.nu)
-        # uRegCost = crocoddyl.CostModelControl(self.ik.state, self.ik.actuation.nu)
-
         xRegCost = crocoddyl.CostModelState(self.ik.state)
         uRegCost = crocoddyl.CostModelControl(self.ik.state)
 

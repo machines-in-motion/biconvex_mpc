@@ -7,8 +7,9 @@ from matplotlib import pyplot as plt
 
 from .. dynamics.centroidal import CentroidalDynamics
 from ..solvers.fista import FISTA
+from . cost import BiConvexCosts
 
-class BiConvexMP(CentroidalDynamics):
+class BiConvexMP(CentroidalDynamics, BiConvexCosts):
 
     def __init__(self, m, dt, T, n_eff, rho = 2e+3, L0 = 0.001, beta = 1.1, maxit = 1000, tol = 1e-5):
         '''
@@ -37,7 +38,8 @@ class BiConvexMP(CentroidalDynamics):
         self.r_arr = []
         # Note : no of collocation points should be computed only once
         # and passed to centroidal dynamics
-        super().__init__(m, dt, T, n_eff)
+        CentroidalDynamics.__init__(self, m, dt, T, n_eff)
+        BiConvexCosts.__init__(self, self.n_col, self.dt, T)
         # make the inputs to these parameters that come from outside
         self.fista = FISTA(L0, beta)
 
@@ -105,32 +107,6 @@ class BiConvexMP(CentroidalDynamics):
         
         self.X_low = np.reshape(self.X_low, (len(self.X_low), 1))
         self.X_high = np.reshape(self.X_high, (len(self.X_high), 1))
-
-
-    def create_cost_X(self, W_X, W_X_ter, X_ter, X_nom = None):
-        '''
-        Creates the cost matrix Q_X and q_X for the X optimization
-        Input:
-            W_X : weights on the tracking X
-            W_X_ter : terminal weights on the tracking of X
-        '''
-        assert len(W_X) == len(W_X_ter)
-        assert len(W_X) == 9
-
-        if isinstance(X_nom, np.ndarray) == None:
-            X_nom = np.zeros(9*(self.n_col))
-
-        self.Q_X = np.zeros((9*(self.n_col + 1), 9*(self.n_col + 1)))    
-        np.fill_diagonal(self.Q_X, W_X)
-        np.fill_diagonal(self.Q_X[-9:, -9:], W_X_ter)
-        self.q_X = np.zeros((self.n_col+1)*9)
-        self.q_X[:-9] = -2* np.tile(W_X, (self.n_col)) * X_nom
-        self.q_X[-9:] = -2*W_X_ter*X_ter
-        self.q_X = np.reshape(self.q_X, (len(self.q_X), 1))
-        
-
-        self.Q_X = np.matrix(self.Q_X)
-        self.q_X = np.matrix(self.q_X)
 
     def create_cost_F(self, W_F):
         '''
@@ -249,12 +225,22 @@ class BiConvexMP(CentroidalDynamics):
         ax[1].plot(self.X_opt[3::9], label = "Vx")
         ax[1].plot(self.X_opt[4::9], label = "Vy")
         ax[1].plot(self.X_opt[5::9], label = "Vz")
+        if isinstance(self.ik_mom_opt, np.ndarray):
+            ax[1].plot(self.ik_mom_opt[:,0], label = "ik_Vx")
+            ax[1].plot(self.ik_mom_opt[:,1], label = "ik_Vy")
+            ax[1].plot(self.ik_mom_opt[:,2], label = "ik_Vz")
+            
         ax[1].grid()
         ax[1].legend()
 
         ax[2].plot(self.X_opt[6::9], label = "ang_x")
         ax[2].plot(self.X_opt[7::9], label = "ang_y")
         ax[2].plot(self.X_opt[8::9], label = "ang_z")
+        if isinstance(self.ik_mom_opt, np.ndarray):
+            ax[2].plot(self.ik_mom_opt[:,3], label = "ik_ang_x")
+            ax[2].plot(self.ik_mom_opt[:,4], label = "ik_ang_y")
+            ax[2].plot(self.ik_mom_opt[:,5], label = "ik_ang_z")
+            
         ax[2].grid()
         ax[2].legend()
 

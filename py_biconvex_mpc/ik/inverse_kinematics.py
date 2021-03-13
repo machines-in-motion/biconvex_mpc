@@ -21,6 +21,9 @@ class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks
             dt : discrertization of time
             T : horizon of plan in seconds
         """
+        self.rmodel = rmodel
+        self.rdata = rmodel.createData()
+
         self.state = crocoddyl.StateMultibody(rmodel)
         self.actuation = crocoddyl.ActuationModelFloatingBase(self.state)
         self.dt = dt
@@ -70,4 +73,19 @@ class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks
 
         return self.opt_sol
 
+    def compute_optimal_momentum(self):
+        """
+        This function computes the optimal momentum based on the solution
+        """
+        opt_mom = np.zeros((len(self.opt_sol), 6))
+        m = pin.computeTotalMass(self.rmodel)
+        for i in range(len(self.opt_sol)):
+            q = self.opt_sol[i][:self.rmodel.nq]
+            v = self.opt_sol[i][self.rmodel.nq:]
+            pin.forwardKinematics(self.rmodel, self.rdata, q, v)
+            pin.computeCentroidalMomentum(self.rmodel, self.rdata)
+            opt_mom[i] = np.array(self.rdata.hg)
+            opt_mom[i][0:3] /= m
+
+        return opt_mom
         

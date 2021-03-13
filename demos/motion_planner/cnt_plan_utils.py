@@ -12,7 +12,7 @@ from robot_properties_solo.config import Solo12Config
 from py_biconvex_mpc.ik_utils.gait_generator import GaitGenerator
 
 
-class SoloCntGen:
+class SoloCntGen():
 
     def __init__(self, T, dt, gait = 1):
         '''
@@ -27,7 +27,8 @@ class SoloCntGen:
         self.rdata = robot.data 
         self.f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
         q0 = np.array(Solo12Config.initial_configuration)
-        
+
+        self.T = T        
         self.foot_size = 0.025 #foot size        
 
         pin.forwardKinematics(robot.model, robot.data, q0, pin.utils.zero(robot.model.nv))
@@ -97,7 +98,7 @@ class SoloCntGen:
 
     def create_ik_step_costs(self, cnt_plan, sh, wt_arr):
         """
-        This function creates the IK cost for trot motion
+        This function creates the IK cost for trot,bound, pace etc.. motion
         Input:
             cnt_plan : output from the dynamic contact plan (above function)
             sh : step height
@@ -121,6 +122,36 @@ class SoloCntGen:
                     gr_loc = cnt_plan[t][i][1:4]
                     self.gg.create_contact_task(gr_loc, st, et, e_name, e_name + "_ctc_" + str(t), wt_arr[1])
 
+    def create_contact_costs(self, cnt_plan, wt):
+        """
+        This function creates costs for end effectors based on contact plan and
+        weight array. It can be used for a generic contact plan
+        Input:
+            cnt_plan : output from the dynamic contact plan (above function)
+            wt : contact_wt
+        """
+        for t in range(0, len(cnt_plan)):
+            for i in range(len(self.f_arr)):
+                st = np.round(cnt_plan[t][i][4],2) 
+                et = np.round(cnt_plan[t][i][5],2)
+                e_name = self.f_arr[i]
+                if int(cnt_plan[t][i][0]) == 1:
+                    gr_loc = cnt_plan[t][i][1:4]
+                    self.gg.create_contact_task(gr_loc, st, et, e_name, e_name + "_ctc_" + str(t), wt)
+
+    def create_com_tasks(self, mom_opt, com_opt, wt_arr):
+        """
+        This function creats center of mass tracking task
+        Input:
+            mom_opt : optimal momentum trajectory from the motion planner
+            com_opt : optimal center of mass trajectory
+            wt_arr : [weight for momentum tracking, weight for center of mass tracking]
+        """
+        self.gg.ik.add_com_position_tracking_task(0, self.T, com_opt, wt_arr[1], "com_track_cost")
+        self.gg.create_centroidal_task(mom_opt, 0, self.T, "mom_track_cost", wt_arr[0])
+
+    def return_gait_generator(self):
+        
         return self.gg
 
     def reset(self, T, dt):

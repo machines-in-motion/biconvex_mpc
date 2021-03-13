@@ -83,7 +83,6 @@ class Solo12Env:
         for n in range(int(np.round(self.T/self.dt,2))):
             self.x_com[n*self.ratio:(n+1)*self.ratio] = np.linspace(com_opt[n],com_opt[n+1], self.ratio, endpoint = True)
             self.xd_com[n*self.ratio:(n+1)*self.ratio] = np.linspace(mom_opt[n,0:3]/self.rmass,mom_opt[n+1,0:3]/self.rmass,self.ratio)
-            # self.xd_ori[n*self.ratio:(n+1)*self.ratio] = np.linspace(mom_opt[n,3:],mom_opt[n+1,3:],self.ratio)
             self.cnt_array[n*self.ratio:(n+1)*self.ratio] = cnt_plan[n]
             self.r_arr_array[n*self.ratio:(n+1)*self.ratio] = r_arr[n]
 
@@ -124,7 +123,7 @@ class Solo12Env:
             self.x_ori[n*self.ratio: (n+1)*self.ratio] = np.linspace(self.x_ori[n*self.ratio], self.x_ori[(n+1)*self.ratio], self.ratio, endpoint=True)
             self.xd_ori[n*self.ratio: (n+1)*self.ratio] = np.linspace(self.xd_ori[n*self.ratio], self.xd_ori[(n+1)*self.ratio], self.ratio, endpoint=True)
 
-    def sim(self, vname = None):
+    def sim(self, fr = 0.0, vname = None):
         '''
         This function simulates the motion plan
         Input: 
@@ -139,13 +138,18 @@ class Solo12Env:
         if vname:
             self.robot.start_recording(vname)
         for i in range(self.n_col):
-            # time.sleep(0.0)
+            time.sleep(fr)
             self.env.step(sleep=True) # You can sleep here if you want to slow down the replay
             q, dq = self.robot.get_state()
             # fl_hip, fr_hip, hl_hip, hr_hip = self.sse.return_hip_locations(q,dq)
             w_com = self.robot_cent_ctrl.compute_com_wrench(q, dq, self.x_com[i], self.xd_com[i], self.x_ori[i], self.xd_ori[i])
-
-            F = self.robot_cent_ctrl.compute_force_qp(q, dq, self.cnt_array[i], w_com)
+            w_com = np.array(w_com)
+            # for n in range(4):
+            #     print(self.fff[i])
+            #     w_com[0:3] += self.fff[i][3*n:3*n+3]
+                
+            # F = self.robot_cent_ctrl.compute_force_qp(q, dq, self.cnt_array[i], w_com)
+            F = self.fff[i]
             x_des = self.x_foot[i]
             xd_des = self.xd_foot[i]
             tau = self.robot_leg_ctrl.return_joint_torques(q,dq,self.kp,self.kd, x_des, xd_des,F)

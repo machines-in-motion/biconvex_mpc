@@ -10,6 +10,8 @@ import pinocchio as pin
 
 from blmc_controllers.robot_impedance_controller import RobotImpedanceController
 from blmc_controllers.robot_centroidal_controller import RobotCentroidalController
+from blmc_controllers.robot_id_controller import InverseDynamicsController
+
 from bullet_utils.env import BulletEnvWithGround
 from robot_properties_solo.solo12wrapper import Solo12Robot, Solo12Config
 from . trajectory_generator import TrajGenerator
@@ -52,9 +54,16 @@ class Solo12Env:
                 mu=0.6, kc=kc, dc=dc, kb=kb, db=db)
         self.robot_leg_ctrl = RobotImpedanceController(self.robot, config_file)
 
+        self.robot_id_ctrl = InverseDynamicsController(self.robot, config_file)
+        self.robot_id_ctrl.set_gains(kp[0], kd[0])
+
         # state estimator
         self.sse = SoloStateEstimator(self.robot.pin_robot)
         # creating arrays
+        self.q_des = np.zeros((self.n_col+1, self.robot.pin_robot.nq))
+        self.dq_des = np.zeros((self.n_col+1, self.robot.pin_robot.nv))
+        self.a_des = np.zeros((self.n_col, self.robot.pin_robot.nv))
+
         self.x_com = np.zeros((self.n_col+1, 3))
         self.xd_com = np.zeros((self.n_col+1, 3))
         self.x_ori = np.zeros((self.n_col+1, 4))
@@ -69,6 +78,11 @@ class Solo12Env:
 
         self.cnt_array = np.zeros((self.n_col, 4))
         self.r_arr_array = np.zeros((self.n_col, 4, 3))
+
+        # creating real data arrays
+        self.f_real = np.zeros((self.n_col, 12))
+        self.ll_real = np.zeros((self.n_col, 12)) # leg length real
+        self.foot_real = np.zeros((self.n_col, 12))
 
     def generate_motion_plan(self, com_opt, mom_opt, F_opt, cnt_plan, r_arr):
         '''
@@ -90,15 +104,21 @@ class Solo12Env:
                 self.fff[n*self.ratio:(n+1)*self.ratio] = np.linspace(F_opt[12*n:12*(n+1)], F_opt[12*(n+1):12*(n+2)], self.ratio)[:,:,0]
         self.fff[n*self.ratio:] = self.fff[(n)*self.ratio-1]
 
-    def generate_end_eff_plan(self, xs):
+    def generate_end_eff_plan(self, xs, us):
         '''
         This function creates swing foot trajectories for solo given the plan
         Input:
             xs : joint configuration and velocity from ddp plan
+            us : joint torques from ddp plan
         '''
         for n in range(len(xs)):
             q = xs[n][:self.robot.pin_robot.model.nq]
             v = xs[n][self.robot.pin_robot.model.nq:]
+            self.q_des[n*self.ratio] = q
+            self.dq_des[n*self.ratio] = v
+            if n < len(us):
+                self.a_des[n*self.ratio] = us[n]
+            
             pin.forwardKinematics(self.robot.pin_robot.model, self.robot.pin_robot.data, q, v)
             pin.updateFramePlacements(self.robot.pin_robot.model, self.robot.pin_robot.data) 
             self.x_ori[n*self.ratio] = q[3:7]           
@@ -123,6 +143,12 @@ class Solo12Env:
             self.x_ori[n*self.ratio: (n+1)*self.ratio] = np.linspace(self.x_ori[n*self.ratio], self.x_ori[(n+1)*self.ratio], self.ratio, endpoint=True)
             self.xd_ori[n*self.ratio: (n+1)*self.ratio] = np.linspace(self.xd_ori[n*self.ratio], self.xd_ori[(n+1)*self.ratio], self.ratio, endpoint=True)
 
+            self.q_des[n*self.ratio: (n+1)*self.ratio] = np.linspace(self.q_des[n*self.ratio], self.q_des[(n+1)*self.ratio], self.ratio, endpoint=True)
+            self.dq_des[n*self.ratio: (n+1)*self.ratio] = np.linspace(self.dq_des[n*self.ratio], self.dq_des[(n+1)*self.ratio], self.ratio, endpoint=True)
+            if n < len(us) - 1:
+                self.a_des[n*self.ratio: (n+1)*self.ratio] = np.linspace(self.a_des[n*self.ratio], self.a_des[(n+1)*self.ratio], self.ratio, endpoint=True)
+
+
     def sim(self, fr = 0.0, vname = None):
         '''
         This function simulates the motion plan
@@ -141,18 +167,41 @@ class Solo12Env:
             time.sleep(fr)
             self.env.step(sleep=True) # You can sleep here if you want to slow down the replay
             q, dq = self.robot.get_state()
-            # fl_hip, fr_hip, hl_hip, hr_hip = self.sse.return_hip_locations(q,dq)
-            w_com = self.robot_cent_ctrl.compute_com_wrench(q, dq, self.x_com[i], self.xd_com[i], self.x_ori[i], self.xd_ori[i])
-            w_com = np.array(w_com)
-            # for n in range(4):
-            #     print(self.fff[i])
-            #     w_com[0:3] += self.fff[i][3*n:3*n+3]
-                
+            rl_cnt, act_force = self.robot.get_force()
+            if len(rl_cnt) > 0:
+                for k  in range(len(rl_cnt)):
+                    if rl_cnt[k] == self.robot.pin_robot.model.getFrameId("FL_FOOT") - 1:
+                        self.f_real[i][0:3] = -act_force[k][0:3]
+                    if rl_cnt[k] == self.robot.pin_robot.model.getFrameId("FR_FOOT") - 1:
+                        self.f_real[i][3:6] = -act_force[k][0:3]
+                    if rl_cnt[k] == self.robot.pin_robot.model.getFrameId("HL_FOOT") - 1:
+                        self.f_real[i][6:9] = -act_force[k][0:3]
+                    if rl_cnt[k] == self.robot.pin_robot.model.getFrameId("HR_FOOT") - 1:
+                        self.f_real[i][9:12] = -act_force[k][0:3]
+
+            hip_loc = self.sse.return_hip_locations(q, dq)
+            foot_loc = self.sse.return_foot_locations(q, dq)            
+            self.ll_real[i] = np.reshape(np.subtract(foot_loc, hip_loc), (12,))
+            self.foot_real[i] = np.reshape(foot_loc, (12,))
+            
+            # w_com = self.robot_cent_ctrl.compute_com_wrench(q, dq, self.x_com[i], self.xd_com[i], self.x_ori[i], self.xd_ori[i])
+            # w_com = np.array(w_com)    
+            # w_com[0] += np.sum(self.fff[i][0::3]) 
+            # w_com[1] += np.sum(self.fff[i][1::3]) 
+            # w_com[2] += np.sum(self.fff[i][2::3]) 
+# 
             # F = self.robot_cent_ctrl.compute_force_qp(q, dq, self.cnt_array[i], w_com)
+            # x_des = self.x_foot[i]
+            # print(x_des[2])
+            # xd_des = self.xd_foot[i]
+            # tau = self.robot_leg_ctrl.return_joint_torques(q,dq,self.kp,self.kd, x_des, xd_des,F)
+
             F = self.fff[i]
-            x_des = self.x_foot[i]
-            xd_des = self.xd_foot[i]
-            tau = self.robot_leg_ctrl.return_joint_torques(q,dq,self.kp,self.kd, x_des, xd_des,F)
+            q_des = self.q_des[i]
+            dq_des = self.dq_des[i]
+            a_des = self.a_des[i]
+
+            tau = self.robot_id_ctrl.id_joint_torques(q, dq, q_des, dq_des, a_des, F)
 
             self.robot.send_joint_command(tau)
            
@@ -196,5 +245,33 @@ class Solo12Env:
             ax_foot[n].grid()
             ax_foot[n].legend()
 
+        plt.show()
+
+
+    def plot_real(self):
+
+        fig, ax_f = plt.subplots(4,1)
+        for n in range(4):
+            ax_f[n].plot(self.f_real[:,3*n], label = "ee: " + str(n) + "Fx")
+            ax_f[n].plot(self.f_real[:,3*n+1], label = "ee: " + str(n) + "Fy")
+            ax_f[n].plot(self.f_real[:,3*n+2], label = "ee: " + str(n) + "Fz")
+            ax_f[n].grid()
+            ax_f[n].legend()
+
+        fig, ax_ll = plt.subplots(4,1)
+        for n in range(4):
+            ax_ll[n].plot(self.ll_real[:,3*n], label = "ee: " + str(n) + "ll_x")
+            ax_ll[n].plot(self.ll_real[:,3*n+1], label = "ee: " + str(n) + "ll_y")
+            ax_ll[n].plot(self.ll_real[:,3*n+2], label = "ee: " + str(n) + "ll_z")
+            ax_ll[n].grid()
+            ax_ll[n].legend()
+
+        fig, ax_foot = plt.subplots(4,1)
+        for n in range(4):
+            ax_foot[n].plot(self.foot_real[:,3*n], label = "ee: " + str(n) + "foot_x")
+            ax_foot[n].plot(self.foot_real[:,3*n+1], label = "ee: " + str(n) + "foot_y")
+            ax_foot[n].plot(self.foot_real[:,3*n+2], label = "ee: " + str(n) + "foot_z")
+            ax_foot[n].grid()
+            ax_foot[n].legend()
 
         plt.show()

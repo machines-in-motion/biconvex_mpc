@@ -71,7 +71,7 @@ class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks
 
         self.opt_sol = ddp.xs
 
-        return self.opt_sol
+        return self.opt_sol, ddp.us
 
     def compute_optimal_momentum(self):
         """

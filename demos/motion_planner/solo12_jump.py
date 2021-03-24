@@ -20,24 +20,24 @@ q0 = np.array(Solo12Config.initial_configuration)
 x0 = np.concatenate([q0, pin.utils.zero(robot.model.nv)])
 
 # cnt plan
-rt = 0.5 # reartime 
-T = 0.3 + rt + 0.2
+rt = 0.4 # reartime 
+T = 0.4 + rt + 0.1
 dt = 5e-2
 
-cnt_plan = [[[ 1.,      0.3946,   0.14695,  0., 0.,  0.3    ],
-             [ 1.,      0.3946,  -0.14695,  0., 0.,  0.3    ],
-             [ 1.,      0.0054,   0.14695,  0., 0.,  0.3    ],
-             [ 1.,      0.0054,  -0.14695,  0., 0.,  0.3    ]],
+cnt_plan = [[[ 1.,      0.3946,   0.14695,  0., 0.,  0.4    ],
+             [ 1.,      0.3946,  -0.14695,  0., 0.,  0.4    ],
+             [ 1.,      0.0054,   0.14695,  0., 0.,  0.4    ],
+             [ 1.,      0.0054,  -0.14695,  0., 0.,  0.4    ]],
         
-            [[ 0.,      0.3946,   0.14695,  0., 0.3, 0.3 + rt   ],
-             [ 0.,      0.3946,  -0.14695,  0., 0.3, 0.3 + rt   ],
-             [ 0.,      0.0054,   0.14695,  0., 0.3, 0.3 + rt   ],
-             [ 0.,      0.0054,  -0.14695,  0., 0.3, 0.3 + rt   ]],
+            [[ 1.,      0.3946,   0.14695,  0., 0.4, 0.4 + rt   ],
+             [ 1.,      0.3946,  -0.14695,  0., 0.4, 0.4 + rt   ],
+             [ 1.,      0.0054,   0.14695,  0., 0.4, 0.4 + rt   ],
+             [ 1.,      0.0054,  -0.14695,  0., 0.4, 0.4 + rt   ]],
         
-            [[ 1.,      0.3946,   0.14695,  0., 0.3 + rt, T    ],
-             [ 1.,      0.3946,  -0.14695,  0., 0.3 + rt, T    ],
-             [ 1.,      0.0054,   0.14695,  0., 0.3 + rt, T    ],
-             [ 1.,      0.0054,  -0.14695,  0., 0.3 + rt, T    ]]]
+            [[ 1.,      0.3946,   0.14695,  0., 0.4 + rt, T    ],
+             [ 1.,      0.3946,  -0.14695,  0., 0.4 + rt, T    ],
+             [ 1.,      0.0054,   0.14695,  0., 0.4 + rt, T    ],
+             [ 1.,      0.0054,  -0.14695,  0., 0.4 + rt, T    ]]]
 
 cnt_plan = np.array(cnt_plan)
 
@@ -67,7 +67,7 @@ fy_max = 20
 fz_max = 20
 
 # optimization
-optimize = False
+optimize = True
 
 if optimize :
     mom_opt_ik = None
@@ -76,7 +76,7 @@ if optimize :
         mp.create_contact_array(cnt_plan)
         mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
 
-        mp.add_via_point([0.00, 0.0, 0.05], 0.1, [1e-5, 1e-5, 1e+4])
+        # mp.add_via_point([0.00, 0.0, 0.05], 0.1, [1e-5, 1e-5, 1e+5])
 
         mp.add_ik_momentum_cost(mom_opt_ik)
         mp.create_cost_X(W_X, W_X_ter, X_ter)
@@ -86,15 +86,13 @@ if optimize :
 
         cnt_planner = SoloCntGen(T, dt, gait = 1)
         cnt_planner.create_contact_costs(cnt_plan, 1e5)
-        cnt_planner.create_com_tasks(mom_opt, com_opt, [1e6, 1e6])
+        cnt_planner.create_com_tasks(mom_opt, com_opt, [1e5, 1e5])
         ik_solver = cnt_planner.return_gait_generator()
 
-        ht = 0.2 + 0.5*rt # time where foot goes high
-        # ik_solver.ik.add_position_tracking_task(robot.model.getFrameId("FR_FOOT"), ht, ht, np.array([0.35, -0.14, 0.5]), 1e5, "high_five_cost")
-        state_wt = np.array([0.] * 3 + [100.] * 3 + [1.0] * (robot.model.nv - 6) \
-                            + [10.] * 6 + [10.0] *(robot.model.nv - 6))
+        state_wt = np.array([0.] * 3 + [100.] * 3 + [10.0] * (robot.model.nv - 6) \
+                            + [0.01] * 6 + [3.0] *(robot.model.nv - 6))
 
-        xs, us = ik_solver.optimize(x0, wt_xreg=3e-3, state_wt=state_wt)
+        xs, us = ik_solver.optimize(x0, wt_xreg=7e-3, state_wt=state_wt)
         mom_opt_ik = ik_solver.ik.compute_optimal_momentum()
 
         W_X = np.array([1e-5, 1e-5, 1e-5, 1e+3, 1e+3, 1e+3, 3e3, 3e3, 3e3])
@@ -114,15 +112,15 @@ else:
     mp.create_contact_array(cnt_plan)
     
     # simulation
-    kp = 4*[0,200, 200]
-    kd = 4*[0.0,5.0, 5.0]
-    kc = [300, 300, 300]
-    dc = [10,10,10]
-    kb = [100, 100, 100]
-    db = [20,20,20]
+    kp = 4*[0, 0, 0]
+    kd = 4*[0., 0., 0.0]
+    kc = [0, 0, 0]
+    dc = [0,0,0]
+    kb = [0, 0, 0]
+    db = [0,0,0]
     env = Solo12Env(X_init, T, dt, kp, kd, kc, dc, kb, db)
     env.generate_motion_plan(com_opt, mom_opt, F_opt, mp.cnt_arr.copy(), mp.r_arr.copy())
     env.generate_end_eff_plan(xs, us)
     # env.plot()
-    env.sim(fr = 0.005)
+    env.sim(fr = 0.00)
     env.plot_real()

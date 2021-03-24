@@ -123,6 +123,23 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         self.Q_F = np.matrix(self.Q_F)
         self.q_F = np.matrix(self.q_F)
 
+    # def friction_projection(self, f, L):
+    #     """
+    #     This function handles friction cone constraints
+    #     Input:
+    #         f : force vector
+    #         L : step length
+    #     """
+    #     for i in range(0, len(f), 3):
+    #         x = f[i:i+2]
+    #         s = f[i+2]
+    #         x_norm = np.linalg.norm(x)
+    #         if x_norm > abs(s):
+    #             f[i:i+2] *= (x_norm + s)/2*x_norm
+    #             f[i+2] = 0.5*(x_norm + s)
+    #         elif x_norm > s or x_norm < -s:
+    #             f[i:i+3] = 0
+    #     return f
 
     def optimize(self, X_init, no_iters, X_wm = None, F_wm = None):
         '''
@@ -164,6 +181,7 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             grad_obj_f = lambda f: 2*self.Q_F*f + self.q_F + 2*self.rho*A_x.T*(A_x*f - b_x + P_k)
             # projection of f into constraint space (friction cone and max f)
             proj_f = lambda f, L : np.clip(f, self.F_low, self.F_high)
+            # proj_f = lambda f, L : self.friction_projection(f, L)
             F_k_1 = self.fista.optimize(obj_f, grad_obj_f, proj_f, F_k, self.maxit, self.tol)
 
             # assert False

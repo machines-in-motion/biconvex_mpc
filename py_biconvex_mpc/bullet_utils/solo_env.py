@@ -81,8 +81,12 @@ class Solo12Env:
 
         # creating real data arrays
         self.f_real = np.zeros((self.n_col, 12))
+        self.ctrl_f = np.zeros((self.n_col, 12))
         self.ll_real = np.zeros((self.n_col, 12)) # leg length real
         self.foot_real = np.zeros((self.n_col, 12))
+        self.x_com_real = np.zeros((self.n_col+1, 3))
+        self.xd_com_real = np.zeros((self.n_col+1, 3))
+
 
     def generate_motion_plan(self, com_opt, mom_opt, F_opt, cnt_plan, r_arr):
         '''
@@ -130,9 +134,12 @@ class Solo12Env:
                 h_loc = self.robot.pin_robot.data.oMf[h_id].translation
                 f_vel = pin.getFrameVelocity(self.robot.pin_robot.model, self.robot.pin_robot.data, f_id, pin.LOCAL_WORLD_ALIGNED)
                 h_vel = pin.getFrameVelocity(self.robot.pin_robot.model, self.robot.pin_robot.data, h_id, pin.LOCAL_WORLD_ALIGNED)
-                self.x_foot[n*self.ratio][3*i:3*i+3] = f_loc - h_loc
-                self.xd_foot[n*self.ratio][3*i:3*i+3] = np.array(f_vel)[0:3] - np.array(h_vel)[0:3]
+                # self.x_foot[n*self.ratio][3*i:3*i+3] = f_loc - h_loc
+                # self.xd_foot[n*self.ratio][3*i:3*i+3] = np.array(f_vel)[0:3] - np.array(h_vel)[0:3]
+                self.x_foot[n*self.ratio][3*i:3*i+3] = f_loc
+                self.xd_foot[n*self.ratio][3*i:3*i+3] = np.array(f_vel)[0:3]
                 self.plt_x_foot[n*self.ratio][3*i:3*i+3] = f_loc
+
 
         for n in range(len(xs)-1):
             self.x_foot[n*self.ratio: (n+1)*self.ratio] = np.linspace(self.x_foot[n*self.ratio], self.x_foot[(n+1)*self.ratio], self.ratio, endpoint=True)
@@ -167,6 +174,9 @@ class Solo12Env:
             time.sleep(fr)
             self.env.step(sleep=True) # You can sleep here if you want to slow down the replay
             q, dq = self.robot.get_state()
+            self.x_com_real[i] = q[0:3]
+            self.xd_com_real[i] = dq[0:3]
+
             rl_cnt, act_force = self.robot.get_force()
             if len(rl_cnt) > 0:
                 for k  in range(len(rl_cnt)):
@@ -183,25 +193,29 @@ class Solo12Env:
             foot_loc = self.sse.return_foot_locations(q, dq)            
             self.ll_real[i] = np.reshape(np.subtract(foot_loc, hip_loc), (12,))
             self.foot_real[i] = np.reshape(foot_loc, (12,))
-            
-            # w_com = self.robot_cent_ctrl.compute_com_wrench(q, dq, self.x_com[i], self.xd_com[i], self.x_ori[i], self.xd_ori[i])
-            # w_com = np.array(w_com)    
-            # w_com[0] += np.sum(self.fff[i][0::3]) 
-            # w_com[1] += np.sum(self.fff[i][1::3]) 
-            # w_com[2] += np.sum(self.fff[i][2::3]) 
+            # print(q[2], self.x_com[i][2])
+            # print("des", self.fff[i][2::3])
+            # print("bul", self.f_real[i][2::3])
+            w_com = self.robot_cent_ctrl.compute_com_wrench(q, dq, self.x_com[i], self.xd_com[i], self.x_ori[i], self.xd_ori[i])
+            w_com = np.array(w_com)  
+            w_com[0] += np.sum(self.fff[i][0::3]) 
+            w_com[1] += np.sum(self.fff[i][1::3]) 
+            w_com[2] += np.sum(self.fff[i][2::3]) 
+
+            F = self.robot_cent_ctrl.compute_force_qp(q, dq, self.cnt_array[i], w_com)
+            print(F[2::3], np.sum(F[2::3]), np.sum(self.fff[i][2::3]) )
+            x_des = self.x_foot[i] - np.reshape(hip_loc, (12,))
+            xd_des = self.xd_foot[i]
+            tau = self.robot_leg_ctrl.return_joint_torques(q,dq,self.kp,self.kd, x_des, xd_des,F)
+            # if np.sum(self.f_real[i][2::3]) < 1 and np.sum(self.fff[i][2::3]) > 10:
+                # print(tau[0:3], self.f_real[i][2::3], rl_cnt)
+            self.ctrl_f[i] = self.robot_leg_ctrl.return_desired_forces()
+            # F = self.fff[i]
+            # q_des = self.q_des[i]
+            # dq_des = self.dq_des[i]
+            # a_des = self.a_des[i]
 # 
-            # F = self.robot_cent_ctrl.compute_force_qp(q, dq, self.cnt_array[i], w_com)
-            # x_des = self.x_foot[i]
-            # print(x_des[2])
-            # xd_des = self.xd_foot[i]
-            # tau = self.robot_leg_ctrl.return_joint_torques(q,dq,self.kp,self.kd, x_des, xd_des,F)
-
-            F = self.fff[i]
-            q_des = self.q_des[i]
-            dq_des = self.dq_des[i]
-            a_des = self.a_des[i]
-
-            tau = self.robot_id_ctrl.id_joint_torques(q, dq, q_des, dq_des, a_des, F)
+            # tau = self.robot_id_ctrl.id_joint_torques(q, dq, q_des, dq_des, a_des, F)
 
             self.robot.send_joint_command(tau)
            
@@ -250,13 +264,34 @@ class Solo12Env:
 
     def plot_real(self):
 
+        fig, ax = plt.subplots(3,1)
+        ax[0].plot(self.x_com[:,0], label = "Cx")
+        ax[0].plot(self.x_com[:,1], label = "Cy")
+        ax[0].plot(self.x_com[:,2], label = "Cz")
+        ax[0].plot(self.x_com_real[:,2], label = "real_Cz")
+        ax[0].grid()
+        ax[0].legend()
+
+        # ax[1].plot(self.ctrl_f[:,0], label = "ctrl_Fx")
+        # ax[1].plot(self.ctrl_f[:,1], label = "ctrl_Fy")
+        # ax[1].plot(self.fff[:,2], label = "real_Cz")
+        # ax[1].grid()
+        # ax[1].legend()
+
+
         fig, ax_f = plt.subplots(4,1)
         for n in range(4):
-            ax_f[n].plot(self.f_real[:,3*n], label = "ee: " + str(n) + "Fx")
-            ax_f[n].plot(self.f_real[:,3*n+1], label = "ee: " + str(n) + "Fy")
-            ax_f[n].plot(self.f_real[:,3*n+2], label = "ee: " + str(n) + "Fz")
+            # ax_f[n].plot(self.f_real[:,3*n], label = "ee: " + str(n) + "Fx")
+            # ax_f[n].plot(self.f_real[:,3*n+1], label = "ee: " + str(n) + "Fy")
+            ax_f[n].plot(self.f_real[:,3*n+2], label = "ee: " + str(n) + "bul_Fz")
+            ax_f[n].plot(self.ctrl_f[:,3*n+2], label = "ee: " + str(n) + "ctrl_Fz")
+            ax_f[n].plot(self.fff[:,3*n+2], label = "ee: " + str(n) + "plan_Fz")
             ax_f[n].grid()
+            ax_f[n].set_ylim(0, 20)
             ax_f[n].legend()
+
+        np.savez("./dat_file/bul", F_real = self.f_real, Com_real = self.x_com_real, \
+                                    dCom_real = self.xd_com_real)
 
         fig, ax_ll = plt.subplots(4,1)
         for n in range(4):

@@ -57,8 +57,8 @@ class Solo12Env:
         self.kd = self.robot.nb_ee * kd
         
         config_file = Solo12Config.paths["imp_ctrl_yaml"]
-        self.robot_cent_ctrl = RobotCentroidalController(self.robot,
-                mu=0.6, kc=kc, dc=dc, kb=kb, db=db)
+        # self.robot_cent_ctrl = RobotCentroidalController(self.robot,
+        #         mu=0.6, kc=kc, dc=dc, kb=kb, db=db)
         self.robot_leg_ctrl = RobotImpedanceController(self.robot, config_file)
 
         self.robot_id_ctrl = InverseDynamicsController(self.robot, self.f_arr)
@@ -91,7 +91,6 @@ class Solo12Env:
         self.ctrl_f = np.zeros((self.n_col, 12))
         self.ll_real = np.zeros((self.n_col, 12)) # leg length real
         self.foot_real = np.zeros((self.n_col, 12))
-        self.x_base_real = np.zeros((self.n_col+1, 3))
         self.x_com_real = np.zeros((self.n_col+1, 3))
         self.xd_com_real = np.zeros((self.n_col+1, 3))
 
@@ -135,12 +134,15 @@ class Solo12Env:
             pin.updateFramePlacements(self.robot.pin_robot.model, self.robot.pin_robot.data) 
             self.x_ori[n*self.ratio] = q[3:7]           
             self.xd_ori[n*self.ratio] = v[3:6]
-
             for i in range(len(self.f_arr)):
                 f_id = self.robot.pin_robot.model.getFrameId(self.f_arr[i])
                 h_id = self.robot.pin_robot.model.getFrameId(self.h_arr[i])
                 f_loc = self.robot.pin_robot.data.oMf[f_id].translation
+                h_loc = self.robot.pin_robot.data.oMf[h_id].translation
                 f_vel = pin.getFrameVelocity(self.robot.pin_robot.model, self.robot.pin_robot.data, f_id, pin.LOCAL_WORLD_ALIGNED)
+                h_vel = pin.getFrameVelocity(self.robot.pin_robot.model, self.robot.pin_robot.data, h_id, pin.LOCAL_WORLD_ALIGNED)
+                # self.x_foot[n*self.ratio][3*i:3*i+3] = f_loc - h_loc
+                # self.xd_foot[n*self.ratio][3*i:3*i+3] = np.array(f_vel)[0:3] - np.array(h_vel)[0:3]
                 self.x_foot[n*self.ratio][3*i:3*i+3] = f_loc
                 self.xd_foot[n*self.ratio][3*i:3*i+3] = np.array(f_vel)[0:3]
                 self.plt_x_foot[n*self.ratio][3*i:3*i+3] = f_loc
@@ -176,22 +178,12 @@ class Solo12Env:
         if vname:
             self.robot.start_recording(vname)
 
-        for i in range(2000):
-
-            q, dq = self.robot.get_state()
-            tau = -5*np.subtract(q[7:], self.q_des[0][7:])
-            tau -=  0.05*(dq[6:])
-            self.robot.send_joint_command(tau)
-            self.env.step() # You can sleep here if you want to slow down the replay
-
-
         for i in range(self.n_col):
             time.sleep(fr)
             self.env.step() # You can sleep here if you want to slow down the replay
             
             q, dq = self.robot.get_state()
-            self.x_base_real[i] = q[0:3]
-            self.x_com_real[i] = pin.centerOfMass(self.robot.pin_robot.model, self.robot.pin_robot.data, q, dq)
+            self.x_com_real[i] = q[0:3]
             self.xd_com_real[i] = dq[0:3]
 
             self.f_real[i] = self.robot.get_contact_forces()
@@ -200,20 +192,19 @@ class Solo12Env:
             foot_loc = self.sse.return_foot_locations(q, dq)            
             self.ll_real[i] = np.reshape(np.subtract(foot_loc, hip_loc), (12,))
             self.foot_real[i] = np.reshape(foot_loc, (12,))
-            
-            w_com = self.robot_cent_ctrl.compute_com_wrench(q, dq, self.x_com[i], self.xd_com[i], self.x_ori[i], self.xd_ori[i])
-            w_com = np.array(w_com)  
-            w_com[0] += np.sum(self.fff[i][0::3]) 
-            w_com[1] += np.sum(self.fff[i][1::3]) 
-            w_com[2] += np.sum(self.fff[i][2::3]) 
+            # w_com = self.robot_cent_ctrl.compute_com_wrench(q, dq, self.x_com[i], self.xd_com[i], self.x_ori[i], self.xd_ori[i])
+            # w_com = np.array(w_com)  
+            # w_com[0] += np.sum(self.fff[i][0::3]) 
+            # w_com[1] += np.sum(self.fff[i][1::3]) 
+            # w_com[2] += np.sum(self.fff[i][2::3]) 
 
             # F = self.robot_cent_ctrl.compute_force_qp(q, dq, self.cnt_array[i], w_com)
-            # self.ctrl_f[i] = F
-            # print(F[2::3], np.sum(F[2::3]), np.sum(self.fff[i][2::3]) )
+            # # print(F[2::3], np.sum(F[2::3]), np.sum(self.fff[i][2::3]) )
             # x_des = self.x_foot[i] - np.reshape(hip_loc, (12,))
             # xd_des = self.xd_foot[i]
             # tau = self.robot_leg_ctrl.return_joint_torques(q,dq,self.kp,self.kd, x_des, xd_des,F)
-            
+            # if np.sum(self.f_real[i][2::3]) < 1 and np.sum(self.fff[i][2::3]) > 10:
+                # print(tau[0:3], self.f_real[i][2::3], rl_cnt)
             F = self.fff[i]
             q_des = self.q_des[i]
             dq_des = self.dq_des[i]
@@ -268,25 +259,12 @@ class Solo12Env:
     def plot_real(self):
 
         fig, ax = plt.subplots(3,1)
-        # ax[0].plot(self.x_com[:,0], label = "Cx")
-        # ax[0].plot(self.x_com[:,1], label = "Cy")
         ax[0].plot(self.x_com[:,0], label = "Cx")
-        ax[0].plot(self.x_com_real[:,0], label = "real_Cx")
-        ax[0].plot(self.x_base_real[:,0], label = "real_basex")
+        ax[0].plot(self.x_com[:,1], label = "Cy")
+        ax[0].plot(self.x_com[:,2], label = "Cz")
+        ax[0].plot(self.x_com_real[:,2], label = "real_Cz")
         ax[0].grid()
         ax[0].legend()
-
-        ax[1].plot(self.x_com[:,1], label = "Cy")
-        ax[1].plot(self.x_com_real[:,1], label = "real_Cy")
-        ax[1].plot(self.x_base_real[:,1], label = "real_basey")
-        ax[1].grid()
-        ax[1].legend()
-        
-        ax[2].plot(self.x_com[:,2], label = "Cz")
-        ax[2].plot(self.x_com_real[:,2], label = "real_Cz")
-        ax[2].plot(self.x_base_real[:,2], label = "real_basez")
-        ax[2].grid()
-        ax[2].legend()
 
         # ax[1].plot(self.ctrl_f[:,0], label = "ctrl_Fx")
         # ax[1].plot(self.ctrl_f[:,1], label = "ctrl_Fy")
@@ -309,20 +287,20 @@ class Solo12Env:
         np.savez("./dat_file/bul", F_real = self.f_real, Com_real = self.x_com_real, \
                                     dCom_real = self.xd_com_real)
 
-        # fig, ax_ll = plt.subplots(4,1)
-        # for n in range(4):
-        #     ax_ll[n].plot(self.ll_real[:,3*n], label = "ee: " + str(n) + "ll_x")
-        #     ax_ll[n].plot(self.ll_real[:,3*n+1], label = "ee: " + str(n) + "ll_y")
-        #     ax_ll[n].plot(self.ll_real[:,3*n+2], label = "ee: " + str(n) + "ll_z")
-        #     ax_ll[n].grid()
-        #     ax_ll[n].legend()
+        fig, ax_ll = plt.subplots(4,1)
+        for n in range(4):
+            ax_ll[n].plot(self.ll_real[:,3*n], label = "ee: " + str(n) + "ll_x")
+            ax_ll[n].plot(self.ll_real[:,3*n+1], label = "ee: " + str(n) + "ll_y")
+            ax_ll[n].plot(self.ll_real[:,3*n+2], label = "ee: " + str(n) + "ll_z")
+            ax_ll[n].grid()
+            ax_ll[n].legend()
 
-        # fig, ax_foot = plt.subplots(4,1)
-        # for n in range(4):
-        #     ax_foot[n].plot(self.foot_real[:,3*n], label = "ee: " + str(n) + "foot_x")
-        #     ax_foot[n].plot(self.foot_real[:,3*n+1], label = "ee: " + str(n) + "foot_y")
-        #     ax_foot[n].plot(self.foot_real[:,3*n+2], label = "ee: " + str(n) + "foot_z")
-        #     ax_foot[n].grid()
-        #     ax_foot[n].legend()
+        fig, ax_foot = plt.subplots(4,1)
+        for n in range(4):
+            ax_foot[n].plot(self.foot_real[:,3*n], label = "ee: " + str(n) + "foot_x")
+            ax_foot[n].plot(self.foot_real[:,3*n+1], label = "ee: " + str(n) + "foot_y")
+            ax_foot[n].plot(self.foot_real[:,3*n+2], label = "ee: " + str(n) + "foot_z")
+            ax_foot[n].grid()
+            ax_foot[n].legend()
 
         plt.show()

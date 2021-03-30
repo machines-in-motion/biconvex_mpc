@@ -29,7 +29,7 @@ class SoloCntGen():
         q0 = np.array(Solo12Config.initial_configuration)
 
         self.T = T        
-        self.foot_size = 0.025 #foot size        
+        self.foot_size = 0.01 #foot size        
 
         pin.forwardKinematics(robot.model, robot.data, q0, pin.utils.zero(robot.model.nv))
         pin.updateFramePlacements(robot.model, robot.data)
@@ -137,6 +137,7 @@ class SoloCntGen():
                 e_name = self.f_arr[i]
                 if int(cnt_plan[t][i][0]) == 1:
                     gr_loc = cnt_plan[t][i][1:4]
+                    gr_loc[2] += self.foot_size
                     self.gg.create_contact_task(gr_loc, st, et, e_name, e_name + "_ctc_" + str(t), wt)
 
     def create_com_tasks(self, mom_opt, com_opt, wt_arr):

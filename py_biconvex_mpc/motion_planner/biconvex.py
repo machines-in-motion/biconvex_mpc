@@ -237,6 +237,10 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         ax[0].plot(self.X_opt[0::9], label = "Cx")
         ax[0].plot(self.X_opt[1::9], label = "Cy")
         ax[0].plot(self.X_opt[2::9], label = "Cz")
+        if isinstance(self.ik_com_opt, np.ndarray):
+            ax[0].plot(self.ik_com_opt[:,0], label = "ik_Cx")
+            ax[0].plot(self.ik_com_opt[:,1], label = "ik_Cy")
+            ax[0].plot(self.ik_com_opt[:,2], label = "ik_Cz")
         ax[0].grid()
         ax[0].legend()
 

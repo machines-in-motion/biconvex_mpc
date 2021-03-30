@@ -22,6 +22,7 @@ class BiConvexCosts:
         self.via_point_t = []
         self.via_point_wts = []
         self.ik_mom_opt = None
+        self.ik_com_opt = None
 
     def add_via_point(self, via_point, t, wt):
         """
@@ -42,6 +43,14 @@ class BiConvexCosts:
             mom_opt : optimal momentum vector (vel, ang_mom)
         """
         self.ik_mom_opt = mom_opt
+
+    def add_ik_com_cost(self, com_opt):
+        """
+        adds center of mass tracking task
+        Input :     
+            com_opt : optimal center of mass 
+        """
+        self.ik_com_opt = com_opt
 
     def create_cost_X(self, W_X, W_X_ter, X_ter, X_nom = None):
         '''

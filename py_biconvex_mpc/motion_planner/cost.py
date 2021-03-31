@@ -86,6 +86,12 @@ class BiConvexCosts:
                 X_nom[9*i + 3:9*i + 9] = self.ik_mom_opt[i]
             X_ter[3:] = self.ik_mom_opt[-1]
 
+        if isinstance(self.ik_com_opt, np.ndarray):
+            for i in range(len(self.ik_com_opt) - 1):
+                X_nom[9*i:9*i + 3] = self.ik_com_opt[i]
+            X_ter[0:3] = self.ik_mom_opt[-1]
+
+
         self.q_X[:-9] *= -2*X_nom
         self.q_X[-9:] = -2*W_X_ter*X_ter
 

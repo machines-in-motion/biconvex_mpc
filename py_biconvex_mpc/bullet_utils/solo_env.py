@@ -207,19 +207,17 @@ class Solo12Env:
             w_com[1] += np.sum(self.fff[i][1::3]) 
             w_com[2] += np.sum(self.fff[i][2::3]) 
 
-            # F = self.robot_cent_ctrl.compute_force_qp(q, dq, self.cnt_array[i], w_com)
-            # self.ctrl_f[i] = F
-            # print(F[2::3], np.sum(F[2::3]), np.sum(self.fff[i][2::3]) )
-            # x_des = self.x_foot[i] - np.reshape(hip_loc, (12,))
-            # xd_des = self.xd_foot[i]
-            # tau = self.robot_leg_ctrl.return_joint_torques(q,dq,self.kp,self.kd, x_des, xd_des,F)
+            F = self.robot_cent_ctrl.compute_force_qp(q, dq, self.cnt_array[i], w_com)
+            self.ctrl_f[i] = F
+            x_des = self.x_foot[i] - np.reshape(hip_loc, (12,))
+            xd_des = self.xd_foot[i]
+            tau = self.robot_leg_ctrl.return_joint_torques(q,dq,self.kp,self.kd, x_des, xd_des,F)
             
-            F = self.fff[i]
-            q_des = self.q_des[i]
-            dq_des = self.dq_des[i]
-            a_des = self.a_des[i]
-            tau = self.robot_id_ctrl.id_joint_torques(q, dq, q_des, dq_des, a_des, F)
-
+            # F = self.fff[i]
+            # q_des = self.q_des[i]
+            # dq_des = self.dq_des[i]
+            # a_des = self.a_des[i]
+            # tau = self.robot_id_ctrl.id_joint_torques(q, dq, q_des, dq_des, a_des, F)
             self.robot.send_joint_command(tau)
            
         if vname:

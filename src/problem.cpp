@@ -9,11 +9,11 @@ namespace function
         std::cout << "Setting up problem data" << std::endl;
     }
 
-    ProblemData::compute_obj(const Eigen::VectorXd& x) {
+    double ProblemData::compute_obj(const Eigen::VectorXd& x) {
         return x.transpose()*(*Q_)*x + (*q_).transpose()*x + (rho*((*A_)*x - b_ + Pk_).norm());
     }
 
-    ProblemData::compute_grad_obj(const Eigen::VectorXd& x) {
+    double ProblemData::compute_grad_obj(const Eigen::VectorXd& x) {
         return 2*(*Q_)*x + (*q_) + 2*rho*(*A_).transpose()*((*A_)*x - b_ + Pk_);
     }
     

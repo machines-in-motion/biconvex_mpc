@@ -15,10 +15,10 @@ class Solver
         //Optimize function
         void optimize(Eigen::VectorXd& f, Eigen::VectorXd& g, int maxit, double tol);
 
-        void optimize(std::shared_ptr<ProblemData> prob_data);
+        void optimize(std::shared_ptr<function::ProblemData> prob_data);
 
         //Compute Step Length
-        void compute_step_length(std::shared_ptr<ProblemData> problem);
+        void compute_step_length(std::shared_ptr<function::ProblemData> problem);
 
         //Resets parameters
         void reset();

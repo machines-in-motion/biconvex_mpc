@@ -2,6 +2,7 @@
 #define PROBLEM_HPP
 
 #include <Eigen/Dense>
+#include <memory>
 
 namespace function
 {
@@ -18,11 +19,17 @@ public:
 
     //Compute gradient of cost function for a given x
     double compute_grad_obj(const Eigen::VectorXd& x);
-private:
+
+
+    /**
+     * The following data should be moved to private with getters and setters
+     */
     std::shared_ptr<Eigen::MatrixXd> Q_;
     std::shared_ptr<Eigen::VectorXd> q_;
     std::shared_ptr<Eigen::MatrixXd> A_;
     std::shared_ptr<Eigen::VectorXd> b_;
+    Eigen::VectorXd lower_bound_;
+    Eigen::VectorXd upper_bound_;
     std::shared_ptr<Eigen::VectorXd> Pk_;
     double rho;
 
@@ -32,6 +39,7 @@ private:
     Eigen::VectorXd x_k;
     Eigen::VectorXd x_k_1;
     Eigen::VectorXd G_k_norm;
+private:
 };
 
 } //namespace function

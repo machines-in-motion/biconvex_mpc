@@ -22,7 +22,7 @@ q0 = np.array(Solo12Config.initial_configuration)
 x0 = np.concatenate([q0, pin.utils.zero(robot.model.nv)])
 # initial and ter state
 X_init = np.zeros(9)
-X_init[0:3] = q0[0:3]
+X_init[0:3] = pin.centerOfMass(robot.model, robot.data, q0,  pin.utils.zero(robot.model.nv))
 X_ter = X_init.copy()
 # contact plan
 st = 0.2 # step time 
@@ -36,7 +36,6 @@ X_ter[0:3] += sl*(n_steps)
 X_nom = np.zeros((9*int(T/dt)))
 X_nom[2::9] = X_init[2]
 
-print(X_ter)
 cnt_planner = SoloCntGen(T, dt, gait = 2)
 cnt_plan = cnt_planner.create_trot_plan(st, sl, n_steps)
 
@@ -69,16 +68,21 @@ if optimize:
     mp.create_cost_X(W_X, W_X_ter, X_ter, X_nom)
     mp.create_cost_F(W_F)
     com_opt, F_opt, mom_opt = mp.optimize(X_init, 30)
-    # print(F_opt[2::3])
-    # mp.stats()
 
     cnt_planner.create_ik_step_costs(cnt_plan, sh, [1e+5, 1e+6])
-    cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+4, 1e+3])
+    cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+4, 1e+3], [1e+4, 1e+3])
     ik_solver = cnt_planner.return_gait_generator()
     state_wt = np.array([0.] * 3 + [500.] * 3 + [5.0] * (robot.model.nv - 6) \
                         + [0.01] * 6 + [5.0] *(robot.model.nv - 6))
 
     xs, us = ik_solver.optimize(x0, wt_xreg=7e-3, state_wt=state_wt)
+    com_opt_ik, mom_opt_ik = ik_solver.ik.compute_optimal_com_and_mom()
+
+    W_X = np.array([1e-3, 1e-3, 1e-3, 1e+3, 1e+3, 1e+3, 3e3, 3e3, 3e3])
+
+    mp.add_ik_com_cost(com_opt_ik)
+    mp.add_ik_momentum_cost(mom_opt_ik)    
+    mp.stats()
 
     np.savez("./dat_file/mom", com_opt = com_opt, mom_opt = mom_opt, F_opt = F_opt)
     np.savez("./dat_file/ik", xs = xs, us = us)
@@ -93,11 +97,11 @@ else:
     mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
     mp.create_contact_array(cnt_plan)
 
-    kp = 4*[5.0, .0, .0]
+    kp = 4*[250.0, 250.0, 250.0]
     kd = 4*[.5, 0.5, 0.5]
     kc = [100, 100, 100]
     dc = [10,10,10]
-    kb = [500, 500, 500]
+    kb = [200, 200, 200]
     db = [50,50,50]
     env = Solo12Env(X_init, T, dt, kp, kd, kc, dc, kb, db)
     env.generate_motion_plan(com_opt, mom_opt, F_opt, mp.cnt_arr.copy(), mp.r_arr.copy())

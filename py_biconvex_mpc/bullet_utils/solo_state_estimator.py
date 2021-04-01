@@ -22,6 +22,14 @@ class SoloStateEstimator:
         self.robot.framesForwardKinematics(q)
         return np.reshape(np.array(self.robot.data.oMf[frame_idx].translation), (3,))
     
+    def get_frame_velocity(self, q, dq, frame_idx):
+        """
+            returns frame velocity
+        """
+        self.robot.framesForwardKinematics(q)
+        return np.reshape(np.array(pin.getFrameVelocity(self.robot.model, \
+                    self.robot.data, frame_idx, pin.LOCAL_WORLD_ALIGNED))[0:3], (3,))
+
     def return_com_location(self, q, dq):
         """
             returns com location
@@ -54,6 +62,17 @@ class SoloStateEstimator:
         fr_hip = self.get_frame_location(q, dq, self.robot.model.getFrameId("FR_HFE"))
         hl_hip = self.get_frame_location(q, dq, self.robot.model.getFrameId("HL_HFE"))
         hr_hip = self.get_frame_location(q, dq, self.robot.model.getFrameId("HR_HFE"))
+        
+        return fl_hip, fr_hip, hl_hip, hr_hip
+    
+    def return_hip_velocities(self, q, dq):
+        """
+            returns current hip velocities of solo
+        """
+        fl_hip = self.get_frame_velocity(q, dq, self.robot.model.getFrameId("FL_HFE"))
+        fr_hip = self.get_frame_velocity(q, dq, self.robot.model.getFrameId("FR_HFE"))
+        hl_hip = self.get_frame_velocity(q, dq, self.robot.model.getFrameId("HL_HFE"))
+        hr_hip = self.get_frame_velocity(q, dq, self.robot.model.getFrameId("HR_HFE"))
         
         return fl_hip, fr_hip, hl_hip, hr_hip
     

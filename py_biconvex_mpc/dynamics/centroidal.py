@@ -24,7 +24,7 @@ class CentroidalDynamics:
         self.block_A_f = np.zeros((9,18))
         self.block_A_f[0:9,0:9] = np.identity(9)
         self.block_A_f[0:9,9:18] = -np.identity(9)
-        self.block_A_f[0:3,3:6] = self.dt*np.identity(3)
+        self.block_A_f[0:3, 9+3:9+6] = self.dt*np.identity(3)
 
         self.block_b_f = np.zeros(9)
 

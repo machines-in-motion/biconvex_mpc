@@ -77,7 +77,7 @@ if optimize :
         mp.create_contact_array(cnt_plan)
         mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
 
-        mp.add_via_point([0.00, 0.0, 0.5], 0.6, [1e-5, 1e-5, 1e+6])
+        # mp.add_via_point([0.00, 0.0, 0.5], 0.6, [1e-5, 1e-5, 1e+6])
 
         mp.create_cost_X(W_X, W_X_ter, X_ter)
         mp.create_cost_F(W_F)
@@ -85,8 +85,11 @@ if optimize :
 
         cnt_planner = SoloCntGen(T, dt, gait = 1)
         cnt_planner.create_contact_costs(cnt_plan, 1e5)
-        cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+5, 1e+3])
+        cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+5, 1e+3], [1e+5, 1e+3])
         ik_solver = cnt_planner.return_gait_generator()
+        
+        # ik_solver.ik.add_position_tracking_task(robot.model.getFrameId("FL_FOOT"), \
+                            # 0.6, 0.6, np.array([0.35, 0.14, 0.5]), 1e+5, "FL_high_five")
 
         state_wt = np.array([0.] * 3 + [0.] * 3 + [0.0] * (robot.model.nv - 6) \
                             + [10.0] * 6 + [20.0] *(robot.model.nv - 6))
@@ -94,12 +97,12 @@ if optimize :
         xs, us = ik_solver.optimize(x0, wt_xreg=7e-3, state_wt=state_wt)
         com_opt_ik, mom_opt_ik = ik_solver.ik.compute_optimal_com_and_mom()
 
-        W_X = np.array([1e-5, 1e-5, 1e-5, 1e+3, 1e+3, 1e+3, 3e3, 3e3, 3e3])
+        W_X = np.array([1e+3, 1e+3, 1e+3, 1e+3, 1e+3, 1e+3, 3e3, 3e3, 3e3])
         
         # adding center of mass and momentum tracking cost
         mp.add_ik_com_cost(com_opt_ik)
         mp.add_ik_momentum_cost(mom_opt_ik)
-        # mp.stats()
+        mp.stats()
 
     np.savez("./dat_file/mom", com_opt = com_opt, mom_opt = mom_opt, F_opt = F_opt)
     np.savez("./dat_file/ik", xs = xs, us = us)
@@ -115,12 +118,12 @@ else:
     mp.create_contact_array(cnt_plan)
     
     # simulation
-    kp = 4*[10.0, 0, 0]
-    kd = 4*[0.5, 0.0, 0.0]
+    kp = 4*[50.0, 50.0, 50.0]
+    kd = 4*[0.5, 0.5, 0.5]
     kc = [500, 500, 500]
-    dc = [10,10,10]
-    kb = [100, 100, 100]
-    db = [5,5,5]
+    dc = [50,50,50]
+    kb = [500, 500, 500]
+    db = [50,50,50]
     env = Solo12Env(X_init, T, dt, kp, kd, kc, dc, kb, db)
     env.generate_motion_plan(com_opt, mom_opt, F_opt, mp.cnt_arr.copy(), mp.r_arr.copy())
     env.generate_end_eff_plan(xs, us)

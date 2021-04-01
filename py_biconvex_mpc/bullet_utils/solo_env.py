@@ -179,8 +179,8 @@ class Solo12Env:
         for i in range(2000):
 
             q, dq = self.robot.get_state()
-            tau = -5*np.subtract(q[7:], self.q_des[0][7:])
-            tau -=  0.05*(dq[6:])
+            tau = -10*np.subtract(q[7:], self.q_des[0][7:])
+            tau -=  0.5*(dq[6:])
             self.robot.send_joint_command(tau)
             self.env.step() # You can sleep here if you want to slow down the replay
 
@@ -197,10 +197,11 @@ class Solo12Env:
             self.f_real[i] = self.robot.get_contact_forces()
 
             hip_loc = self.sse.return_hip_locations(q, dq)
+            hip_vel = self.sse.return_hip_velocities(q, dq)
             foot_loc = self.sse.return_foot_locations(q, dq)            
             self.ll_real[i] = np.reshape(np.subtract(foot_loc, hip_loc), (12,))
             self.foot_real[i] = np.reshape(foot_loc, (12,))
-            
+
             w_com = self.robot_cent_ctrl.compute_com_wrench(q, dq, self.x_com[i], self.xd_com[i], self.x_ori[i], self.xd_ori[i])
             w_com = np.array(w_com)  
             w_com[0] += np.sum(self.fff[i][0::3]) 
@@ -210,7 +211,7 @@ class Solo12Env:
             F = self.robot_cent_ctrl.compute_force_qp(q, dq, self.cnt_array[i], w_com)
             self.ctrl_f[i] = F
             x_des = self.x_foot[i] - np.reshape(hip_loc, (12,))
-            xd_des = self.xd_foot[i]
+            xd_des = self.xd_foot[i] - np.reshape(hip_vel, (12,))
             tau = self.robot_leg_ctrl.return_joint_torques(q,dq,self.kp,self.kd, x_des, xd_des,F)
             
             # F = self.fff[i]

@@ -140,16 +140,24 @@ class SoloCntGen():
                     gr_loc[2] += self.foot_size
                     self.gg.create_contact_task(gr_loc, st, et, e_name, e_name + "_ctc_" + str(t), wt)
 
-    def create_com_tasks(self, mom_opt, com_opt, wt_arr):
+    def create_com_tasks(self, mom_opt, com_opt, wt_arr, ter_wt_arr):
         """
         This function creats center of mass tracking task
         Input:
             mom_opt : optimal momentum trajectory from the motion planner
             com_opt : optimal center of mass trajectory
             wt_arr : [weight for momentum tracking, weight for center of mass tracking]
+            ter_wt_arr : terminal [weight for momentum tracking, weight for center of mass tracking]
+
         """
         self.gg.ik.add_com_position_tracking_task(0, self.T, com_opt, wt_arr[1], "com_track_cost")
         self.gg.create_centroidal_task(mom_opt, 0, self.T, "mom_track_cost", wt_arr[0])
+
+        self.gg.ik.add_com_position_tracking_task(self.T, self.T, \
+                                com_opt[-1], ter_wt_arr[1], "com_track_cost", True)
+        self.gg.ik.add_centroidal_momentum_tracking_task(self.T, self.T, \
+                                mom_opt[-1], ter_wt_arr[0], "mom_track_cost", True)
+
 
     def return_gait_generator(self):
         

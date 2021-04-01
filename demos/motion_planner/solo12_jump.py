@@ -61,7 +61,7 @@ rho = 1e+5 # penalty on dynamic constraint violation
 # constraints 
 bx = 0.25
 by = 0.25
-bz = 0.23
+bz = 0.25
 fx_max = 20
 fy_max = 20
 fz_max = 20
@@ -85,7 +85,7 @@ if optimize :
 
         cnt_planner = SoloCntGen(T, dt, gait = 1)
         cnt_planner.create_contact_costs(cnt_plan, 1e5)
-        cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+4, 1e+1])
+        cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+4, 1e+1], [1e+4, 1e+1])
         ik_solver = cnt_planner.return_gait_generator()
 
         state_wt = np.array([0.] * 3 + [100.] * 3 + [10.0] * (robot.model.nv - 6) \
@@ -115,12 +115,12 @@ else:
     mp.create_contact_array(cnt_plan)
     
     # simulation
-    kp = 4*[0.0, 0.0, 0.0]
-    kd = 4*[.00, .0, .0]
-    kc = [0, 0, 0]
-    dc = [0,0,0]
-    kb = [0, 0, 0]
-    db = [0,0,0]
+    kp = 4*[5.0, 50.0, 50.0]
+    kd = 4*[.5, .0, .0]
+    kc = [400, 400, 400]
+    dc = [50,50,50]
+    kb = [100, 100, 100]
+    db = [10,10,10]
     env = Solo12Env(X_init, T, dt, kp, kd, kc, dc, kb, db)
     env.generate_motion_plan(com_opt, mom_opt, F_opt, mp.cnt_arr.copy(), mp.r_arr.copy())
     env.generate_end_eff_plan(xs, us)

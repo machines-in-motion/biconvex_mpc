@@ -10,11 +10,13 @@ namespace function
     }
 
     double ProblemData::compute_obj(const Eigen::VectorXd& x) {
-        return x.transpose()*(*Q_)*x + (*q_).transpose()*x + (rho*((*A_)*x - b_ + Pk_).norm());
+        auto obj =  x.transpose()*(*Q_)*x + (*q_).transpose()*x + (rho*((*A_)*x - *b_ + *Pk_).norm().T);
+        return obj[0,0];
     }
 
     double ProblemData::compute_grad_obj(const Eigen::VectorXd& x) {
-        return 2*(*Q_)*x + (*q_) + 2*rho*(*A_).transpose()*((*A_)*x - b_ + Pk_);
+        auto grad =  2*(*Q_)*x + (*q_) + 2*rho*(*A_).transpose()*((*A_)*x - *b_ + *Pk_);
+        return grad[0,0];
     }
     
 } //namespace fista

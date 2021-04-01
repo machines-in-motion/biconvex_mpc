@@ -4,13 +4,14 @@
 # Author : Avadesh Meduri
 # Date : 5/12/2020
 
+import time
 import numpy as np
 from matplotlib import pyplot as plt 
 import matplotlib.pyplot as plt
 
 class FISTA:
 
-    def __init__(self, L0, beta, tol = 0.00001):
+    def __init__(self, L0, beta, tol = 1e-5):
         '''
         This is an implementation of Fast Iterative Shrinkage thresholding
         Algorithm
@@ -23,18 +24,28 @@ class FISTA:
         self.tol = tol
         assert L0 > 0
         self.L0 = L0
+        self.L0_reset = L0
         assert beta > 1
         self.beta = beta
         
         self.f_all = []
         self.g_all = []
+        self.ls_iter = []
+        self.k = 0
 
-    def reset(self):
+    def reset(self, L0_reset = None):
         '''
         resets all the params
+        Input:
+            L0_reset : value of step length
         '''
         self.f_all = []
         self.g_all = []
+        if L0_reset:
+            self.L0 = L0_reset
+        else:
+            self.L0 = self.L0_reset
+        
 
     def compute_step_length(self, y_k, f, f_grad, g):
         '''
@@ -48,7 +59,9 @@ class FISTA:
         '''
         grad_k = f_grad(y_k)
         L = self.L0
+        it = 0
         while True:
+            it += 1
             y_k_1 = g(y_k - grad_k/L, L)
             G_k_norm = np.linalg.norm((y_k_1 - y_k)) # proximal gradient
             if f(y_k_1) > f(y_k) + (grad_k.T)*(y_k_1 - y_k) + (L/2)*G_k_norm**2:
@@ -56,7 +69,7 @@ class FISTA:
             else:
                 break
         self.L0  = L
-
+        self.ls_iter.append(it)
         return y_k_1, G_k_norm
 
     def optimize(self, f, f_grad, g, x0, maxit, tol):
@@ -88,7 +101,7 @@ class FISTA:
             x_k = x_k_1
             y_k = y_k_1
             t_k = t_k_1   
-
+        self.k = k
         return x_k_1
 
     def stats(self):

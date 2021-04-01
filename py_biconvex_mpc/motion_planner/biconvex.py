@@ -2,6 +2,7 @@
 # Author : Avadesh Meduri  
 # Date : 6/12/2020
 
+import time
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -11,7 +12,7 @@ from . cost import BiConvexCosts
 
 class BiConvexMP(CentroidalDynamics, BiConvexCosts):
 
-    def __init__(self, m, dt, T, n_eff, rho = 2e+3, L0 = 0.001, beta = 1.1, maxit = 1000, tol = 1e-5):
+    def __init__(self, m, dt, T, n_eff, rho = 1e+5, L0 = 1e2, beta = 1.5, maxit = 1000, tol = 1e-5):
         '''
         This is the Bi Convex motion planner
         Input:
@@ -123,24 +124,6 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         self.Q_F = np.matrix(self.Q_F)
         self.q_F = np.matrix(self.q_F)
 
-    # def friction_projection(self, f, L):
-    #     """
-    #     This function handles friction cone constraints
-    #     Input:
-    #         f : force vector
-    #         L : step length
-    #     """
-    #     for i in range(0, len(f), 3):
-    #         x = f[i:i+2]
-    #         s = f[i+2]
-    #         x_norm = np.linalg.norm(x)
-    #         if x_norm > abs(s):
-    #             f[i:i+2] *= (x_norm + s)/2*x_norm
-    #             f[i+2] = 0.5*(x_norm + s)
-    #         elif x_norm > s or x_norm < -s:
-    #             f[i:i+3] = 0
-    #     return f
-
     def optimize(self, X_init, no_iters, X_wm = None, F_wm = None):
         '''
         This function optimizes the centroidal dynamics trajectory
@@ -158,19 +141,18 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         # self.create_cost_X(W_X, W_X_ter, X_ter)
         # self.create_cost_F(W_F)
 
-        if X_wm:
+        if isinstance(X_wm, np.ndarray):
             X_k = X_wm
         else:
             X_k = np.ones((9*(self.n_col+1),1))
 
-        if F_wm:
+        if isinstance(F_wm, np.ndarray):
             F_k = F_wm
         else:
             F_k = np.zeros((3*self.n_col*self.n_eff,1))
 
         # penalty of dynamic constraint violation from ADMM
         P_k = np.zeros((9*self.n_col + 9, 1))
-
         for k in range(no_iters):
             print("iter number {}".format(k), end='\n')
             self.fista.reset()
@@ -182,10 +164,15 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             # projection of f into constraint space (friction cone and max f)
             proj_f = lambda f, L : np.clip(f, self.F_low, self.F_high)
             # proj_f = lambda f, L : self.friction_projection(f, L)
+            st = time.time()
             F_k_1 = self.fista.optimize(obj_f, grad_obj_f, proj_f, F_k, self.maxit, self.tol)
+            et = time.time()
+
+            # print("finished f", et - st, self.fista.k)
 
             # assert False
-            self.fista.reset()
+            self.fista.reset(L0_reset=1e7)
+
             # optimizing for x
             A_f, b_f = self.compute_F_mat(F_k_1, self.r_arr, self.cnt_arr, X_init)
             obj_x = lambda x :x.T *self.Q_X*x + self.q_X.T*x + self.rho*np.linalg.norm(A_f*x - b_f + P_k)**2    
@@ -193,7 +180,11 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             grad_obj_x = lambda x: 2*self.Q_X*x + self.q_X + 2*self.rho*A_f.T*(A_f*x - b_f + P_k)
             # projection of f into constraint space (friction cone and max f)
             proj_x = lambda x, L : np.clip(x, self.X_low, self.X_high)
+            st = time.time()
             X_k_1 = self.fista.optimize(obj_x, grad_obj_x, proj_x, X_k, self.maxit, self.tol)
+            et = time.time()
+            
+            # print("finished x", et - st, self.fista.k)
 
             # update of P_k
             P_k_1 = P_k + (A_f*X_k_1 - b_f)
@@ -204,7 +195,7 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             
             # computing cost of total optimization problem
             dyn_violation = np.linalg.norm(A_f*X_k - b_f)
-            print(dyn_violation)
+            print("dyn_violation", dyn_violation)
             cost_x = X_k.T *self.Q_X*X_k + self.q_X.T*X_k + dyn_violation
             cost_f = F_k.T *self.Q_F*F_k + self.q_F.T*F_k + dyn_violation
 
@@ -214,8 +205,9 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             self.dyn_all.append(float(dyn_violation))           
             self.total_all.append(float(total_cost))            
 
-            # if k > 2 and np.abs(self.f_all[-2] - self.f_all[-1]) < self.tol:
-            #     break
+            if dyn_violation < 0.01:
+                break
+            
         self.X_opt = X_k
         self.F_opt = F_k
         
@@ -229,6 +221,10 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         self.mom_opt[:,0:3] = self.m*self.mom_opt[:,0:3]
 
         return com_opt, F_k, self.mom_opt
+
+    def get_optimal_x(self):
+
+        return self.X_opt
 
     def stats(self):
         print("solver terminated in {} iterations".format(len(self.f_all)))

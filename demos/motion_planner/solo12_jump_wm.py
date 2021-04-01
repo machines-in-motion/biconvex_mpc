@@ -1,4 +1,4 @@
-## This file contains a rearing demo for solo12
+## This file contains a jump demo with warm start
 ## Author : Avadesh Meduri
 ## Date : 12/03/2021
 
@@ -67,63 +67,21 @@ fy_max = 20
 fz_max = 20
 
 # optimization
-optimize = True
 
-if optimize :
-    mom_opt_ik = None
-    com_opt_ik = None
-    for k in range(1):
-        mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
-        mp.create_contact_array(cnt_plan)
-        mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
-
-        # mp.add_via_point([0.00, 0.0, 0.05], 0.1, [1e-5, 1e-5, 1e+5])
-
-        mp.create_cost_X(W_X, W_X_ter, X_ter)
-        mp.create_cost_F(W_F)
-        com_opt, F_opt, mom_opt = mp.optimize(X_init, 50)
-
-        cnt_planner = SoloCntGen(T, dt, gait = 1)
-        cnt_planner.create_contact_costs(cnt_plan, 1e5)
-        cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+4, 1e+1], [1e+4, 1e+1])
-        ik_solver = cnt_planner.return_gait_generator()
-
-        state_wt = np.array([0.] * 3 + [100.] * 3 + [10.0] * (robot.model.nv - 6) \
-                            + [0.01] * 6 + [3.0] *(robot.model.nv - 6))
-
-        xs, us = ik_solver.optimize(x0, wt_xreg=7e-3, wt_ureg = 2e-3, state_wt=state_wt)
-        com_opt_ik, mom_opt_ik = ik_solver.ik.compute_optimal_com_and_mom()
-
-        W_X = np.array([1e+3, 1e+3, 1e+3, 1e+3, 1e+3, 1e+3, 3e3, 3e3, 3e3])
-        
-        # adding center of mass and momentum tracking cost
-        mp.add_ik_com_cost(com_opt_ik)
-        mp.add_ik_momentum_cost(mom_opt_ik)
-        mp.stats()
-
-    np.savez("./dat_file/mom", com_opt = com_opt, mom_opt = mom_opt, F_opt = F_opt)
-    np.savez("./dat_file/ik", xs = xs, us = us)
-
-else:
-    f = np.load("dat_file/mom.npz")
-    mom_opt, com_opt, F_opt = f["mom_opt"], f["com_opt"], f["F_opt"]
-    f = np.load("dat_file/ik.npz")
-    xs = f["xs"]
-    us = f['us']
-
+X_wm = None
+F_wm = None
+for k in range(2):
     mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
     mp.create_contact_array(cnt_plan)
-    
-    # simulation
-    kp = 4*[5.0, 50.0, 50.0]
-    kd = 4*[.5, .0, .0]
-    kc = [400, 400, 400]
-    dc = [50,50,50]
-    kb = [100, 100, 100]
-    db = [10,10,10]
-    env = Solo12Env(X_init, T, dt, kp, kd, kc, dc, kb, db)
-    env.generate_motion_plan(com_opt, mom_opt, F_opt, mp.cnt_arr.copy(), mp.r_arr.copy())
-    env.generate_end_eff_plan(xs, us)
-    # env.plot()
-    env.sim(fr = 0.00, vname = None)
-    env.plot_real()
+    mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
+
+    # mp.add_via_point([0.00, 0.0, 0.05], 0.1, [1e-5, 1e-5, 1e+5])
+
+    mp.create_cost_X(W_X, W_X_ter, X_ter)
+    mp.create_cost_F(W_F)
+    com_opt, F_opt, mom_opt = mp.optimize(X_init, 50, X_wm = X_wm, F_wm = F_wm)
+    X_opt = mp.get_optimal_x()
+    mp.stats()
+    X_wm = X_opt + 0*np.random.rand(len(X_opt))[:,None]
+    F_wm = F_opt + 0*np.random.rand(len(F_opt))[:,None]
+    print("________________________________-")

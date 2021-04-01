@@ -57,18 +57,20 @@ fx_max = 15
 fy_max = 15
 fz_max = 15
 
-optimize = False
+optimize = True
 
 if optimize:
     # optimization
-
     mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
     mp.create_contact_array(cnt_plan)
     mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
     mp.create_cost_X(W_X, W_X_ter, X_ter, X_nom)
     mp.create_cost_F(W_F)
+    st = time.time()
     com_opt, F_opt, mom_opt = mp.optimize(X_init, 30)
     # print(F_opt[2::3])
+    et = time.time()
+    print("time", et - st)
 
     cnt_planner.create_ik_step_costs(cnt_plan, sh, [1e+5, 1e+6])
     cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+4, 1e+3], [1e+4, 1e+3])

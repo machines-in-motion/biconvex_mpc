@@ -160,13 +160,23 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             self.fista.reset()
             # optimizing for f
             A_x, b_x = self.compute_X_mat(X_k, self.r_arr, self.cnt_arr)
-            A_sparse = csc_matrix(A_x)
+            A_x_ineq = np.identity(A_x.shape[1])
+
+            A_sparse = csc_matrix(np.vstack([A_x, A_x_ineq]))
             Q_sparse = csc_matrix(np.matrix(self.Q_F))
-            lb = self.F_low
-            ub = self.F_high
+
+            lb = np.hstack([np.asarray(b_x.T)[0,:], -np.inf*np.ones(A_x.shape[1])])
+            #lb = self.F_low[0:A_sparse.shape[0]]
+            ub = np.hstack([np.asarray(b_x.T)[0,:], np.inf*np.ones(A_x.shape[1])])
+            #ub = self.F_high[0:A_sparse.shape[0]]
+            print(A_sparse.shape)
+            print(lb.shape)
+
             solver = osqp.OSQP()
-            solver.setup(P=Q_sparse, q=self.q_F, A=A_sparse, l=lb, u=ub, verbose=False, eps_abs = self.tol, eps_rel = self.tol,
-            polish=True, scaled_termination = True, adaptive_rho = True, check_termination = 20, max_iter = 5000)
+            solver.setup(Q_sparse, self.q_F, A_sparse, lb, ub, verbose=True, eps_abs=1e-5, eps_rel=1e-5, eps_prim_inf=1e-5, eps_dual_inf=1e-5,
+            check_termination = 10, max_iter = 10000)
+            result = solver.solve()
+            print(result.x)
 
             obj_f = lambda f :f.T *self.Q_F*f + self.q_F.T*f + self.rho*np.linalg.norm(A_x*f - b_x + P_k)**2
             # gradient of the objective function that optimizes for f 

@@ -24,10 +24,11 @@ namespace fista
 
         // This should probably have a stopping criteria just in case...
         while (1) {
-            (problem->y_k_1) = ((problem->y_k) - grad_k/L).min(problem->lower_bound_).max(problem->upper_bound_);
-            (problem->G_k_norm) = (problem->y_k_1) - problem->y_k)->normSquared(); // proximal gradient
+            auto temp = ((problem->y_k) - grad_k/L);
+            (problem->y_k_1) = ((problem->y_k) - grad_k/L).cwiseMin(problem->lower_bound_).cwiseMax(problem->upper_bound_);
+            auto G_k_norm = (problem->y_k_1 - problem->y_k).squaredNorm(); // proximal gradient
             if (problem->compute_obj(problem->y_k_1) > 
-                problem->compute_obj(problem->y_k) + (grad_k.tranpsose())*(problem->y_k_1 - problem->y_k) + (L/2)*(problem->G_k_norm)){
+                problem->compute_obj(problem->y_k) + (grad_k.transpose())*(problem->y_k_1 - problem->y_k) + (L/2)*(G_k_norm)){
                     L = beta_*L;
                 }
             else {

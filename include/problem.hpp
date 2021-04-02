@@ -18,7 +18,7 @@ public:
     double compute_obj(const Eigen::VectorXd& x);
 
     //Compute gradient of cost function for a given x
-    double compute_grad_obj(const Eigen::VectorXd& x);
+    Eigen::VectorXd compute_grad_obj(const Eigen::VectorXd& x);
 
 
     /**
@@ -39,6 +39,8 @@ public:
     Eigen::VectorXd x_k;
     Eigen::VectorXd x_k_1;
     Eigen::VectorXd G_k_norm;
+
+    Eigen::VectorXd objective_gradient;
 private:
 };
 

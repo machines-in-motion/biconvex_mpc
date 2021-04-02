@@ -17,8 +17,18 @@ cd biconvex_mpc
 pip3 install .
 ```
 
+For C++:
+
+```
+mkdir build && cd build
+cmake ..
+make install
+```
+
+
 ## Authors
 - Avadesh Meduri
+- Paarth Shah
 
 ## Copyrights
 

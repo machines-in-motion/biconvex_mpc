@@ -47,7 +47,7 @@ W_X_ter = 10*np.array([1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5])
 
 W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 
-rho = 1e+5 # penalty on dynamic constraint violation
+rho = 5e+4 # penalty on dynamic constraint violation
 
 # constraints 
 bx = 0.25
@@ -57,9 +57,9 @@ fx_max = 15
 fy_max = 15
 fz_max = 15
 
-optimize = True
+solve = True
 
-if optimize:
+if solve:
     # optimization
     mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
     mp.create_contact_array(cnt_plan)
@@ -67,48 +67,36 @@ if optimize:
     mp.create_cost_X(W_X, W_X_ter, X_ter, X_nom)
     mp.create_cost_F(W_F)
     st = time.time()
-    com_opt, F_opt, mom_opt = mp.optimize(X_init, 50)
+    com_opt, F_opt, mom_opt = mp.optimize(X_init, 2)
+    X_opt, P_opt = mp.get_optimal_x_p()
+
     # print(F_opt[2::3])
     et = time.time()
     print("time", et - st)
-    assert False
-    cnt_planner.create_ik_step_costs(cnt_plan, sh, [1e+5, 1e+6])
-    cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+4, 1e+3], [1e+4, 1e+3])
-    ik_solver = cnt_planner.return_gait_generator()
-    state_wt = np.array([0.] * 3 + [500.] * 3 + [5.0] * (robot.model.nv - 6) \
-                        + [0.01] * 6 + [5.0] *(robot.model.nv - 6))
 
-    xs, us = ik_solver.optimize(x0, wt_xreg=7e-3, state_wt=state_wt)
-    com_opt_ik, mom_opt_ik = ik_solver.ik.compute_optimal_com_and_mom()
+    # mp.stats()
 
-    W_X = np.array([1e-3, 1e-3, 1e-3, 1e+3, 1e+3, 1e+3, 3e3, 3e3, 3e3])
+    np.savez("./dat_file/mom_wm", X_opt = X_opt, F_opt = F_opt, P_opt = P_opt)
 
-    mp.add_ik_com_cost(com_opt_ik)
-    mp.add_ik_momentum_cost(mom_opt_ik)    
-    mp.stats()
-
-    np.savez("./dat_file/mom", com_opt = com_opt, mom_opt = mom_opt, F_opt = F_opt)
-    np.savez("./dat_file/ik", xs = xs, us = us)
 else:
-    # simulation
-    f = np.load("dat_file/mom.npz")
-    mom_opt, com_opt, F_opt = f["mom_opt"], f["com_opt"], f["F_opt"]
-    f = np.load("dat_file/ik.npz")
-    xs = f["xs"]
-    us = f['us']
+    f = np.load("dat_file/mom_wm.npz")
+    X_opt, F_opt, P_opt = f["X_opt"], f["F_opt"], f["P_opt"]
+
+    X_wm = X_opt #+ 0*np.random.rand(len(X_opt))[:,None]
+    F_wm = F_opt #+ 0*np.random.rand(len(F_opt))[:,None]
+
+    X_init[0:2] = 0.2*np.random.rand(2)
+    # print(X_init)
 
     mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
+    mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
     mp.create_contact_array(cnt_plan)
 
-    kp = 4*[100.0, 100.0, 100.0]
-    kd = 4*[.5, 0.5, 0.5]
-    kc = [100, 100, 100]
-    dc = [10,10,10]
-    kb = [200, 200, 200]
-    db = [50,50,50]
-    env = Solo12Env(X_init, T, dt, kp, kd, kc, dc, kb, db)
-    env.generate_motion_plan(com_opt, mom_opt, F_opt, mp.cnt_arr.copy(), mp.r_arr.copy())
-    env.generate_end_eff_plan(xs, us)
-    # env.plot()
-    env.sim(fr = 0.00, vname = None)
-    env.plot_real()
+    mp.create_cost_X(W_X, W_X_ter, X_ter)
+    mp.create_cost_F(W_F)
+    st = time.time()
+    com_opt, F_opt, mom_opt = mp.optimize(X_init, 50, X_wm = X_wm, F_wm = F_wm, P_wm= P_opt)
+    et = time.time()
+    print("net time:", et - st)
+    mp.stats()
+    X_opt_n, P_opt_n = mp.get_optimal_x_p()

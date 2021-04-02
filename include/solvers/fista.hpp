@@ -1,20 +1,18 @@
-#ifndef FISTA_HPP
-#define FISTA_HPP
+#ifndef SOLVERS_HPP
+#define SOLVERS_HPP
 
 #include <Eigen/Dense>
 
 #include "problem.hpp"
 
-namespace fista
+namespace solvers
 {
-class Solver
+class FISTA
     {
     public:
-        Solver(double L0, double beta, double tolerance = 0.00001);
+        FISTA(double L0, double beta, double tolerance = 0.00001);
 
         //Optimize function
-        void optimize(Eigen::VectorXd& f, Eigen::VectorXd& g, int maxit, double tol);
-
         void optimize(std::shared_ptr<function::ProblemData> prob_data);
 
         //Compute Step Length
@@ -34,21 +32,12 @@ class Solver
         //Computes step length
         void compute_step_length(Eigen::VectorXd y_k);
 
-        //Use min and max Eigen functionality
-        /*
-        template <typename T>
-        void clamp_vec(std::vector<T>& vec, const T& min, const T& max) {
-            std::transform(std::begin(vec), std::end(vec), std::begin(vec),
-                        [&] (const T& v) { return std::clamp(v, min, max); });
-        };
-        */
-
         //Solver parameters
         double l0_;
         double tolerance_;
         double beta_;
         int max_iters;
     };
-} //namespace fista
+} //namespace solvers
 
 #endif

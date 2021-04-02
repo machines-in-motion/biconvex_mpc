@@ -12,7 +12,8 @@ namespace function
 class ProblemData 
 {
 public:
-    ProblemData(std::shared_ptr<Eigen::MatrixXd> Q, std::shared_ptr<Eigen::VectorXd> q, std::shared_ptr<Eigen::MatrixXd> A, std::shared_ptr<Eigen::VectorXd> b);
+    ProblemData(std::shared_ptr<Eigen::MatrixXd> Q, std::shared_ptr<Eigen::VectorXd> q, 
+                std::shared_ptr<Eigen::MatrixXd> A, std::shared_ptr<Eigen::VectorXd> b);
 
     //Compute cost function for given x
     double compute_obj(const Eigen::VectorXd& x);
@@ -20,6 +21,7 @@ public:
     //Compute gradient of cost function for a given x
     Eigen::VectorXd compute_grad_obj(const Eigen::VectorXd& x);
 
+    void set_bounds(Eigen::VectorXd lb, Eigen::VectorXd ub) {lb_ = lb; ub_ = ub;}
 
     /**
      * The following data should be moved to private with getters and setters
@@ -28,8 +30,8 @@ public:
     std::shared_ptr<Eigen::VectorXd> q_;
     std::shared_ptr<Eigen::MatrixXd> A_;
     std::shared_ptr<Eigen::VectorXd> b_;
-    Eigen::VectorXd lower_bound_;
-    Eigen::VectorXd upper_bound_;
+    Eigen::VectorXd lb_;
+    Eigen::VectorXd ub_;
     std::shared_ptr<Eigen::VectorXd> Pk_;
     double rho;
 
@@ -38,9 +40,8 @@ public:
     Eigen::VectorXd y_k_1;
     Eigen::VectorXd x_k;
     Eigen::VectorXd x_k_1;
-    Eigen::VectorXd G_k_norm;
+    double G_k_norm;
 
-    Eigen::VectorXd objective_gradient;
 private:
 };
 

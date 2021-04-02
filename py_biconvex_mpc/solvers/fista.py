@@ -88,7 +88,7 @@ class FISTA:
         x_k = x0
         y_k = x_k
         t_k = 1.0
-        for k  in range(maxit):
+        for k in range(maxit):
             x_k_1, G_k_norm = self.compute_step_length(y_k, f, f_grad, g)
             t_k_1 = 1.0 + np.sqrt(1 + 4*(t_k**2))/2.0
             y_k_1 = x_k_1 + ((t_k - 1)/t_k_1)*(x_k_1 - x_k)

@@ -67,21 +67,42 @@ fy_max = 20
 fz_max = 20
 
 # optimization
-
-X_wm = None
-F_wm = None
-for k in range(2):
+solve = True
+if solve:
     mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
     mp.create_contact_array(cnt_plan)
     mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
 
-    # mp.add_via_point([0.00, 0.0, 0.05], 0.1, [1e-5, 1e-5, 1e+5])
+    mp.create_cost_X(W_X, W_X_ter, X_ter)
+    mp.create_cost_F(W_F)
+    st = time.time()
+    com_opt, F_opt, mom_opt = mp.optimize(X_init, 50)
+    et = time.time()
+    print("net time:", et - st)
+    X_opt, P_opt = mp.get_optimal_x_p()
+    # mp.stats()
+
+    np.savez("./dat_file/mom_wm", X_opt = X_opt, F_opt = F_opt, P_opt = P_opt)
+else:
+    f = np.load("dat_file/mom_wm.npz")
+    X_opt, F_opt, P_opt = f["X_opt"], f["F_opt"], f["P_opt"]
+
+    X_wm = X_opt #+ 0*np.random.rand(len(X_opt))[:,None]
+    F_wm = F_opt #+ 0*np.random.rand(len(F_opt))[:,None]
+
+    X_init[0:2] = 0.2*np.random.rand(2)
+    print(X_init)
+
+    mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
+
+    mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
+    mp.create_contact_array(cnt_plan)
 
     mp.create_cost_X(W_X, W_X_ter, X_ter)
     mp.create_cost_F(W_F)
-    com_opt, F_opt, mom_opt = mp.optimize(X_init, 50, X_wm = X_wm, F_wm = F_wm)
-    X_opt = mp.get_optimal_x()
+    st = time.time()
+    com_opt, F_opt, mom_opt = mp.optimize(X_init, 50, X_wm = X_wm, F_wm = F_wm, P_wm= P_opt)
+    et = time.time()
+    print("net time:", et - st)
     mp.stats()
-    X_wm = X_opt + 0*np.random.rand(len(X_opt))[:,None]
-    F_wm = F_opt + 0*np.random.rand(len(F_opt))[:,None]
-    print("________________________________-")
+    X_opt_n, P_opt_n = mp.get_optimal_x_p()

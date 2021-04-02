@@ -5,6 +5,7 @@
 import time
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy import sparse
 
 from .. dynamics.centroidal import CentroidalDynamics
 from ..solvers.fista import FISTA
@@ -12,7 +13,7 @@ from . cost import BiConvexCosts
 
 class BiConvexMP(CentroidalDynamics, BiConvexCosts):
 
-    def __init__(self, m, dt, T, n_eff, rho = 1e+5, L0 = 1e2, beta = 1.5, maxit = 1000, tol = 1e-5):
+    def __init__(self, m, dt, T, n_eff, rho = 1e+5, L0 = 1e2, beta = 1.5, maxit = 150, tol = 1e-5):
         '''
         This is the Bi Convex motion planner
         Input:
@@ -34,7 +35,6 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         self.rho = rho
         self.maxit = maxit
         self.tol = tol
-
         self.cnt_arr = []
         self.r_arr = []
         # Note : no of collocation points should be computed only once
@@ -124,7 +124,7 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         self.Q_F = np.matrix(self.Q_F)
         self.q_F = np.matrix(self.q_F)
 
-    def optimize(self, X_init, no_iters, X_wm = None, F_wm = None):
+    def optimize(self, X_init, no_iters, X_wm = None, F_wm = None, P_wm = None):
         '''
         This function optimizes the centroidal dynamics trajectory
         Input:
@@ -150,44 +150,51 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             F_k = F_wm
         else:
             F_k = np.zeros((3*self.n_col*self.n_eff,1))
-
+        
         # penalty of dynamic constraint violation from ADMM
-        P_k = np.zeros((9*self.n_col + 9, 1))
+        if isinstance(P_wm, np.ndarray):
+            P_k = P_wm
+        else:    
+            P_k = np.zeros((9*self.n_col + 9, 1))
+
         for k in range(no_iters):
             print("iter number {}".format(k), end='\n')
-            self.fista.reset()
-            # optimizing for f
-            A_x, b_x = self.compute_X_mat(X_k, self.r_arr, self.cnt_arr)
-            obj_f = lambda f :f.T *self.Q_F*f + self.q_F.T*f + self.rho*np.linalg.norm(A_x*f - b_x + P_k)**2    
-            # gradient of the objective function that optimizes for f 
-            grad_obj_f = lambda f: 2*self.Q_F*f + self.q_F + 2*self.rho*A_x.T*(A_x*f - b_x + P_k)
-            # projection of f into constraint space (friction cone and max f)
-            proj_f = lambda f, L : np.clip(f, self.F_low, self.F_high)
-            # proj_f = lambda f, L : self.friction_projection(f, L)
-            st = time.time()
-            F_k_1 = self.fista.optimize(obj_f, grad_obj_f, proj_f, F_k, self.maxit, self.tol)
-            et = time.time()
+            maxit = int(self.maxit/(k//10 + 1))
+            if k > 0 and not isinstance(F_wm, np.ndarray):
+                self.fista.reset()
+                # optimizing for f
+                A_x, b_x = self.compute_X_mat(X_k, self.r_arr, self.cnt_arr)
+                obj_f = lambda f :f.T *self.Q_F*f + self.q_F.T*f + self.rho*np.linalg.norm(A_x*f - b_x + P_k)**2    
+                # gradient of the objective function that optimizes for f 
+                grad_obj_f = lambda f: 2*self.Q_F*f + self.q_F + 2*self.rho*A_x.T*(A_x*f - b_x + P_k)
+                # projection of f into constraint space (friction cone and max f)
+                proj_f = lambda f, L : np.clip(f, self.F_low, self.F_high)
+                st = time.time()
+                F_k_1 = self.fista.optimize(obj_f, grad_obj_f, proj_f, F_k, maxit, self.tol)
+                et = time.time()
+                print("finished f", et - st, self.fista.k, maxit)
+            else:
+                F_k_1 = F_k
 
-            # print("finished f", et - st, self.fista.k)
-
-            # assert False
             self.fista.reset(L0_reset=1e7)
 
             # optimizing for x
             A_f, b_f = self.compute_F_mat(F_k_1, self.r_arr, self.cnt_arr, X_init)
+            # A_f = sparse.csc_matrix(A_f)
             obj_x = lambda x :x.T *self.Q_X*x + self.q_X.T*x + self.rho*np.linalg.norm(A_f*x - b_f + P_k)**2    
             # gradient of the objective function that optimizes for f 
             grad_obj_x = lambda x: 2*self.Q_X*x + self.q_X + 2*self.rho*A_f.T*(A_f*x - b_f + P_k)
             # projection of f into constraint space (friction cone and max f)
             proj_x = lambda x, L : np.clip(x, self.X_low, self.X_high)
             st = time.time()
-            X_k_1 = self.fista.optimize(obj_x, grad_obj_x, proj_x, X_k, self.maxit, self.tol)
+            X_k_1 = self.fista.optimize(obj_x, grad_obj_x, proj_x, X_k, maxit, self.tol)
             et = time.time()
-            
-            # print("finished x", et - st, self.fista.k)
 
+            print("finished x", et - st, self.fista.k, maxit)
+            
             # update of P_k
             P_k_1 = P_k + (A_f*X_k_1 - b_f)
+
             # preparing for next iteration
             X_k = X_k_1
             F_k = F_k_1
@@ -195,6 +202,7 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             
             # computing cost of total optimization problem
             dyn_violation = np.linalg.norm(A_f*X_k - b_f)
+            # dyn_violation = np.linalg.norm(A_x*F_k - b_x)
             print("dyn_violation", dyn_violation)
             cost_x = X_k.T *self.Q_X*X_k + self.q_X.T*X_k + dyn_violation
             cost_f = F_k.T *self.Q_F*F_k + self.q_F.T*F_k + dyn_violation
@@ -206,10 +214,12 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             self.total_all.append(float(total_cost))            
 
             if dyn_violation < 0.01:
+                print("terminated because of exit condition ...")
                 break
             
         self.X_opt = X_k
         self.F_opt = F_k
+        self.P_opt = P_k
         
         com_opt = np.zeros((self.n_col + 1, 3))
         self.mom_opt = np.zeros((self.n_col + 1, 6))
@@ -222,9 +232,9 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
 
         return com_opt, F_k, self.mom_opt
 
-    def get_optimal_x(self):
+    def get_optimal_x_p(self):
 
-        return self.X_opt
+        return self.X_opt, self.P_opt
 
     def stats(self):
         print("solver terminated in {} iterations".format(len(self.f_all)))

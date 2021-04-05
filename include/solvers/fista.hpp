@@ -1,8 +1,6 @@
 #ifndef SOLVERS_HPP
 #define SOLVERS_HPP
 
-#include <Eigen/Dense>
-
 #include "problem.hpp"
 
 namespace solvers

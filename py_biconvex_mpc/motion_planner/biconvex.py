@@ -169,10 +169,12 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
                 grad_obj_f = lambda f: 2*self.Q_F*f + self.q_F + 2*self.rho*A_x.T*(A_x*f - b_x + P_k)
                 # projection of f into constraint space (friction cone and max f)
                 proj_f = lambda f, L : np.clip(f, self.F_low, self.F_high)
+
                 st = time.time()
                 F_k_1 = self.fista.optimize(obj_f, grad_obj_f, proj_f, F_k, maxit, self.tol)
                 et = time.time()
                 print("finished f", et - st, self.fista.k, maxit)
+                # self.fista.stats()
             else:
                 F_k_1 = F_k
 
@@ -189,9 +191,9 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             st = time.time()
             X_k_1 = self.fista.optimize(obj_x, grad_obj_x, proj_x, X_k, maxit, self.tol)
             et = time.time()
-
             print("finished x", et - st, self.fista.k, maxit)
-            
+            # self.fista.stats()
+
             # update of P_k
             P_k_1 = P_k + (A_f*X_k_1 - b_f)
 
@@ -229,6 +231,8 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             self.mom_opt[:,i] = self.X_opt[i+3::9].T
 
         self.mom_opt[:,0:3] = self.m*self.mom_opt[:,0:3]
+
+        # self.stats()
 
         return com_opt, F_k, self.mom_opt
 
@@ -272,18 +276,18 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         ax[2].grid()
         ax[2].legend()
 
-        fig, ax_mom = plt.subplots(3,1)
-        ax_mom[0].plot(self.mom_opt[:,0], label = "lmom_x")
-        ax_mom[0].grid()
-        ax_mom[0].legend()
+        # fig, ax_mom = plt.subplots(3,1)
+        # ax_mom[0].plot(self.mom_opt[:,0], label = "lmom_x")
+        # ax_mom[0].grid()
+        # ax_mom[0].legend()
 
-        ax_mom[1].plot(self.mom_opt[:,1], label = "lmom_y")
-        ax_mom[1].grid()
-        ax_mom[1].legend()
+        # ax_mom[1].plot(self.mom_opt[:,1], label = "lmom_y")
+        # ax_mom[1].grid()
+        # ax_mom[1].legend()
         
-        ax_mom[2].plot(self.mom_opt[:,2], label = "lmom_z")
-        ax_mom[2].grid()
-        ax_mom[2].legend()
+        # ax_mom[2].plot(self.mom_opt[:,2], label = "lmom_z")
+        # ax_mom[2].grid()
+        # ax_mom[2].legend()
 
 
         fig, ax_f = plt.subplots(self.n_eff,1)
@@ -294,21 +298,21 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             ax_f[n].grid()
             ax_f[n].legend()
 
-        fig, ax_cost = plt.subplots(4,1)
-        ax_cost[0].plot(self.x_all, label = "cost_x")
-        ax_cost[0].grid()
-        ax_cost[0].legend()
+        # fig, ax_cost = plt.subplots(4,1)
+        # ax_cost[0].plot(self.x_all, label = "cost_x")
+        # ax_cost[0].grid()
+        # ax_cost[0].legend()
 
-        ax_cost[1].plot(self.f_all, label = "cost_f")
-        ax_cost[1].grid()
-        ax_cost[1].legend()
+        # ax_cost[1].plot(self.f_all, label = "cost_f")
+        # ax_cost[1].grid()
+        # ax_cost[1].legend()
 
-        ax_cost[2].plot(self.dyn_all, label = "dynamics_violation")
-        ax_cost[2].grid()
-        ax_cost[2].legend()
+        # ax_cost[2].plot(self.dyn_all, label = "dynamics_violation")
+        # ax_cost[2].grid()
+        # ax_cost[2].legend()
 
-        ax_cost[3].plot(self.total_all, label = "cost_total")
-        ax_cost[3].grid()
-        ax_cost[3].legend()
+        # ax_cost[3].plot(self.total_all, label = "cost_total")
+        # ax_cost[3].grid()
+        # ax_cost[3].legend()
 
         plt.show()

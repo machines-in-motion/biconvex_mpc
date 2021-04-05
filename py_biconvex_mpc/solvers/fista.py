@@ -96,6 +96,7 @@ class FISTA:
             self.g_all.append(float(G_k_norm))
             # print("finished iteration {} and the cost is {}".format(k, float(self.f_all[-1])), end='\r')
             if G_k_norm < tol:
+                print("due to norm")
                 break
             
             x_k = x_k_1
@@ -111,7 +112,8 @@ class FISTA:
         print("The algorithm has terminated after : " + str(len(self.f_all)) + " iterations")
         print("The optimal value of the objective funtion is : " + str(self.f_all[-1]))
         fig, axs = plt.subplots(1, 1, sharex=True)
-        axs.plot(self.f_all, label="objective value")
+        axs.plot(np.subtract(self.f_all,self.f_all[-1]), label="objective value")
+        # axs.plot(self.g_all, label="grad value")
         axs.set_ylabel("Value of objective function")
         axs.legend()
         axs.grid()

@@ -1,7 +1,7 @@
 #ifndef PROBLEM_HPP
 #define PROBLEM_HPP
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <memory>
 
 namespace function

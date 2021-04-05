@@ -23,18 +23,19 @@ add_library(${PROJECT_NAME}
     src/solvers/problem.cpp
 )
 
+
+
 add_executable(test_fista src/solvers/test_fista.cpp)
 add_dependencies(test_fista ${PROJECT_NAME})
 target_link_libraries(test_fista PUBLIC ${PROJECT_NAME})
 
 install(TARGETS test_fista DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(biconvex_mpc Eigen3::Eigen)
-
 pybind11_add_module(${PROJECT_NAME}_cpp MODULE
   srcpy/solvers/fista.cpp
   )
 
-# cmake-format: on
-target_link_libraries(${PROJECT_NAME}_cpp PRIVATE pybind11::module)
-target_link_libraries(${PROJECT_NAME}_cpp PRIVATE ${PROJECT_NAME})
+# # cmake-format: on
+# target_link_libraries(${PROJECT_NAME}_cpp PRIVATE pybind11::module)
+# target_link_libraries(${PROJECT_NAME}_cpp PRIVATE ${PROJECT_NAME})
+target_link_libraries(biconvex_mpc Eigen3::Eigen)

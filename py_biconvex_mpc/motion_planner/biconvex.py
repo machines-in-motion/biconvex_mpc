@@ -160,19 +160,20 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         for k in range(no_iters):
             print("iter number {}".format(k), end='\n')
             maxit = int(self.maxit/(k//10 + 1))
-            if k > 0 and not isinstance(F_wm, np.ndarray):
+            if k > 0 or not isinstance(F_wm, np.ndarray):
                 self.fista.reset()
                 # optimizing for f
+                st = time.time()
                 A_x, b_x = self.compute_X_mat(X_k, self.r_arr, self.cnt_arr)
+                et = time.time()
+
                 obj_f = lambda f :f.T *self.Q_F*f + self.q_F.T*f + self.rho*np.linalg.norm(A_x*f - b_x + P_k)**2    
                 # gradient of the objective function that optimizes for f 
                 grad_obj_f = lambda f: 2*self.Q_F*f + self.q_F + 2*self.rho*A_x.T*(A_x*f - b_x + P_k)
                 # projection of f into constraint space (friction cone and max f)
                 proj_f = lambda f, L : np.clip(f, self.F_low, self.F_high)
 
-                st = time.time()
                 F_k_1 = self.fista.optimize(obj_f, grad_obj_f, proj_f, F_k, maxit, self.tol)
-                et = time.time()
                 print("finished f", et - st, self.fista.k, maxit)
                 # self.fista.stats()
             else:
@@ -181,16 +182,15 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             self.fista.reset(L0_reset=1e7)
 
             # optimizing for x
+            st = time.time()
             A_f, b_f = self.compute_F_mat(F_k_1, self.r_arr, self.cnt_arr, X_init)
-            # A_f = sparse.csc_matrix(A_f)
+            et = time.time()
             obj_x = lambda x :x.T *self.Q_X*x + self.q_X.T*x + self.rho*np.linalg.norm(A_f*x - b_f + P_k)**2    
             # gradient of the objective function that optimizes for f 
             grad_obj_x = lambda x: 2*self.Q_X*x + self.q_X + 2*self.rho*A_f.T*(A_f*x - b_f + P_k)
             # projection of f into constraint space (friction cone and max f)
             proj_x = lambda x, L : np.clip(x, self.X_low, self.X_high)
-            st = time.time()
             X_k_1 = self.fista.optimize(obj_x, grad_obj_x, proj_x, X_k, maxit, self.tol)
-            et = time.time()
             print("finished x", et - st, self.fista.k, maxit)
             # self.fista.stats()
 
@@ -231,8 +231,6 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             self.mom_opt[:,i] = self.X_opt[i+3::9].T
 
         self.mom_opt[:,0:3] = self.m*self.mom_opt[:,0:3]
-
-        # self.stats()
 
         return com_opt, F_k, self.mom_opt
 

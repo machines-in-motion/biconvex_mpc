@@ -67,7 +67,7 @@ fy_max = 20
 fz_max = 20
 
 # optimization
-solve = True
+solve = False
 if solve:
     mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
     mp.create_contact_array(cnt_plan)

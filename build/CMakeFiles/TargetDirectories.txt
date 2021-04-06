@@ -1,9 +1,0 @@
-/home/ameduri/devel/workspace/biconvex_mpc/build/CMakeFiles/install/strip.dir
-/home/ameduri/devel/workspace/biconvex_mpc/build/CMakeFiles/install.dir
-/home/ameduri/devel/workspace/biconvex_mpc/build/CMakeFiles/install/local.dir
-/home/ameduri/devel/workspace/biconvex_mpc/build/CMakeFiles/test_fista.dir
-/home/ameduri/devel/workspace/biconvex_mpc/build/CMakeFiles/biconvex_mpc.dir
-/home/ameduri/devel/workspace/biconvex_mpc/build/CMakeFiles/biconvex_mpc_cpp.dir
-/home/ameduri/devel/workspace/biconvex_mpc/build/CMakeFiles/edit_cache.dir
-/home/ameduri/devel/workspace/biconvex_mpc/build/CMakeFiles/rebuild_cache.dir
-/home/ameduri/devel/workspace/biconvex_mpc/build/CMakeFiles/list_install_components.dir

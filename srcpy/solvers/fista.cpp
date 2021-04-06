@@ -1,18 +1,24 @@
 // This file contains python bindings for fista
 
 #include <fista.hpp>
-#include <pybind11/pybind11.h>
 
+#include <pybind11/pybind11.h>
+#include <eigen3/Eigen/Dense>
+
+using namespace solvers;
+using namespace function;
 namespace py = pybind11;
 
-namespace solvers 
+PYBIND11_MODULE(fista_py, m)
 {
-void bind_fista(py::module& m){
+    m.doc() = "FISTA (first order shrinkage method)";
 
-    py::class_<FISTA>(m, "FISTA")
-        // .def(py::init<>())
+    //FISTA
+    py::class_<FISTA> fista(m, "Fista instance");
+    fista.def(py::init<double,double,double>());
+    fista.def("optimize", &solvers::FISTA::optimize);
 
-        .def("optimize", & FISTA::optimize, "optimizes the problem");
-    }
+    //Problem
+    py::class_<ProblemData> problem_data(m, "Problem Data");
+    problem_data.def(py::init<)
 }
-

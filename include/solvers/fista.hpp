@@ -16,6 +16,9 @@ class FISTA
         //Compute Step Length
         void compute_step_length(std::shared_ptr<function::ProblemData> problem);
 
+        //Compute Step Length
+        void compute_step_length_pybind(std::shared_ptr<function::ProblemData> problem);
+
         //Resets parameters
         void reset();
 

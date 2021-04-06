@@ -22,8 +22,6 @@ add_library(${PROJECT_NAME}
     src/solvers/fista.cpp
 )
 
-
-
 add_executable(test_fista src/solvers/test_fista.cpp)
 add_dependencies(test_fista ${PROJECT_NAME})
 target_link_libraries(test_fista PUBLIC ${PROJECT_NAME})

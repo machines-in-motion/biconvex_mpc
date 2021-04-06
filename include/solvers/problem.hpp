@@ -13,7 +13,9 @@ class ProblemData
 {
 public:
     ProblemData(std::shared_ptr<Eigen::MatrixXd> Q, std::shared_ptr<Eigen::VectorXd> q, 
-                std::shared_ptr<Eigen::MatrixXd> A, std::shared_ptr<Eigen::VectorXd> b);
+                std::shared_ptr<Eigen::MatrixXd> A, std::shared_ptr<Eigen::VectorXd> b,
+                std::shared_ptr<Eigen::VectorXd> P_k, std::shared_ptr<int> n, 
+                std::shared_ptr<double> rho);
 
     //Compute cost function for given x
     double compute_obj(const Eigen::VectorXd& x);
@@ -29,12 +31,18 @@ public:
     std::shared_ptr<Eigen::MatrixXd> Q_;
     std::shared_ptr<Eigen::VectorXd> q_;
     std::shared_ptr<Eigen::MatrixXd> A_;
+    std::shared_ptr<Eigen::MatrixXd> ATA_;
     std::shared_ptr<Eigen::VectorXd> b_;
+    std::shared_ptr<Eigen::VectorXd> Pk_;
+    std::shared_ptr<Eigen::VectorXd> bPk_;
+    
+    std::shared_ptr<Eigen::VectorXd> ATbPk_;
+
+    
     Eigen::VectorXd lb_;
     Eigen::VectorXd ub_;
-    std::shared_ptr<Eigen::VectorXd> Pk_;
-    double rho;
-
+    std::shared_ptr<double> rho;
+    std::shared_ptr<int> n;
     //FISTA related optimization variables
     Eigen::VectorXd y_k;
     Eigen::VectorXd y_k_1;

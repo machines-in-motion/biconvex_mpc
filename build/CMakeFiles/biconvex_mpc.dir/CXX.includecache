@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/solvers/fista.hpp
+problem.hpp
+../include/solvers/problem.hpp
+
+../include/solvers/problem.hpp
+eigen3/Eigen/Dense
+-
+memory
+-
+
+/home/ameduri/devel/workspace/biconvex_mpc/src/solvers/fista.cpp
+fista.hpp
+/home/ameduri/devel/workspace/biconvex_mpc/src/solvers/fista.hpp
+iostream
+-
+

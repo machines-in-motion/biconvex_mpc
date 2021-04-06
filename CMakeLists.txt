@@ -20,7 +20,6 @@ include_directories(
 
 add_library(${PROJECT_NAME}
     src/solvers/fista.cpp
-    src/solvers/problem.cpp
 )
 
 

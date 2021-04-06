@@ -1,0 +1,2 @@
+/usr/bin/ar qc libbiconvex_mpc.a  CMakeFiles/biconvex_mpc.dir/src/solvers/fista.cpp.o
+/usr/bin/ranlib libbiconvex_mpc.a

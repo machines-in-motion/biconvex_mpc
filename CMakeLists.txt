@@ -26,12 +26,16 @@ add_executable(test_fista src/solvers/test_fista.cpp)
 add_dependencies(test_fista ${PROJECT_NAME})
 target_link_libraries(test_fista PUBLIC ${PROJECT_NAME})
 
-install(TARGETS test_fista DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
-
 pybind11_add_module(${PROJECT_NAME}_cpp MODULE
   srcpy/solvers/fista.cpp
   )
 
+install(TARGETS test_fista DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+
+install(PROGRAMS
+  scripts/fista_py.py
+  DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}
+)
 # # cmake-format: on
 # target_link_libraries(${PROJECT_NAME}_cpp PRIVATE pybind11::module)
 # target_link_libraries(${PROJECT_NAME}_cpp PRIVATE ${PROJECT_NAME})

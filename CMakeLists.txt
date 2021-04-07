@@ -7,7 +7,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/python3.6/dist-packages/")
-
 set (python_install_dir "/usr/local/lib/python3.6/dist-packages/")
 
 #Configure packages

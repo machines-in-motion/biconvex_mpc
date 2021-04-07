@@ -3,6 +3,8 @@
 ## Author : Avadesh Meduri & Paarth Shah
 ## Date : 7/04/2021
 
+from scipy.sparse import csc_matrix
+import time
 import numpy as np
 from test_problem import test_problem_func
 import fista_py
@@ -15,7 +17,19 @@ mp = test_problem_func()
 
 A_x, b_x = mp.compute_X_mat(X_opt, mp.r_arr, mp.cnt_arr)
 A_f, b_f = mp.compute_F_mat(F_opt, mp.r_arr, mp.cnt_arr, np.reshape(X_opt[0:9],9))
+Q_x = mp.Q_X
+q_x = mp.q_X
+Q_f = mp.Q_F
+q_f = mp.q_F
+n = len(F_opt)
+P_k = np.ones(A_x.shape[0])[:,None]
 
 ## creating C++ class
+prob = fista_py.data(Q_f, q_f, A_x, b_x, P_k, n, 1e+5)
 
-prob = fista_py.problem(A_x)
+st = time.time()
+obj = prob.compute_obj(F_opt)
+et = time.time()
+# print(1e3*(et - st))
+
+# print(obj)

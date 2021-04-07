@@ -21,7 +21,8 @@ PYBIND11_MODULE(fista_py, m)
 
     //Problem
      py::class_<ProblemData> problem_data(m, "data");
-     problem_data.def(py::init<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXd, Eigen::VectorXd>());
+     problem_data.def(py::init<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXd, Eigen::VectorXd, 
+                                Eigen::VectorXd, int, double>());
      problem_data.def("compute_obj", &function::ProblemData::compute_obj);
 }
 

@@ -2,6 +2,8 @@
 #define PROBLEM_HPP
 
 #include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Sparse>
+#include <chrono>
 #include <memory>
 
 namespace function
@@ -15,7 +17,8 @@ class ProblemData
                     std::shared_ptr<double> rho);
 
         ProblemData(Eigen::MatrixXd Q, Eigen::VectorXd q,
-                    Eigen::MatrixXd A, Eigen::VectorXd b);
+                    Eigen::MatrixXd A, Eigen::VectorXd b, 
+                    Eigen::VectorXd P_k, int n, double rho);
 
         //Compute cost function for given x
         double compute_obj(const Eigen::VectorXd& x);
@@ -34,25 +37,30 @@ class ProblemData
         /**
          * The following data should be moved to private with getters and setters
          */
-        std::shared_ptr<Eigen::MatrixXd> Q_;
-        std::shared_ptr<Eigen::VectorXd> q_;
-        std::shared_ptr<Eigen::MatrixXd> A_;
-        std::shared_ptr<Eigen::MatrixXd> ATA_;
-        std::shared_ptr<Eigen::VectorXd> b_;
-        std::shared_ptr<Eigen::VectorXd> Pk_;
-        std::shared_ptr<Eigen::VectorXd> bPk_;
-
-        std::shared_ptr<Eigen::VectorXd> ATbPk_;
-
+    
         Eigen::VectorXd lb_;
         Eigen::VectorXd ub_;
-        std::shared_ptr<double> rho;
-        std::shared_ptr<int> n;
+        double rho_e;
+        int n_e;
         //Temporary PyBind variables to get around Eigen::Ref issues
         Eigen::MatrixXd Q_e;
         Eigen::VectorXd q_e;
         Eigen::MatrixXd A_e;
         Eigen::VectorXd b_e;
+        Eigen::VectorXd Pk_e;
+
+        Eigen::SparseMatrix<double> Q_sp;
+        // Eigen::VectorXd q_e;
+        // Eigen::MatrixXd A_e;
+        // Eigen::VectorXd b_e;
+        // Eigen::VectorXd Pk_e;
+
+
+        Eigen::MatrixXd ATA_;
+        Eigen::VectorXd Pk_;
+        Eigen::VectorXd bPk_;
+        Eigen::VectorXd ATbPk_;
+
 
         //FISTA related optimization variables
         Eigen::VectorXd y_k;

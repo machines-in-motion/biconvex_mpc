@@ -1,9 +1,7 @@
 // This file contains python bindings for fista
-
 #include <fista.hpp>
 
 #include <pybind11/pybind11.h>
-#include <eigen3/Eigen/Dense>
 
 using namespace solvers;
 using namespace function;
@@ -14,13 +12,19 @@ PYBIND11_MODULE(fista_cpp, m)
     m.doc() = "FISTA (first order shrinkage method)";
 
     //FISTA
-    py::class_<FISTA> fista(m, "Fista instance");
-    fista.def(py::init<double,double,double>());
-    fista.def("optimize", &solvers::FISTA::optimize);
+    py::class_<solvers::FISTA> fista(m, "Fista instance");
+    fista.def(py::init<double, double, double>());
+    //fista.def("optimize", &solvers::FISTA::optimize);
 
     //Problem
+<<<<<<< HEAD
     // py::class_<ProblemData> problem_data(m, "Problem Data");
     // problem_data.def(py::init<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXd, Eigen::VectorXd>());
     // problem_data.def("compute_obj", &function::ProblemData::compute_obj);
+=======
+//    py::class_<ProblemData> problem_data(m, "Problem Data");
+//    problem_data.def(py::init<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXd, Eigen::VectorXd>());
+//    problem_data.def("compute_obj", &function::ProblemData::compute_obj);
+>>>>>>> 38f448c651d8f0658e4ceb83fa0b956331559bfb
 }
 

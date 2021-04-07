@@ -6,10 +6,6 @@ project(biconvex_mpc VERSION 0.0.1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# prefix path to look for pybind11
-list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/python3.6/dist-packages/")
-set (python_path "/usr/local/lib/python3.6/dist-packages/")
-
 #Configure packages
 find_package(pybind11 CONFIG REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -51,11 +47,7 @@ install(TARGETS test_fista DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 #)
 
 # # cmake-format: on
-<<<<<<< HEAD
-target_link_libraries(${PROJECT_NAME}_cpp PRIVATE ${PROJECT_NAME})
-target_link_libraries(${PROJECT_NAME}_cpp PRIVATE pybind11::module)
-install(TARGETS ${PROJECT_NAME}_cpp DESTINATION $python_path)
-=======
-# target_link_libraries(${PROJECT_NAME}_cpp PRIVATE pybind11::module)
-# target_link_libraries(${PROJECT_NAME}_cpp PRIVATE ${PROJECT_NAME})
->>>>>>> 38f448c651d8f0658e4ceb83fa0b956331559bfb
+#target_link_libraries(${PROJECT_NAME}_cpp PRIVATE ${PROJECT_NAME})
+#target_link_libraries(${PROJECT_NAME}_cpp PRIVATE pybind11::module)
+#install(TARGETS ${PROJECT_NAME}_cpp DESTINATION $python_path)
+

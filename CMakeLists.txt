@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/python3.6/dist-packages/")
 
+set (python_install_dir "/usr/local/lib/python3.6/dist-packages/")
 
 #Configure packages
 find_package(pybind11 CONFIG REQUIRED)
@@ -38,6 +39,8 @@ target_link_libraries(fista_py PRIVATE biconvex_mpc)
 
 #Install PyBind library
 install(TARGETS fista_py LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+# install(TARGETS fista_py LIBRARY DESTINATION ${python_install_dir})
+
 #Install cpp binary
 install(TARGETS test_fista DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 

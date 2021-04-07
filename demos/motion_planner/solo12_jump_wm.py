@@ -50,7 +50,7 @@ X_nom = np.zeros((9*int(np.round(T/dt,2))))
 X_nom[2::9] = X_init[2]
 
 # weights
-W_X = np.array([1e-5, 1e-5, 1e-5, 1e-4, 1e-4, 1e-4, 3e3, 3e3, 3e3])
+W_X = np.array([1e-5, 1e-5, 1e-5, 1e-4, 1e-4, 1e-4, 5e2, 5e2, 5e2])
 
 W_X_ter = 10*np.array([1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5])
 
@@ -83,6 +83,8 @@ if solve:
     # mp.stats()
 
     np.savez("./dat_file/mom_wm", X_opt = X_opt, F_opt = F_opt, P_opt = P_opt)
+    np.savez("./dat_file/mom", com_opt = com_opt, mom_opt = mom_opt, F_opt = F_opt)
+
 else:
     f = np.load("dat_file/mom_wm.npz")
     X_opt, F_opt, P_opt = f["X_opt"], f["F_opt"], f["P_opt"]

@@ -144,7 +144,7 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         if isinstance(X_wm, np.ndarray):
             X_k = X_wm
         else:
-            X_k = np.ones((9*(self.n_col+1),1))
+            X_k = np.tile(X_init, ((self.n_col+1)))[:,None]
 
         if isinstance(F_wm, np.ndarray):
             F_k = F_wm
@@ -155,11 +155,14 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         if isinstance(P_wm, np.ndarray):
             P_k = P_wm
         else:    
-            P_k = np.zeros((9*self.n_col + 9, 1))
+            P_k = 0.0*np.ones((9*self.n_col + 9, 1))
+        
+        dyn_violation = 99999
 
         for k in range(no_iters):
             print("iter number {}".format(k), end='\n')
             maxit = int(self.maxit/(k//10 + 1))
+
             if k > 0 or not isinstance(F_wm, np.ndarray):
                 self.fista.reset()
                 # optimizing for f
@@ -167,9 +170,9 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
                 A_x, b_x = self.compute_X_mat(X_k, self.r_arr, self.cnt_arr)
                 et = time.time()
 
-                obj_f = lambda f :f.T *self.Q_F*f + self.q_F.T*f + self.rho*np.linalg.norm(A_x*f - b_x + P_k)**2    
+                obj_f = lambda f : f.T *self.Q_F*f + self.q_F.T*f + self.rho*np.linalg.norm(A_x*f - b_x + P_k)**2    
                 # gradient of the objective function that optimizes for f 
-                grad_obj_f = lambda f: 2*self.Q_F*f + self.q_F + 2*self.rho*A_x.T*(A_x*f - b_x + P_k)
+                grad_obj_f = lambda f: 2*self.Q_F*f + self.q_F + 2.0*self.rho*A_x.T*(A_x*f - b_x + P_k)
                 # projection of f into constraint space (friction cone and max f)
                 proj_f = lambda f, L : np.clip(f, self.F_low, self.F_high)
 
@@ -180,14 +183,14 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
                 F_k_1 = F_k
 
             self.fista.reset(L0_reset=1e7)
-
+            
             # optimizing for x
             st = time.time()
             A_f, b_f = self.compute_F_mat(F_k_1, self.r_arr, self.cnt_arr, X_init)
             et = time.time()
-            obj_x = lambda x :x.T *self.Q_X*x + self.q_X.T*x + self.rho*np.linalg.norm(A_f*x - b_f + P_k)**2    
+            obj_x = lambda x : x.T *self.Q_X*x + self.q_X.T*x + self.rho*np.linalg.norm(A_f*x - b_f + P_k)**2    
             # gradient of the objective function that optimizes for f 
-            grad_obj_x = lambda x: 2*self.Q_X*x + self.q_X + 2*self.rho*A_f.T*(A_f*x - b_f + P_k)
+            grad_obj_x = lambda x: 2.0*self.Q_X*x + self.q_X + 2.0*self.rho*A_f.T*(A_f*x - b_f + P_k)
             # projection of f into constraint space (friction cone and max f)
             proj_x = lambda x, L : np.clip(x, self.X_low, self.X_high)
             X_k_1 = self.fista.optimize(obj_x, grad_obj_x, proj_x, X_k, maxit, self.tol)
@@ -198,13 +201,15 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             P_k_1 = P_k + (A_f*X_k_1 - b_f)
 
             # preparing for next iteration
+            self.X_opt_old = X_wm
+            self.F_opt_old = F_wm
+
             X_k = X_k_1
             F_k = F_k_1
             P_k = P_k_1
             
             # computing cost of total optimization problem
             dyn_violation = np.linalg.norm(A_f*X_k - b_f)
-            # dyn_violation = np.linalg.norm(A_x*F_k - b_x)
             print("dyn_violation", dyn_violation)
             cost_x = X_k.T *self.Q_X*X_k + self.q_X.T*X_k + dyn_violation
             cost_f = F_k.T *self.Q_F*F_k + self.q_F.T*F_k + dyn_violation
@@ -219,9 +224,11 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
                 print("terminated because of exit condition ...")
                 break
             
-        self.X_opt = X_k
-        self.F_opt = F_k
-        self.P_opt = P_k
+            self.X_opt = X_k
+            self.F_opt = F_k
+            self.P_opt = P_k
+            # print("X_init_norm", np.linalg.norm(self.X_opt[0:9].T - X_init))
+        # self.stats()
         
         com_opt = np.zeros((self.n_col + 1, 3))
         self.mom_opt = np.zeros((self.n_col + 1, 6))
@@ -245,6 +252,12 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         ax[0].plot(self.X_opt[0::9], label = "Cx")
         ax[0].plot(self.X_opt[1::9], label = "Cy")
         ax[0].plot(self.X_opt[2::9], label = "Cz")
+
+        # ax[0].plot(self.X_opt_old[0::9], label = "Cx_old")
+        # ax[0].plot(self.X_opt_old[1::9], label = "Cy_old")
+        # ax[0].plot(self.X_opt_old[2::9], label = "Cz_old")
+
+
         if isinstance(self.ik_com_opt, np.ndarray):
             ax[0].plot(self.ik_com_opt[:,0], label = "ik_Cx")
             ax[0].plot(self.ik_com_opt[:,1], label = "ik_Cy")
@@ -255,6 +268,11 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         ax[1].plot(self.X_opt[3::9], label = "Vx")
         ax[1].plot(self.X_opt[4::9], label = "Vy")
         ax[1].plot(self.X_opt[5::9], label = "Vz")
+
+        # ax[1].plot(self.X_opt_old[3::9], label = "Vx_old")
+        # ax[1].plot(self.X_opt_old[4::9], label = "Vy_old")
+        # ax[1].plot(self.X_opt_old[5::9], label = "Vz_old")
+
         if isinstance(self.ik_mom_opt, np.ndarray):
             ax[1].plot(self.ik_mom_opt[:,0], label = "ik_Vx")
             ax[1].plot(self.ik_mom_opt[:,1], label = "ik_Vy")
@@ -266,6 +284,10 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         ax[2].plot(self.X_opt[6::9], label = "ang_x")
         ax[2].plot(self.X_opt[7::9], label = "ang_y")
         ax[2].plot(self.X_opt[8::9], label = "ang_z")
+        # ax[2].plot(self.X_opt_old[6::9], label = "ang_x_old")
+        # ax[2].plot(self.X_opt_old[7::9], label = "ang_y_old")
+        # ax[2].plot(self.X_opt_old[8::9], label = "ang_z_old")
+
         if isinstance(self.ik_mom_opt, np.ndarray):
             ax[2].plot(self.ik_mom_opt[:,3], label = "ik_ang_x")
             ax[2].plot(self.ik_mom_opt[:,4], label = "ik_ang_y")
@@ -293,6 +315,11 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             ax_f[n].plot(self.F_opt[3*n::3*self.n_eff], label = "ee: " + str(n) + "Fx")
             ax_f[n].plot(self.F_opt[3*n+1::3*self.n_eff], label = "ee: " + str(n) + "Fy")
             ax_f[n].plot(self.F_opt[3*n+2::3*self.n_eff], label = "ee: " + str(n) + "Fz")
+
+            # ax_f[n].plot(self.F_opt_old[3*n::3*self.n_eff], label = "old_ee: " + str(n) + "Fx")
+            # ax_f[n].plot(self.F_opt_old[3*n+1::3*self.n_eff], label = "old_ee: " + str(n) + "Fy")
+            # ax_f[n].plot(self.F_opt_old[3*n+2::3*self.n_eff], label = "old_ee: " + str(n) + "Fz")
+
             ax_f[n].grid()
             ax_f[n].legend()
 

@@ -18,9 +18,9 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/solvers/
 )
 
-add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME} SHARED
     src/solvers/fista.cpp
-        src/solvers/problem.cpp
+    src/solvers/problem.cpp
 )
 
 add_executable(test_fista src/solvers/test_fista.cpp)
@@ -31,6 +31,8 @@ target_link_libraries(biconvex_mpc Eigen3::Eigen)
 #Pybind setup
 pybind11_add_module(fista_py MODULE srcpy/solvers/fista.cpp)
 target_include_directories(fista_py PRIVATE ${EIGEN3_INCLUDE_DIR})
+target_link_libraries(fista_py PRIVATE pybind11::module)
+target_link_libraries(fista_py PRIVATE biconvex_mpc)
 
 #Install Targets
 
@@ -39,9 +41,10 @@ install(TARGETS fista_py LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 #Install cpp binary
 install(TARGETS test_fista DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 
-#install(PROGRAMS
-#  fista_py.py
-#  DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}
+#install(TARGETS fista_py
+#        DIRECTORY python/${PROJECT_NAME}
+#        PATTERN "*.pyc" EXCLUDE
+#        PATTERN "__pycache__" EXCLUDE
 #)
 
 # # cmake-format: on

@@ -44,7 +44,7 @@ class ProblemData
         std::shared_ptr<Eigen::MatrixXd> ATA_;
         std::shared_ptr<Eigen::VectorXd> b_;
         std::shared_ptr<Eigen::VectorXd> Pk_;
-        std::shared_ptr<Eigen::VectorXd> bPk_;
+        // std::shared_ptr<Eigen::VectorXd> bPk_;
 
         std::shared_ptr<Eigen::VectorXd> ATbPk_;
 
@@ -58,19 +58,14 @@ class ProblemData
         Eigen::MatrixXd A_e;
         Eigen::VectorXd b_e;
         Eigen::VectorXd Pk_e;
+        Eigen::VectorXd bPk_;
+
 
         Eigen::SparseMatrix<double> Q_sp;
         // Eigen::VectorXd q_e;
         // Eigen::MatrixXd A_e;
         // Eigen::VectorXd b_e;
         // Eigen::VectorXd Pk_e;
-
-
-        Eigen::MatrixXd ATA_;
-        Eigen::VectorXd Pk_;
-        Eigen::VectorXd bPk_;
-        Eigen::VectorXd ATbPk_;
-
 
         //FISTA related optimization variables
         Eigen::VectorXd y_k;

@@ -11,10 +11,11 @@ namespace function
 class ProblemData 
     {
     public:
+        ProblemData();
+
         ProblemData(std::shared_ptr<Eigen::MatrixXd> Q, std::shared_ptr<Eigen::VectorXd> q,
                     std::shared_ptr<Eigen::MatrixXd> A, std::shared_ptr<Eigen::VectorXd> b,
-                    std::shared_ptr<Eigen::VectorXd> P_k, std::shared_ptr<int> n,
-                    std::shared_ptr<double> rho);
+                    std::shared_ptr<Eigen::VectorXd> P_k, int n, double rho);
 
         ProblemData(Eigen::MatrixXd Q, Eigen::VectorXd q,
                     Eigen::MatrixXd A, Eigen::VectorXd b, 
@@ -37,12 +38,21 @@ class ProblemData
         /**
          * The following data should be moved to private with getters and setters
          */
-    
+        std::shared_ptr<Eigen::MatrixXd> Q_;
+        std::shared_ptr<Eigen::VectorXd> q_;
+        std::shared_ptr<Eigen::MatrixXd> A_;
+        std::shared_ptr<Eigen::MatrixXd> ATA_;
+        std::shared_ptr<Eigen::VectorXd> b_;
+        std::shared_ptr<Eigen::VectorXd> Pk_;
+        std::shared_ptr<Eigen::VectorXd> bPk_;
+
+        std::shared_ptr<Eigen::VectorXd> ATbPk_;
+
+        double rho_;
+        int n_;
+        //Temporary PyBind variables to get around Eigen::Ref issues
         Eigen::VectorXd lb_;
         Eigen::VectorXd ub_;
-        double rho_e;
-        int n_e;
-        //Temporary PyBind variables to get around Eigen::Ref issues
         Eigen::MatrixXd Q_e;
         Eigen::VectorXd q_e;
         Eigen::MatrixXd A_e;

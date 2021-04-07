@@ -16,8 +16,10 @@ PYBIND11_MODULE(fista_py, m)
 
     //FISTA
     py::class_<solvers::FISTA> fista(m, "instance");
-    fista.def(py::init<double, double, double>());
-    fista.def("optimize", &solvers::FISTA::optimize);
+    fista.def(py::init<double, double, int, double>());
+    fista.def("optimize", &solvers::FISTA::optimize_pybind);
+    fista.def("set_data", &solvers::FISTA::set_data);
+    //fista.def("compute_obj", &solvers::FISTA::compute_obj);
 
     //Problem
      py::class_<ProblemData> problem_data(m, "data");

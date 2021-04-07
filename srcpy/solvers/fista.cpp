@@ -14,7 +14,7 @@ PYBIND11_MODULE(fista_py, m)
     //FISTA
     py::class_<solvers::FISTA> fista(m, "Fista instance");
     fista.def(py::init<double, double, double>());
-    //fista.def("optimize", &solvers::FISTA::optimize);
+    fista.def("optimize", &solvers::FISTA::optimize);
 
     //Problem
     // py::class_<ProblemData> problem_data(m, "Problem Data");

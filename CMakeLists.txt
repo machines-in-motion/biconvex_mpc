@@ -51,11 +51,5 @@ install(TARGETS test_fista DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 #)
 
 # # cmake-format: on
-<<<<<<< HEAD
-target_link_libraries(${PROJECT_NAME}_cpp PRIVATE ${PROJECT_NAME})
-target_link_libraries(${PROJECT_NAME}_cpp PRIVATE pybind11::module)
-install(TARGETS ${PROJECT_NAME}_cpp DESTINATION $python_path)
-=======
 # target_link_libraries(${PROJECT_NAME}_cpp PRIVATE pybind11::module)
 # target_link_libraries(${PROJECT_NAME}_cpp PRIVATE ${PROJECT_NAME})
->>>>>>> 38f448c651d8f0658e4ceb83fa0b956331559bfb

@@ -6,6 +6,7 @@ namespace solvers
 {
     FISTA::FISTA(double L0, double beta, double tolerance) : l0_(L0), beta_(beta), tolerance_(tolerance){
         std::cout << "Setting up FISTA solver" << std::endl;
+        std::cout << "l0: " << l0_ << " beta:" << beta_ << " tolerance:" << tolerance_ << std::endl;
     }
 
     void FISTA::compute_step_length(std::shared_ptr<function::ProblemData> problem) {

@@ -17,7 +17,8 @@ PYBIND11_MODULE(fista_py, m)
     //fista.def("optimize", &solvers::FISTA::optimize);
 
     //Problem
-//    py::class_<ProblemData> problem_data(m, "Problem Data");
-//    problem_data.def(py::init<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXd, Eigen::VectorXd>());
-//    problem_data.def("compute_obj", &function::ProblemData::compute_obj);
+    // py::class_<ProblemData> problem_data(m, "Problem Data");
+    // problem_data.def(py::init<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXd, Eigen::VectorXd>());
+    // problem_data.def("compute_obj", &function::ProblemData::compute_obj);
 }
+

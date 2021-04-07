@@ -12,9 +12,9 @@ PYBIND11_MODULE(fista_py, m)
     m.doc() = "FISTA (first order shrinkage method)";
 
     //FISTA
-    py::class_<solvers::FISTA> fista(m, "Fista instance");
+    py::class_<solvers::FISTA> fista(m, "instance");
     fista.def(py::init<double, double, double>());
-    //fista.def("optimize", &solvers::FISTA::optimize);
+    fista.def("optimize", &solvers::FISTA::optimize);
 
     //Problem
     // py::class_<ProblemData> problem_data(m, "Problem Data");

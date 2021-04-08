@@ -11,16 +11,10 @@ class FISTA
         FISTA(double L0, double beta, int max_iters, double tolerance = 0.00001);
 
         //Optimize function
-        void optimize(std::shared_ptr<function::ProblemData> prob_data);
-
-        //Optimize function
-        void optimize_pybind();
+        Eigen::VectorXd optimize(const Eigen::VectorXd& x);
 
         //Compute Step Length
-        void compute_step_length(std::shared_ptr<function::ProblemData> problem);
-
-        //Compute Step Length
-        void compute_step_length_pybind();
+        void compute_step_length();
 
         //Set data in ProblemData
         void set_data(Eigen::MatrixXd Q, Eigen::VectorXd q, Eigen::MatrixXd A, Eigen::VectorXd b,
@@ -44,9 +38,14 @@ class FISTA
 
         //Solver parameters
         double l0_;
+        double L;
         double tolerance_;
         double beta_;
         int max_iters_;
+
+        double t_k;
+        double t_k_1;        
+
     };
 } //namespace solvers
 

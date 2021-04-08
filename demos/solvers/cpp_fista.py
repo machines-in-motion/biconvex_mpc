@@ -24,16 +24,43 @@ q_f = mp.q_F
 n = len(F_opt)
 P_k = np.ones(A_x.shape[0])[:,None]
 
-## creating C++ class
-prob = fista_py.data(Q_f, q_f, A_x, b_x, P_k, n, 1e+5)
+F_low = mp.F_low
+F_high = mp.F_high
+X_low = mp.X_low
+X_high = mp.X_high
 
-Fista = fista_py.instance()
+L0 = 150.0
+beta = 1.5
+max_iters = int(150)
+rho = 1e5
 
-st = time.time()
-obj = prob.compute_obj(F_opt)
-# obj_2 = prob.compute_obj_2(F_opt)
-grad = prob.compute_grad(F_opt)
-et = time.time()
-# print(1e3*(et - st))
 
-print(obj)
+F_test = np.random.rand(F_opt.shape[0])[:,None]
+
+
+solver = fista_py.instance(L0, beta, max_iters, 1e-5)
+solver.set_data(Q_f, q_f, A_x, b_x, P_k, F_low, F_high, rho, n)
+F_c = solver.optimize(F_test)
+
+# ## creating C++ class
+obj_f = lambda f : f.T *Q_f*f + q_f.T*f + rho *np.linalg.norm(A_x*f - b_x + P_k)**2    
+grad_obj_f = lambda f: 2*Q_f*f + q_f + 2.0*rho*A_x.T*(A_x*f - b_x + P_k)
+grad_py = grad_obj_f(F_test)
+obj_py = obj_f(F_test)
+proj_f = lambda f, L : np.clip(f, F_low, F_high)
+
+# mp.fista.L0 = L0
+F_k_1 = mp.fista.optimize(obj_f, grad_obj_f, proj_f, F_test, max_iters, 1e-5)
+print(np.linalg.norm(F_c[:,None] - F_k_1))
+
+# prob = fista_py.data(Q_f, q_f, A_x, b_x, P_k, n, rho)
+
+# st = time.time()
+# obj = prob.compute_obj(F_test)
+# grad = prob.compute_grad(F_test)
+# et = time.time()
+# # print(1e3*(et - st))
+
+# print(float(obj_py) - obj)
+
+# print("diff", np.linalg.norm(grad[:,None] - grad_py), grad[:,None].shape, grad_py.shape)

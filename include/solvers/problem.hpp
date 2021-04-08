@@ -53,9 +53,8 @@ class ProblemData
         double obj = 0;
         //Temporary PyBind variables to get around Eigen::Ref issues
         Eigen::VectorXd lb_;
-        Eigen::VectorXd tmp;
-
         Eigen::VectorXd ub_;
+
         Eigen::MatrixXd Q_e;
         Eigen::VectorXd q_e;
         Eigen::MatrixXd A_e;
@@ -63,21 +62,19 @@ class ProblemData
         Eigen::VectorXd Pk_e;
         Eigen::VectorXd bPk_;
         Eigen::VectorXd ATbPk_e;
-
+        
         Eigen::SparseMatrix<double> Q_sp;
         Eigen::SparseMatrix<double> ATA_sp;
-        Eigen::SparseMatrix<double> ATbPk_sp;
-
-        // Eigen::VectorXd q_e;
         Eigen::SparseMatrix<double> A_sp;
-        // Eigen::VectorXd b_e;
-        // Eigen::VectorXd Pk_e;
 
         //FISTA related optimization variables
         Eigen::VectorXd y_k;
         Eigen::VectorXd y_k_1;
         Eigen::VectorXd x_k;
         Eigen::VectorXd x_k_1;
+        Eigen::VectorXd y_diff;
+        
+        
         double G_k_norm;
     };
 } //namespace function

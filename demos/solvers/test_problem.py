@@ -10,7 +10,7 @@ from py_biconvex_mpc.motion_planner.biconvex import BiConvexMP
 from robot_properties_solo.config import Solo12Config
 from py_biconvex_mpc.ik.inverse_kinematics import InverseKinematics
 
-from py_biconvex_mpc.bullet_utils.solo_env import Solo12Env
+#from py_biconvex_mpc.bullet_utils.solo_env import Solo12Env
 
 robot = Solo12Config.buildRobotWrapper()
 n_eff = 4

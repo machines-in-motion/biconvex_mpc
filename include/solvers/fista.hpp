@@ -39,6 +39,7 @@ class FISTA
         //Solver parameters
         double l0_;
         double L;
+        double L_inv;
         double tolerance_;
         double beta_;
         int max_iters_;

@@ -11,7 +11,7 @@ from robot_properties_solo.config import Solo12Config
 from py_biconvex_mpc.ik.inverse_kinematics import InverseKinematics
 
 from cnt_plan_utils import SoloCntGen
-from py_biconvex_mpc.bullet_utils.solo_env import Solo12Env
+#from py_biconvex_mpc.bullet_utils.solo_env import Solo12Env
 
 robot = Solo12Config.buildRobotWrapper()
 n_eff = 4
@@ -67,7 +67,7 @@ fy_max = 20
 fz_max = 20
 
 # optimization
-solve = False
+solve = True
 if solve:
     mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
     mp.create_contact_array(cnt_plan)

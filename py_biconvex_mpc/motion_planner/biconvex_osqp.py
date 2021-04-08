@@ -162,19 +162,22 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             A_x, b_x = self.compute_X_mat(X_k, self.r_arr, self.cnt_arr)
             A_x_ineq = np.identity(A_x.shape[1])
 
-            A_sparse = csc_matrix(np.vstack([A_x, A_x_ineq]))
-            Q_sparse = csc_matrix(np.matrix(self.Q_F))
+            AtA = self.rho*(A_x.T)*A_x
+            z_x = b_x + P_k
 
-            lb = np.hstack([np.asarray(b_x.T)[0,:], -np.inf*np.ones(A_x.shape[1])])
-            #lb = self.F_low[0:A_sparse.shape[0]]
-            ub = np.hstack([np.asarray(b_x.T)[0,:], np.inf*np.ones(A_x.shape[1])])
-            #ub = self.F_high[0:A_sparse.shape[0]]
-            print(A_sparse.shape)
-            print(lb.shape)
+            A_sparse = csc_matrix(A_x_ineq)
+            Q_sparse = csc_matrix(np.matrix(self.Q_F + 2*AtA))
+            #self.q_F -= 2*A_x.T*z_x
+
+            #lb = np.hstack([np.asarray(b_x.T)[0,:], -np.inf*np.ones(A_x.shape[1])])
+            lb = self.F_low[0:A_sparse.shape[0]]
+            #ub = np.hstack([np.asarray(b_x.T)[0,:], np.inf*np.ones(A_x.shape[1])])
+            ub = self.F_high[0:A_sparse.shape[0]]
 
             solver = osqp.OSQP()
-            solver.setup(Q_sparse, self.q_F, A_sparse, lb, ub, verbose=True, eps_abs=1e-5, eps_rel=1e-5, eps_prim_inf=1e-5, eps_dual_inf=1e-5,
-            check_termination = 10, max_iter = 10000)
+            solver.setup(Q_sparse, self.q_F - 2*self.rho*A_x.T*z_x, A_sparse, lb, ub, verbose=True,
+                         eps_abs=1e-5, eps_rel=1e-5, eps_prim_inf=1e-5, eps_dual_inf=1e-5,
+                         check_termination = 5, max_iter = 10000)
             result = solver.solve()
             print(result.x)
 

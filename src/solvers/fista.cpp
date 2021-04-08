@@ -24,6 +24,7 @@ namespace solvers
         prob_data_.compute_grad_obj(prob_data_.y_k);
         while (1) {
             prob_data_.y_k_1 = (prob_data_.y_k - prob_data_.gradient/L).cwiseMin(prob_data_.ub_).cwiseMax(prob_data_.lb_);
+            //prob_data_.euclidean_projection(L);
             prob_data_.y_diff = (prob_data_.y_k_1 - prob_data_.y_k); // proximal gradient
             prob_data_.G_k_norm = prob_data_.y_diff.norm(); // proximal gradient norm
 //            prob_data_.G_k_norm_inf_max = prob_data_.y_diff.maxCoeff();
@@ -50,7 +51,6 @@ namespace solvers
 
             t_k_1 = 1.0 + sqrt(1 + 4*std::pow(t_k,2))/2.0;
             prob_data_.y_k_1 = prob_data_.x_k_1 + ((t_k-1)/t_k_1)*(prob_data_.x_k_1 - prob_data_.x_k);
-
             prob_data_.x_k = prob_data_.x_k_1;
             prob_data_.y_k = prob_data_.y_k_1;
 

@@ -56,4 +56,16 @@ namespace function
         //return grad;
     }
 
+//    void ProblemData::euclidean_projection(double L) {
+//        y_k_1 = (y_k - gradient/L);
+//        for (int i=0;i<n_; ++i) {
+//            if (y_k_1[i] < lb_[i]) {
+//                y_k_1[i] = lb_[i];
+//            }
+//            else if (y_k_1[i] > ub_[i]) {
+//                y_k_1[i] = ub_[i];
+//            }
+//        }
+//    }
+
 } //namespace fista

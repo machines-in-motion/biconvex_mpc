@@ -35,6 +35,8 @@ class ProblemData
 
         void set_bounds(Eigen::VectorXd lb, Eigen::VectorXd ub) {lb_ = lb; ub_ = ub;}
 
+        void euclidean_projection(double L);
+
         /**
          * The following data should be moved to private with getters and setters
          */

@@ -23,7 +23,6 @@ class ProblemData
 
         //Compute cost function for given x
         double compute_obj(const Eigen::VectorXd& x);
-        double compute_obj_2(const Eigen::VectorXd& x);
 
         //Compute cost function for given x. Temp. functionality for pybind testing
         double compute_obj_pybind(const Eigen::VectorXd& x);
@@ -51,8 +50,11 @@ class ProblemData
 
         double rho_;
         int n_;
+        double obj = 0;
         //Temporary PyBind variables to get around Eigen::Ref issues
         Eigen::VectorXd lb_;
+        Eigen::VectorXd tmp;
+
         Eigen::VectorXd ub_;
         Eigen::MatrixXd Q_e;
         Eigen::VectorXd q_e;
@@ -60,9 +62,12 @@ class ProblemData
         Eigen::VectorXd b_e;
         Eigen::VectorXd Pk_e;
         Eigen::VectorXd bPk_;
-
+        Eigen::VectorXd ATbPk_e;
 
         Eigen::SparseMatrix<double> Q_sp;
+        Eigen::SparseMatrix<double> ATA_sp;
+        Eigen::SparseMatrix<double> ATbPk_sp;
+
         // Eigen::VectorXd q_e;
         Eigen::SparseMatrix<double> A_sp;
         // Eigen::VectorXd b_e;

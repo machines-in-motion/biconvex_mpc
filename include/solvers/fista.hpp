@@ -24,7 +24,7 @@ class FISTA
 
         //Set data in ProblemData
         void set_data(Eigen::MatrixXd Q, Eigen::VectorXd q, Eigen::MatrixXd A, Eigen::VectorXd b,
-                      Eigen::VectorXd ub, Eigen::VectorXd lb, double rho, int n);
+                      Eigen::VectorXd P_k, Eigen::VectorXd ub, Eigen::VectorXd lb, double rho, int n);
 
         //Resets parameters
         void reset();

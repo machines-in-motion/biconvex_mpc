@@ -27,9 +27,12 @@ P_k = np.ones(A_x.shape[0])[:,None]
 ## creating C++ class
 prob = fista_py.data(Q_f, q_f, A_x, b_x, P_k, n, 1e+5)
 
+Fista = fista_py.instance()
+
 st = time.time()
 obj = prob.compute_obj(F_opt)
-obj = prob.compute_obj_2(F_opt)
+# obj_2 = prob.compute_obj_2(F_opt)
+grad = prob.compute_grad(F_opt)
 et = time.time()
 # print(1e3*(et - st))
 

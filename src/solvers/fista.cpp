@@ -86,11 +86,15 @@ namespace solvers
     }
 
     void FISTA::set_data(Eigen::MatrixXd Q, Eigen::VectorXd q, Eigen::MatrixXd A, Eigen::VectorXd b,
-                         Eigen::VectorXd ub, Eigen::VectorXd lb, double rho, int n) {
-        prob_data_.Q_e = Q;
-        prob_data_.q_e = q;
-        prob_data_.A_e = A;
-        prob_data_.b_e = b;
+                         Eigen::VectorXd P_k,Eigen::VectorXd ub, Eigen::VectorXd lb, double rho, int n) {
+        // prob_data_.Q_e = Q;
+        // prob_data_.q_e = q;
+        // prob_data_.A_e = A;
+        // prob_data_.b_e = b;
+
+        // prob_data_.Pk_e = b;
+
+        prob_data_(Q, q, A, b, P_k, n, rho);
 
         std::cout << "Q: " << std::endl << prob_data_.Q_e << std::endl;
         std::cout << "b: " << std::endl << prob_data_.b_e << std::endl;

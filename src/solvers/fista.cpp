@@ -49,16 +49,17 @@ namespace solvers
              
             t_k_1 = 1.0 + sqrt(1 + 4*t_k*t_k)/2.0;
             prob_data_.y_k_1 = prob_data_.x_k_1 + ((t_k-1)/t_k_1)*(prob_data_.x_k_1 - prob_data_.x_k);
-            auto t1 = high_resolution_clock::now();
-            // std::swap(prob_data_.x_k, prob_data_.x_k_1);
-            // std::swap(prob_data_.y_k, prob_data_.y_k_1);
-            prob_data_.x_k = prob_data_.x_k_1;
-            prob_data_.y_k = prob_data_.y_k_1;
+            //auto t1 = high_resolution_clock::now();
 
-            auto t2  = high_resolution_clock::now();
-            duration<double, std::milli> ms_double = t2 - t1;
-            std::cout << "step_length " << ms_double.count() << "ms" << std::endl;
-            std::cout << "L " << L << std::endl;
+            //prob_data_.x_k = prob_data_.x_k_1;
+            prob_data_.x_k.swap(prob_data_.x_k_1);
+            //prob_data_.y_k = prob_data_.y_k_1;
+            prob_data_.y_k.swap(prob_data_.y_k_1);
+
+//            auto t2  = high_resolution_clock::now();
+//            duration<double, std::milli> ms_double = t2 - t1;
+//            std::cout << "step_length " << ms_double.count() << "ms" << std::endl;
+//            std::cout << "L " << L << std::endl;
             
             t_k = t_k_1;
 

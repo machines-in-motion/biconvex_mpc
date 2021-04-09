@@ -12,7 +12,7 @@ from py_biconvex_mpc.ik.inverse_kinematics import InverseKinematics
 from py_biconvex_mpc.ik_utils.gait_generator import GaitGenerator
 
 from cnt_plan_utils import SoloCntGen
-from py_biconvex_mpc.bullet_utils.solo_env import Solo12Env
+#from py_biconvex_mpc.bullet_utils.solo_env import Solo12Env
 
 
 robot = Solo12Config.buildRobotWrapper()

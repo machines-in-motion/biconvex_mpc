@@ -124,6 +124,18 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         self.Q_F = np.matrix(self.Q_F)
         self.q_F = np.matrix(self.q_F)
 
+    def friction_proj(self, f, L, mu):
+        for i in range(0, len(f), 3):
+            norm = np.linalg.norm(f[i:i+2])
+            s = f[i+2].copy()
+            if mu*s < norm and norm < -s/mu:
+                f[i:i+3] = 0
+            elif norm > min(abs(s/mu),abs(mu*s)):
+                f[i:i+2] *= ((mu**2)*norm + mu*s)/((mu**2 + 1)*norm)
+                f[i+2] = (mu*norm + s)/(mu**2 + 1)
+        
+        return f
+
     def optimize(self, X_init, no_iters, X_wm = None, F_wm = None, P_wm = None):
         '''
         This function optimizes the centroidal dynamics trajectory
@@ -161,8 +173,8 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
 
         for k in range(no_iters):
             print("iter number {}".format(k), end='\n')
-            maxit = int(self.maxit/(k//10 + 1))
-
+            # maxit = int(self.maxit/(k//10 + 1))
+            maxit = self.maxit
             if k > 0 or not isinstance(F_wm, np.ndarray):
                 self.fista.reset()
                 # optimizing for f
@@ -174,8 +186,9 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
                 # gradient of the objective function that optimizes for f 
                 grad_obj_f = lambda f: 2*self.Q_F*f + self.q_F + 2.0*self.rho*A_x.T*(A_x*f - b_x + P_k)
                 # projection of f into constraint space (friction cone and max f)
-                proj_f = lambda f, L : np.clip(f, self.F_low, self.F_high)
-
+                # proj_f = lambda f, L : np.clip(f, self.F_low, self.F_high)
+                proj_f = lambda f, L : self.friction_proj(f,L, 0.1)
+                
                 F_k_1 = self.fista.optimize(obj_f, grad_obj_f, proj_f, F_k, maxit, self.tol)
                 print("finished f", et - st, self.fista.k, maxit)
                 # self.fista.stats()

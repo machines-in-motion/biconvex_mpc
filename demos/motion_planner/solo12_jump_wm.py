@@ -80,7 +80,7 @@ if solve:
     et = time.time()
     print("net time:", et - st)
     X_opt, P_opt = mp.get_optimal_x_p()
-    # mp.stats()
+    mp.stats()
 
     np.savez("./dat_file/mom_wm", X_opt = X_opt, F_opt = F_opt, P_opt = P_opt)
     np.savez("./dat_file/mom", com_opt = com_opt, mom_opt = mom_opt, F_opt = F_opt)

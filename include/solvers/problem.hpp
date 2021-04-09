@@ -57,6 +57,9 @@ class ProblemData
         Eigen::VectorXd lb_;
         Eigen::VectorXd ub_;
 
+
+        Eigen::VectorXd tmp;
+
         Eigen::MatrixXd Q_e;
         Eigen::VectorXd q_e;
         Eigen::MatrixXd A_e;

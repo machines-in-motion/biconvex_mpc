@@ -67,14 +67,14 @@ if solve:
     mp.create_cost_X(W_X, W_X_ter, X_ter, X_nom)
     mp.create_cost_F(W_F)
     st = time.time()
-    com_opt, F_opt, mom_opt = mp.optimize(X_init, 2)
+    com_opt, F_opt, mom_opt = mp.optimize(X_init, 50)
     X_opt, P_opt = mp.get_optimal_x_p()
 
     # print(F_opt[2::3])
     et = time.time()
     print("time", et - st)
 
-    # mp.stats()
+    mp.stats()
 
     np.savez("./dat_file/mom_wm", X_opt = X_opt, F_opt = F_opt, P_opt = P_opt)
 

@@ -71,6 +71,9 @@ class ProblemData
         Eigen::SparseMatrix<double> Q_sp;
         Eigen::SparseMatrix<double> ATA_sp;
         Eigen::SparseMatrix<double> A_sp;
+        Eigen::SparseMatrix<double> ATbPk_sp;
+        Eigen::SparseMatrix<double> x_2;
+        Eigen::SparseMatrix<double> gradient2; 
 
         //FISTA related optimization variables
         Eigen::VectorXd y_k;
@@ -78,7 +81,8 @@ class ProblemData
         Eigen::VectorXd x_k;
         Eigen::VectorXd x_k_1;
         Eigen::VectorXd y_diff;
-        Eigen::VectorXd gradient;
+        Eigen::VectorXd gradient; 
+
         double prev_obj;
         double G_k_norm;
         double G_k_norm_inf_max = 0.0;

@@ -34,6 +34,7 @@ namespace function
         ATbPk_e = 2.0*rho_*(A_sp).transpose()*(-b_e + Pk_e) + q_e;
         bPk_ = -b_e + Pk_e;
 
+        // ATbPk_sp = ATbPk_e.sparseView();
         // auto t2  = high_resolution_clock::now();
         // duration<double, std::milli> ms_double = t2 - t1;
         //std::cout << "matrix creation " << ms_double.count() << "ms" << std::endl;
@@ -53,19 +54,19 @@ namespace function
     }
 
     void ProblemData::compute_grad_obj(const Eigen::VectorXd& x) {
-        auto t1 = high_resolution_clock::now();
+        // auto t1 = high_resolution_clock::now();
         gradient = ATA_sp*x + ATbPk_e;
-        auto t2  = high_resolution_clock::now();
-        duration<double, std::milli> ms_double = t2 - t1;
-        std::cout << "grad_obj " <<  ms_double.count() << "ms" << std::endl;
+        // auto t2  = high_resolution_clock::now();
+        // duration<double, std::milli> ms_double = t2 - t1;
+        // std::cout << "grad_obj " <<  ms_double.count() << "ms" << std::endl;
 
-        auto ATbPk_e_sp = ATbPk_e.sparseView();
-        auto t1_sp = high_resolution_clock::now();
-        auto x_2 = x.sparseView();
-        auto gradient2 = ATA_sp*x_2 + ATbPk_e_sp;
-        auto t2_sp  = high_resolution_clock::now();
-        duration<double, std::milli> ms_double_sp = t2_sp - t1_sp;
-        std::cout << "grad_obj with sparse matrices " <<  ms_double_sp.count() << "ms" << std::endl;
+        // x_2 = x.sparseView();
+        // auto t1_sp = high_resolution_clock::now();
+        // gradient2 = ATA_sp*x_2 + ATbPk_sp;
+        // auto t2_sp  = high_resolution_clock::now();
+        // duration<double, std::milli> ms_double_sp = t2_sp - t1_sp;
+        // std::cout << "grad_obj with sparse matrices " <<  ms_double_sp.count() << "ms" << std::endl;
+        // gradient = Eigen::VectorXd(gradient2);
         //return grad;
     }
 

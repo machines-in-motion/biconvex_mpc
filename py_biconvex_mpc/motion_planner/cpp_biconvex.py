@@ -6,6 +6,8 @@ import time
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy import sparse
+from ..solvers.fista import FISTA
+
 
 from .. dynamics.centroidal import CentroidalDynamics
 import fista_py
@@ -43,8 +45,8 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         # and passed to centroidal dynamics
         CentroidalDynamics.__init__(self, m, dt, T, n_eff)
         BiConvexCosts.__init__(self, self.n_col, self.dt, T)
-
-        self.fista = fista_py.instance(self.L0, self.beta, maxit,self.rho)
+        
+        self.fista_py = FISTA(L0, beta)
 
         # arrays to store statistics
         self.f_all = [] # history of cost of force optimization
@@ -177,14 +179,52 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             print("iter number {}".format(k), end='\n')
             # maxit = int(self.maxit/(k//10 + 1))
             maxit = self.maxit
+            self.fista = fista_py.instance(self.L0, self.beta, maxit, self.tol)
+
             if k > 0 or not isinstance(F_wm, np.ndarray):
                 # optimizing for f
                 st = time.time()
                 A_x, b_x = self.compute_X_mat(X_k, self.r_arr, self.cnt_arr)
                 et = time.time()
                 
+                # for checking 
+                self.fista_py.reset()
+
+                obj_f = lambda f : f.T *self.Q_F*f + self.q_F.T*f + self.rho*np.linalg.norm(A_x*f - b_x + P_k)**2    
+                # gradient of the objective function that optimizes for f 
+                grad_obj_f = lambda f: 2*self.Q_F*f + self.q_F + 2.0*self.rho*A_x.T*(A_x*f - b_x + P_k)
+                # projection of f into constraint space (friction cone and max f)
+                proj_f = lambda f, L : np.clip(f, self.F_low, self.F_high)
+                
+                F_py = self.fista_py.optimize(obj_f, grad_obj_f, proj_f, F_k, maxit, self.tol)
+                print("iters py", self.fista_py.k)
+
+                prob = fista_py.data(self.Q_F, self.q_F, A_x, b_x, P_k, maxit, self.rho)
+                obj = prob.compute_obj(F_k)
+                grad = prob.compute_grad(F_k)
+                print("Norm - F", np.linalg.norm(obj - obj_f(F_k)))
+                print("Norm - F", np.linalg.norm(grad[:,None] - grad_obj_f(F_k)))
+
                 self.fista.set_data(self.Q_F, self.q_F, A_x, b_x, P_k, self.F_low, self.F_high, self.rho, maxit)
-                F_k_1 = self.fista.optimize(F_k)
+                F_k_1 = self.fista.optimize(F_k)[:,None]
+
+                print("Norm - F", np.linalg.norm(F_py - F_k_1))
+
+                # fig, ax_f = plt.subplots(self.n_eff,1)
+                # for n in range(self.n_eff):
+                #     ax_f[n].plot(F_k_1[3*n::3*self.n_eff], "x",label = "ee: " + str(n) + "Fx")
+                #     ax_f[n].plot(F_k_1[3*n+1::3*self.n_eff], "x", label = "ee: " + str(n) + "Fy")
+                #     ax_f[n].plot(F_k_1[3*n+2::3*self.n_eff], "x", label = "ee: " + str(n) + "Fz")
+
+                #     ax_f[n].plot(F_py[3*n::3*self.n_eff], label = "old_ee: " + str(n) + "Fx")
+                #     ax_f[n].plot(F_py[3*n+1::3*self.n_eff], label = "old_ee: " + str(n) + "Fy")
+                #     ax_f[n].plot(F_py[3*n+2::3*self.n_eff], label = "old_ee: " + str(n) + "Fz")
+
+                #     ax_f[n].grid()
+                #     ax_f[n].legend()
+
+                # plt.show()
+                assert False
                 # print("finished f", et - st, self.fista.k, maxit)
                 # self.fista.stats()
             else:
@@ -198,13 +238,24 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             et = time.time()
     
             self.fista.set_data(self.Q_X, self.q_X, A_f, b_f, P_k, self.X_low, self.X_high, self.rho, maxit)
-            X_k_1 = self.fista.optimize(X_k)
+            X_k_1 = self.fista.optimize(X_k)[:,None]
+
+            # for checking
+            self.fista_py.reset()
+            obj_x = lambda x : x.T *self.Q_X*x + self.q_X.T*x + self.rho*np.linalg.norm(A_f*x - b_f + P_k)**2    
+            # gradient of the objective function that optimizes for f 
+            grad_obj_x = lambda x: 2.0*self.Q_X*x + self.q_X + 2.0*self.rho*A_f.T*(A_f*x - b_f + P_k)
+            # projection of f into constraint space (friction cone and max f)
+            proj_x = lambda x, L : np.clip(x, self.X_low, self.X_high)
+            
+            X_py = self.fista_py.optimize(obj_x, grad_obj_x, proj_x, X_k, maxit, self.tol)
+            print("Norm - X", np.linalg.norm(X_py - X_k_1))
+
             # print("finished x", et - st, self.fista.k, maxit)
             # self.fista.stats()
 
             # update of P_k
-            print(P_k.shape, b_f.shape, (A_f*X_k_1)[:,None].shape)
-            P_k_1 = P_k + ((A_f*X_k_1)[:,None] - b_f)
+            P_k_1 = P_k + ((A_f*X_k_1) - b_f)
 
             # preparing for next iteration
             self.X_opt_old = X_wm
@@ -216,7 +267,7 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             
             # computing cost of total optimization problem
             dyn_violation = np.linalg.norm(A_f*X_k - b_f)
-            print("dyn_violation", dyn_violation)
+            # print("dyn_violation", dyn_violation)
             cost_x = X_k.T *self.Q_X*X_k + self.q_X.T*X_k + dyn_violation
             cost_f = F_k.T *self.Q_F*F_k + self.q_F.T*F_k + dyn_violation
 

@@ -28,7 +28,7 @@ class ProblemData
         double compute_obj_pybind(const Eigen::VectorXd& x);
 
         //Compute gradient of cost function for a given x
-        void compute_grad_obj(const Eigen::VectorXd& x);
+        Eigen::VectorXd compute_grad_obj(const Eigen::VectorXd& x);
 
         //Compute gradient of objective function for a given x. Temp. functionality for pybind testing
         Eigen::VectorXd compute_grad_obj_pybind(const Eigen::VectorXd& x);

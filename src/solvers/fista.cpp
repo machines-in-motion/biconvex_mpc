@@ -12,15 +12,15 @@ namespace solvers
 {
     FISTA::FISTA(double L0, double beta, int max_iters, double tolerance):
     l0_(L0), beta_(beta), max_iters_(max_iters), tolerance_(tolerance){
-        // std::cout << "Setting up FISTA solver with settings: " << std::endl;
-        // std::cout << "l0: " << l0_ << " beta:" << beta_ << " max. iterations: " << max_iters_ <<
-        // " tolerance:" << tolerance_ << std::endl;
+        std::cout << "Setting up FISTA solver with settings: " << std::endl;
+        std::cout << "l0: " << l0_ << " beta:" << beta_ << " max. iterations: " << max_iters_ <<
+        " tolerance:" << tolerance_ << std::endl;
 
         L = l0_;
     }
 
     void FISTA::compute_step_length() {
-        prob_data_.compute_grad_obj(prob_data_.y_k);
+        prob_data_.gradient = prob_data_.compute_grad_obj(prob_data_.y_k);
         while (1) {
             prob_data_.y_k_1 = (prob_data_.y_k - prob_data_.gradient/L).cwiseMin(prob_data_.ub_).cwiseMax(prob_data_.lb_);
             prob_data_.y_diff = (prob_data_.y_k_1 - prob_data_.y_k); // proximal gradient
@@ -46,23 +46,20 @@ namespace solvers
         for (int i=0; i<max_iters_; ++i) {
             compute_step_length();
             
-             
             t_k_1 = 1.0 + sqrt(1 + 4*t_k*t_k)/2.0;
             prob_data_.y_k_1 = prob_data_.x_k_1 + ((t_k-1)/t_k_1)*(prob_data_.x_k_1 - prob_data_.x_k);
             //auto t1 = high_resolution_clock::now();
 
-            //prob_data_.x_k = prob_data_.x_k_1;
-            prob_data_.x_k.swap(prob_data_.x_k_1);
-            //prob_data_.y_k = prob_data_.y_k_1;
-            prob_data_.y_k.swap(prob_data_.y_k_1);
-
+            prob_data_.x_k = prob_data_.x_k_1;
+            // prob_data_.x_k.swap(prob_data_.x_k_1);
+            prob_data_.y_k = prob_data_.y_k_1;
+            // prob_data_.y_k.swap(prob_data_.y_k_1);
 //            auto t2  = high_resolution_clock::now();
 //            duration<double, std::milli> ms_double = t2 - t1;
 //            std::cout << "step_length " << ms_double.count() << "ms" << std::endl;
 //            std::cout << "L " << L << std::endl;
             
             t_k = t_k_1;
-
             if(prob_data_.G_k_norm < tolerance_) {
                 auto t2  = high_resolution_clock::now();
                 duration<double, std::milli> ms_double = t2 - t1;

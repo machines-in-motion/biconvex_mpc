@@ -18,20 +18,22 @@ namespace function
             : Q_e(Q), q_e(q), A_e(A), b_e(b), Pk_e(P_k), n_(n), rho_(rho){
         // std::cout << "Setting up problem data with copied data" << std::endl;
 
+        // auto t1 = high_resolution_clock::now();
+
         Q_sp = Q_e.sparseView();
         A_sp = A_e.sparseView();
 
-        // auto t1 = high_resolution_clock::now();
-
+        
         ATA_sp = 2*(Q_sp + rho_*(A_sp).transpose()*(A_sp));
-        ATbPk_e = 2.0*rho_*(A_sp).transpose()*(-b_e + Pk_e) + q_e;
         bPk_ = -b_e + Pk_e;
+        ATbPk_e = 2.0*rho_*(A_sp).transpose()*(bPk_) + q_e;
+        
+        // auto t3  = high_resolution_clock::now();
+        // duration<double, std::milli> ms_double = t3 - t1;
+        // std::cout << "matrix creation " << ms_double.count() << "ms" << std::endl;
 
         // ATbPk_sp = ATbPk_e.sparseView();
-        // auto t2  = high_resolution_clock::now();
-        // duration<double, std::milli> ms_double = t2 - t1;
-        //std::cout << "matrix creation " << ms_double.count() << "ms" << std::endl;
-    }
+         }
 
     double ProblemData::compute_obj(const Eigen::VectorXd& x) {
         //auto t1 = high_resolution_clock::now();
@@ -52,5 +54,12 @@ namespace function
 
         return gradient;
     }
+
+    Eigen::VectorXd ProblemData::proj(Eigen::VectorXd& grad) {
+
+        proj_grad  = (grad).cwiseMin(ub_).cwiseMax(lb_);
+        return proj_grad;
+    }
+
 
 } //namespace fista

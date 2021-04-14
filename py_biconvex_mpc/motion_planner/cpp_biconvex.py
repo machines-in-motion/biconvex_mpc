@@ -6,7 +6,8 @@ import time
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy import sparse
-from ..solvers.fista import FISTA
+import osqp
+from scipy.sparse import csc_matrix
 
 
 from .. dynamics.centroidal import CentroidalDynamics
@@ -15,7 +16,7 @@ from . cost import BiConvexCosts
 
 class BiConvexMP(CentroidalDynamics, BiConvexCosts):
 
-    def __init__(self, m, dt, T, n_eff, rho = 1e+5, L0 = 1e2, beta = 1.5, maxit = 150, tol = 1e-5):
+    def __init__(self, m, dt, T, n_eff, rho = 1e+5, L0 = 1e+2, beta = 1.5, maxit = 150, tol = 1e-5):
         '''
         This is the Bi Convex motion planner
         Input:
@@ -46,7 +47,7 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         CentroidalDynamics.__init__(self, m, dt, T, n_eff)
         BiConvexCosts.__init__(self, self.n_col, self.dt, T)
         
-        self.fista_py = FISTA(L0, beta)
+        self.fista = fista_py.instance(self.L0, self.beta, maxit, self.tol)
 
         # arrays to store statistics
         self.f_all = [] # history of cost of force optimization
@@ -175,84 +176,74 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         
         dyn_violation = 99999
 
+        arr = 0
         for k in range(no_iters):
             print("iter number {}".format(k), end='\n')
-            # maxit = int(self.maxit/(k//10 + 1))
-            maxit = self.maxit
-            self.fista = fista_py.instance(self.L0, self.beta, maxit, self.tol)
-
+            maxit = int(self.maxit/(k//10 + 1))
+            print("Optimizing f --------------------------------")
             if k > 0 or not isinstance(F_wm, np.ndarray):
+                
                 # optimizing for f
                 st = time.time()
                 A_x, b_x = self.compute_X_mat(X_k, self.r_arr, self.cnt_arr)
                 et = time.time()
-                
-                # for checking 
-                self.fista_py.reset()
-
-                obj_f = lambda f : f.T *self.Q_F*f + self.q_F.T*f + self.rho*np.linalg.norm(A_x*f - b_x + P_k)**2    
-                # gradient of the objective function that optimizes for f 
-                grad_obj_f = lambda f: 2*self.Q_F*f + self.q_F + 2.0*self.rho*A_x.T*(A_x*f - b_x + P_k)
-                # projection of f into constraint space (friction cone and max f)
-                proj_f = lambda f, L : np.clip(f, self.F_low, self.F_high)
-                
-                F_py = self.fista_py.optimize(obj_f, grad_obj_f, proj_f, F_k, maxit, self.tol)
-                print("iters py", self.fista_py.k)
-
-                prob = fista_py.data(self.Q_F, self.q_F, A_x, b_x, P_k, maxit, self.rho)
-                obj = prob.compute_obj(F_k)
-                grad = prob.compute_grad(F_k)
-                print("Norm - F", np.linalg.norm(obj - obj_f(F_k)))
-                print("Norm - F", np.linalg.norm(grad[:,None] - grad_obj_f(F_k)))
-
+                arr += et - st
+                self.fista.set_l0(506.25)
                 self.fista.set_data(self.Q_F, self.q_F, A_x, b_x, P_k, self.F_low, self.F_high, self.rho, maxit)
                 F_k_1 = self.fista.optimize(F_k)[:,None]
 
-                print("Norm - F", np.linalg.norm(F_py - F_k_1))
+                A_x_ineq = np.identity(A_x.shape[1])
+                A_sparse = csc_matrix(A_x_ineq)
+                Q_sparse = csc_matrix(np.matrix(2*self.Q_F + 2*self.rho*(A_x.T)*A_x))
+                z_x = -b_x + P_k
 
-                # fig, ax_f = plt.subplots(self.n_eff,1)
-                # for n in range(self.n_eff):
-                #     ax_f[n].plot(F_k_1[3*n::3*self.n_eff], "x",label = "ee: " + str(n) + "Fx")
-                #     ax_f[n].plot(F_k_1[3*n+1::3*self.n_eff], "x", label = "ee: " + str(n) + "Fy")
-                #     ax_f[n].plot(F_k_1[3*n+2::3*self.n_eff], "x", label = "ee: " + str(n) + "Fz")
+                lb = self.F_low[0:A_sparse.shape[0]]
+                ub = self.F_high[0:A_sparse.shape[0]]
 
-                #     ax_f[n].plot(F_py[3*n::3*self.n_eff], label = "old_ee: " + str(n) + "Fx")
-                #     ax_f[n].plot(F_py[3*n+1::3*self.n_eff], label = "old_ee: " + str(n) + "Fy")
-                #     ax_f[n].plot(F_py[3*n+2::3*self.n_eff], label = "old_ee: " + str(n) + "Fz")
+                osqp_solver = osqp.OSQP()
+                osqp_solver.setup(Q_sparse, self.q_F + 2*self.rho*A_x.T*z_x, A_sparse, lb, ub, verbose=False,
+                             eps_abs=1e-5, eps_rel=1e-5, eps_prim_inf=1e-5, eps_dual_inf=1e-5,
+                             check_termination = 5, max_iter = 200, polish=False, scaling = 1)
+                result = osqp_solver.solve()
+                print("norm f", np.linalg.norm(result.x - F_k_1))
+                osqp_solve_time = result.info.solve_time
+                print("OSQP solve time: " + str(osqp_solve_time*1000)+"ms")
 
-                #     ax_f[n].grid()
-                #     ax_f[n].legend()
 
-                # plt.show()
-                assert False
-                # print("finished f", et - st, self.fista.k, maxit)
-                # self.fista.stats()
+
             else:
                 F_k_1 = F_k
 
             # self.fista.reset(L0_reset=1e7)
             
             # optimizing for x
+            print("Optimizing x --------------------------------")
             st = time.time()
             A_f, b_f = self.compute_F_mat(F_k_1, self.r_arr, self.cnt_arr, X_init)
             et = time.time()
-    
+            arr += et - st
+
             self.fista.set_data(self.Q_X, self.q_X, A_f, b_f, P_k, self.X_low, self.X_high, self.rho, maxit)
+            self.fista.set_l0(1e6)
             X_k_1 = self.fista.optimize(X_k)[:,None]
 
-            # for checking
-            self.fista_py.reset()
-            obj_x = lambda x : x.T *self.Q_X*x + self.q_X.T*x + self.rho*np.linalg.norm(A_f*x - b_f + P_k)**2    
-            # gradient of the objective function that optimizes for f 
-            grad_obj_x = lambda x: 2.0*self.Q_X*x + self.q_X + 2.0*self.rho*A_f.T*(A_f*x - b_f + P_k)
-            # projection of f into constraint space (friction cone and max f)
-            proj_x = lambda x, L : np.clip(x, self.X_low, self.X_high)
-            
-            X_py = self.fista_py.optimize(obj_x, grad_obj_x, proj_x, X_k, maxit, self.tol)
-            print("Norm - X", np.linalg.norm(X_py - X_k_1))
+            A_f_ineq = np.identity(A_f.shape[1])
+            A_sparse = csc_matrix(A_f_ineq)
+            Q_sparse = csc_matrix(np.matrix(2*self.Q_X + 2*self.rho*(A_f.T)*A_f))
+            z_f = -b_f + P_k
 
-            # print("finished x", et - st, self.fista.k, maxit)
-            # self.fista.stats()
+            lb = self.X_low[0:A_sparse.shape[0]]
+            ub = self.X_high[0:A_sparse.shape[0]]
+
+            osqp_solver = osqp.OSQP()
+            osqp_solver.setup(Q_sparse, self.q_X + 2*self.rho*A_f.T*z_f, A_sparse, lb, ub, verbose=False,
+                            eps_abs=1e-5, eps_rel=1e-5, eps_prim_inf=1e-5, eps_dual_inf=1e-5,
+                            check_termination = 5, max_iter = 200, polish=False, scaling = 1)
+            result = osqp_solver.solve()
+            print("norm x", np.linalg.norm(result.x - X_k_1))
+            osqp_solve_time = result.info.solve_time
+            print("OSQP solve time: " + str(osqp_solve_time*1000)+"ms")
+
 
             # update of P_k
             P_k_1 = P_k + ((A_f*X_k_1) - b_f)
@@ -295,7 +286,7 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             self.mom_opt[:,i] = self.X_opt[i+3::9].T
 
         self.mom_opt[:,0:3] = self.m*self.mom_opt[:,0:3]
-
+        print("alocation time:", arr)
         return com_opt, F_k, self.mom_opt
 
     def get_optimal_x_p(self):

@@ -13,10 +13,6 @@ class ProblemData
     public:
         ProblemData();
 
-        ProblemData(std::shared_ptr<Eigen::MatrixXd> Q, std::shared_ptr<Eigen::VectorXd> q,
-                    std::shared_ptr<Eigen::MatrixXd> A, std::shared_ptr<Eigen::VectorXd> b,
-                    std::shared_ptr<Eigen::VectorXd> P_k, int n, double rho);
-
         ProblemData(Eigen::MatrixXd Q, Eigen::VectorXd q,
                     Eigen::MatrixXd A, Eigen::VectorXd b, 
                     Eigen::VectorXd P_k, int n, double rho);
@@ -36,6 +32,9 @@ class ProblemData
         void set_bounds(Eigen::VectorXd lb, Eigen::VectorXd ub) {lb_ = lb; ub_ = ub;}
 
         void euclidean_projection(double L);
+
+        // temporary function to debug projection
+        Eigen::VectorXd proj(Eigen::VectorXd& grad);
 
         /**
          * The following data should be moved to private with getters and setters
@@ -73,7 +72,6 @@ class ProblemData
         Eigen::SparseMatrix<double> A_sp;
         Eigen::SparseMatrix<double> ATbPk_sp;
         Eigen::SparseMatrix<double> x_2;
-        Eigen::SparseMatrix<double> gradient2; 
 
         //FISTA related optimization variables
         Eigen::VectorXd y_k;
@@ -82,6 +80,8 @@ class ProblemData
         Eigen::VectorXd x_k_1;
         Eigen::VectorXd y_diff;
         Eigen::VectorXd gradient; 
+        Eigen::VectorXd proj_grad; 
+
 
         double prev_obj;
         double G_k_norm;

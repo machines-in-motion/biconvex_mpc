@@ -19,7 +19,7 @@ PYBIND11_MODULE(fista_py, m)
     fista.def(py::init<double, double, int, double>());
     fista.def("optimize", &solvers::FISTA::optimize);
     fista.def("set_data", &solvers::FISTA::set_data);
-    //fista.def("compute_obj", &solvers::FISTA::compute_obj);
+    fista.def("set_l0", &solvers::FISTA::set_l0);
 
     //Problem
      py::class_<ProblemData> problem_data(m, "data");
@@ -27,6 +27,8 @@ PYBIND11_MODULE(fista_py, m)
                                 Eigen::VectorXd, int, double>());
      problem_data.def("compute_obj", &function::ProblemData::compute_obj);
      problem_data.def("compute_grad", &function::ProblemData::compute_grad_obj);
+     problem_data.def("compute_proj", &function::ProblemData::proj);
+     problem_data.def("set_bounds", &function::ProblemData::set_bounds);
 
 }
 

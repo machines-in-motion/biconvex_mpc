@@ -41,7 +41,7 @@ install(TARGETS fista_py LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 # install(TARGETS fista_py LIBRARY DESTINATION ${python_install_dir})
 
 #Install cpp binary
-install(TARGETS test_fista DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+#install(TARGETS test_fista DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 
 #install(TARGETS fista_py
 #        DIRECTORY python/${PROJECT_NAME}

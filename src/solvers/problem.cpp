@@ -16,9 +16,6 @@ namespace function
                              Eigen::MatrixXd A, Eigen::VectorXd b, 
                              Eigen::VectorXd P_k, int n, double rho)
             : Q_e(Q), q_e(q), A_e(A), b_e(b), Pk_e(P_k), n_(n), rho_(rho){
-        // std::cout << "Setting up problem data with copied data" << std::endl;
-
-        // auto t1 = high_resolution_clock::now();
 
         Q_sp = Q_e.sparseView();
         A_sp = A_e.sparseView();
@@ -26,25 +23,14 @@ namespace function
         
         ATA_sp = 2*(Q_sp + rho_*(A_sp).transpose()*(A_sp));
         bPk_ = -b_e + Pk_e;
-        ATbPk_e = 2.0*rho_*(A_sp).transpose()*(bPk_) + q_e;
-        
-        // auto t3  = high_resolution_clock::now();
-        // duration<double, std::milli> ms_double = t3 - t1;
-        // std::cout << "matrix creation " << ms_double.count() << "ms" << std::endl;
-
-        // ATbPk_sp = ATbPk_e.sparseView();
-         }
+        ATbPk_e = 2.0*rho_*(A_sp).transpose()*(bPk_) + q_e; 
+        }
 
     double ProblemData::compute_obj(const Eigen::VectorXd& x) {
-        //auto t1 = high_resolution_clock::now();
         obj = (rho_)*((A_sp*x + bPk_).squaredNorm());
         for (unsigned i = 0 ; i < n_; ++i){
             obj += Q_e(i,i)*x(i)*x(i) + q_e(i)*x(i);
         }
-        // auto t2  = high_resolution_clock::now();
-        // duration<double, std::milli> ms_double = t2 - t1;
-        // std::cout << "obj " << ms_double.count() << "ms" << std::endl;
-        // std::cout << obj << std::endl;
         return obj;
     }
 

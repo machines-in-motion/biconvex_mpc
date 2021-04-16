@@ -16,16 +16,21 @@ find_package(Eigen3 REQUIRED)
 # TODO: Create individual directories for each sub-module (i.e. optimizer, etc.)
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/solvers/
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/motion_planner/
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/dynamics/
+
 )
 
 add_library(${PROJECT_NAME} SHARED
     src/solvers/fista.cpp
     src/solvers/problem.cpp
+    src/motion_planner/biconvex.cpp
+    src/dynamics/centroidal.cpp
 )
 
-add_executable(test_fista src/solvers/test_fista.cpp)
-add_dependencies(test_fista ${PROJECT_NAME})
-target_link_libraries(test_fista PUBLIC ${PROJECT_NAME})
+# add_executable(test_fista src/solvers/test_fista.cpp)
+# add_dependencies(test_fista ${PROJECT_NAME})
+# target_link_libraries(test_fista PUBLIC ${PROJECT_NAME})
 target_link_libraries(biconvex_mpc Eigen3::Eigen)
 
 #Pybind setup
@@ -34,23 +39,17 @@ target_include_directories(fista_py PRIVATE ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(fista_py PRIVATE pybind11::module)
 target_link_libraries(fista_py PRIVATE biconvex_mpc)
 
+pybind11_add_module(biconvex_mpc_cpp MODULE srcpy/motion_planner/biconvex.cpp)
+target_include_directories(biconvex_mpc_cpp PRIVATE ${EIGEN3_INCLUDE_DIR})
+target_link_libraries(biconvex_mpc_cpp PRIVATE pybind11::module)
+target_link_libraries(biconvex_mpc_cpp PRIVATE biconvex_mpc)
+
+
 #Install Targets
 
 #Install PyBind library
 install(TARGETS fista_py LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+install(TARGETS biconvex_mpc_cpp LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+
 # install(TARGETS fista_py LIBRARY DESTINATION ${python_install_dir})
-
-#Install cpp binary
-#install(TARGETS test_fista DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
-
-#install(TARGETS fista_py
-#        DIRECTORY python/${PROJECT_NAME}
-#        PATTERN "*.pyc" EXCLUDE
-#        PATTERN "__pycache__" EXCLUDE
-#)
-
-# # cmake-format: on
-#target_link_libraries(${PROJECT_NAME}_cpp PRIVATE ${PROJECT_NAME})
-#target_link_libraries(${PROJECT_NAME}_cpp PRIVATE pybind11::module)
-#install(TARGETS ${PROJECT_NAME}_cpp DESTINATION $python_path)
 

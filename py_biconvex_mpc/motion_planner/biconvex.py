@@ -152,7 +152,6 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         # creating cost matrices
         # self.create_cost_X(W_X, W_X_ter, X_ter)
         # self.create_cost_F(W_F)
-
         if isinstance(X_wm, np.ndarray):
             X_k = X_wm
         else:

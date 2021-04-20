@@ -172,8 +172,8 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
 
         for k in range(no_iters):
             print("iter number {}".format(k), end='\n')
-            # maxit = int(self.maxit/(k//10 + 1))
-            maxit = self.maxit
+            maxit = int(self.maxit/(k//10 + 1))
+            # maxit = self.maxit
             if k > 0 or not isinstance(F_wm, np.ndarray):
                 self.fista.reset()
                 # optimizing for f

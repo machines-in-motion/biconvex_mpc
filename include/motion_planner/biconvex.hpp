@@ -96,6 +96,8 @@ class BiConvexMP{
         // line search parameter
         double beta_ = 1.5;
         // max iters in Fista
+        int init_maxit = 150;
+        // max iters in Fista reduced based on outer loops
         int maxit = 150;
         // tolerarce for exit criteria of Fista
         double tol = 1e-5;

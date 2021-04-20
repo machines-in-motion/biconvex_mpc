@@ -12,6 +12,8 @@ namespace solvers
             if (prob_data_.compute_obj_diff() > prob_data_.gradient.transpose()*(prob_data_.y_diff) +
                                                                     (L_/2)*(prob_data_.G_k_norm*prob_data_.G_k_norm)){
                 L_ = beta_*L_;
+                // std::cout << "Line search called - " << L_ << std::endl;
+
             }
             else {
                 prob_data_.x_k_1 = prob_data_.y_k_1;

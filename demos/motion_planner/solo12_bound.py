@@ -74,7 +74,8 @@ if optimize:
     com_opt, F_opt, mom_opt = mp.optimize(X_init, 30)
     et = time.time()
     print("net time:", et - st)
-
+    
+    assert False
     cnt_planner.create_ik_step_costs(cnt_plan, sh, [1e+5, 1e+6])
     cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+4, 1e+3], [1e+4, 1e+3])
     ik_solver = cnt_planner.return_gait_generator()

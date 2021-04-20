@@ -8,44 +8,47 @@ using std::chrono::milliseconds;
 
 namespace function
 {
-    ProblemData::ProblemData() {
-        // std::cout << "Made empty instance of Problem Data Class" << std::endl;
-    }
-
-    ProblemData::ProblemData(Eigen::MatrixXd Q, Eigen::VectorXd q,
-                             Eigen::MatrixXd A, Eigen::VectorXd b, 
-                             Eigen::VectorXd P_k, int n, double rho)
-            : Q_e(Q), q_e(q), A_e(A), b_e(b), Pk_e(P_k), n_(n), rho_(rho){
-
-        Q_sp = Q_e.sparseView();
-        A_sp = A_e.sparseView();
-
+    ProblemData::ProblemData(int nx) {
         
-        ATA_sp = 2*(Q_sp + rho_*(A_sp).transpose()*(A_sp));
-        bPk_ = -b_e + Pk_e;
-        ATbPk_e = 2.0*rho_*(A_sp).transpose()*(bPk_) + q_e; 
+        y_k.resize(nx); y_k.setZero();
+        y_k_1.resize(nx); y_k_1.setZero();
+        x_k.resize(nx); x_k.setZero();
+        x_k_1.resize(nx); x_k_1.setZero();
+        
+        gradient.resize(nx); gradient.setZero();
+        y_diff.resize(nx); y_diff.setZero();
+        // Should we create memory for the sparse matrices as well?
+    }
+
+    void ProblemData::set_data(Eigen::SparseMatrix<double> A, Eigen::VectorXd b, 
+                            Eigen::VectorXd P_k, double rho){
+
+        A_ = A; b_ = b; P_k_ = P_k; rho_ = rho;
+
+        ATA_ = 2*(Q_ + rho_*(A_).transpose()*(A_));
+        bPk_ = -b_ + P_k_;
+        ATbPk_ = 2.0*rho_*(A_).transpose()*(bPk_) + q_; 
         }
 
-    double ProblemData::compute_obj(const Eigen::VectorXd& x) {
-        obj = (rho_)*((A_sp*x + bPk_).squaredNorm());
-        for (unsigned i = 0 ; i < n_; ++i){
-            obj += Q_e(i,i)*x(i)*x(i) + q_e(i)*x(i);
-        }
-        return obj;
+    double ProblemData::compute_obj(Eigen::VectorXd x_k) {
+        obj_ = x_k.transpose()*Q_*x_k + q_.dot(x_k) + (rho_)*((A_*x_k + bPk_).squaredNorm());
+        // for (unsigned i = 0 ; i < n_; ++i){
+        //     obj_ += Q_(i,i)*x(i)*x(i) + q_(i)*x(i);
+        // }
+        return obj_;
     }
 
-    Eigen::VectorXd ProblemData::compute_grad_obj(const Eigen::VectorXd& x) {
+    double ProblemData::compute_obj_diff() {
+        obj_ = (y_k_1 + y_k).transpose()*Q_*(y_k_1 - y_k) + q_.dot(y_k_1 - y_k) + 
+                    (rho_)*(((A_*y_k_1 + bPk_).squaredNorm()) - ((A_*y_k + bPk_).squaredNorm()));
 
-        gradient = ATA_sp*x + ATbPk_e;
-
-        return gradient;
+        return obj_;
     }
 
-    Eigen::VectorXd ProblemData::proj(Eigen::VectorXd& grad) {
 
-        proj_grad  = (grad).cwiseMin(ub_).cwiseMax(lb_);
-        return proj_grad;
+    void ProblemData::compute_grad_obj() {
+
+        gradient = ATA_*y_k + ATbPk_;
     }
-
 
 } //namespace fista

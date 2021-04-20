@@ -122,7 +122,6 @@ class CentroidalDynamics:
             b_f[t*9:(t+1)*9,0] = self.block_b_f.copy()
 
         A_f[-9:,0:9] = np.identity(9)
-        print("j", X_init)
         b_f[-9:,0] = X_init
 
         return np.matrix(A_f), np.matrix(b_f)

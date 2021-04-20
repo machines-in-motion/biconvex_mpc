@@ -5,16 +5,12 @@
 import time
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy import sparse
-import osqp
 from scipy.sparse import csc_matrix
 
-
-from .. dynamics.centroidal import CentroidalDynamics
-import fista_py
+from biconvex_mpc_cpp import BiconvexMP
 from . cost import BiConvexCosts
 
-class BiConvexMP(CentroidalDynamics, BiConvexCosts):
+class BiConvexMP(BiConvexCosts):
 
     def __init__(self, m, dt, T, n_eff, rho = 1e+5, L0 = 1e+2, beta = 1.5, maxit = 150, tol = 1e-5):
         '''
@@ -44,17 +40,12 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         self.r_arr = []
         # Note : no of collocation points should be computed only once
         # and passed to centroidal dynamics
-        CentroidalDynamics.__init__(self, m, dt, T, n_eff)
         BiConvexCosts.__init__(self, self.n_col, self.dt, T)
         
-        self.fista = fista_py.instance(self.L0, self.beta, maxit, self.tol)
+        # C++ version Biconvex MP
+        self.dyn_planer = BiconvexMP(self.m, self.dt, self.T, self.n_eff)
 
-        # arrays to store statistics
-        self.f_all = [] # history of cost of force optimization
-        self.x_all = [] # history of cost of state optimization
-        self.dyn_all = [] # history of dynamics constraint violation
-        self.total_all = [] # history of total cost
-
+        
     def create_contact_array(self, cnt_plan):
         '''
         This function creates the contact array [[1/0, 1/0], [..], ...]
@@ -68,6 +59,8 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         cnt_arr = np.zeros((self.n_col, self.n_eff))
         r_arr = np.zeros((self.n_col, self.n_eff, 3))
 
+        # This should be removed ASAP
+
         t_arr = np.zeros(self.n_eff)
         for i in range(len(cnt_plan)):
             for n in range(self.n_eff):
@@ -78,6 +71,12 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
 
         self.cnt_arr = cnt_arr
         self.r_arr = r_arr
+
+        # C++ input 
+        for i in range(cnt_plan.shape[0]):
+            self.dyn_planer.set_contact_plan(cnt_plan[i])
+        
+        self.dyn_planer.create_contact_array()
 
     def create_bound_constraints(self, bx, by, bz, fx_max, fy_max, fz_max):
         '''
@@ -114,6 +113,11 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         self.X_low = np.reshape(self.X_low, (len(self.X_low), 1))
         self.X_high = np.reshape(self.X_high, (len(self.X_high), 1))
 
+        ## C++ 
+        self.dyn_planer.set_bounds_x(self.X_low, self.X_high)
+        self.dyn_planer.set_bounds_f(self.F_low, self.F_high)
+
+
     def create_cost_F(self, W_F):
         '''
         Creates the cost matrix Q_F and q_F for the F optimization
@@ -129,17 +133,8 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         self.Q_F = np.matrix(self.Q_F)
         self.q_F = np.matrix(self.q_F)
 
-    def friction_proj(self, f, L, mu):
-        for i in range(0, len(f), 3):
-            norm = np.linalg.norm(f[i:i+2])
-            s = f[i+2].copy()
-            if mu*s < norm and norm < -s/mu:
-                f[i:i+3] = 0
-            elif norm > min(abs(s/mu),abs(mu*s)):
-                f[i:i+2] *= ((mu**2)*norm + mu*s)/((mu**2 + 1)*norm)
-                f[i+2] = (mu*norm + s)/(mu**2 + 1)
-        
-        return f
+        # C++
+        self.dyn_planer.set_cost_f(csc_matrix(self.Q_F), self.q_F)
 
     def optimize(self, X_init, no_iters, X_wm = None, F_wm = None, P_wm = None):
         '''
@@ -154,9 +149,6 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             X_wm : starting X to warm start F optimization
             F_wm : starting F to warm start X optimization
         '''
-        # creating cost matrices
-        # self.create_cost_X(W_X, W_X_ter, X_ter)
-        # self.create_cost_F(W_F)
 
         if isinstance(X_wm, np.ndarray):
             X_k = X_wm
@@ -173,111 +165,15 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             P_k = P_wm
         else:    
             P_k = 0.0*np.ones((9*self.n_col + 9, 1))
-        
-        dyn_violation = 99999
 
-        arr = 0
-        for k in range(no_iters):
-            print("iter number {}".format(k), end='\n')
-            maxit = int(self.maxit/(k//10 + 1))
-            print("Optimizing f --------------------------------")
-            if k > 0 or not isinstance(F_wm, np.ndarray):
-                
-                # optimizing for f
-                st = time.time()
-                A_x, b_x = self.compute_X_mat(X_k, self.r_arr, self.cnt_arr)
-                et = time.time()
-                arr += et - st
-                self.fista.set_l0(506.25)
-                self.fista.set_data(self.Q_F, self.q_F, A_x, b_x, P_k, self.F_low, self.F_high, self.rho, maxit)
-                F_k_1 = self.fista.optimize(F_k)[:,None]
+        # C++        
+        self.dyn_planer.set_warm_start_vars(X_k, F_k, P_k)
+        self.dyn_planer.optimize(X_init, no_iters)
 
-                A_x_ineq = np.identity(A_x.shape[1])
-                A_sparse = csc_matrix(A_x_ineq)
-                Q_sparse = csc_matrix(np.matrix(2*self.Q_F + 2*self.rho*(A_x.T)*A_x))
-                z_x = -b_x + P_k
+        self.X_opt = self.dyn_planer.return_opt_x()
+        self.F_opt = self.dyn_planer.return_opt_f()
+        self.P_opt = self.dyn_planer.return_opt_p()
 
-                lb = self.F_low[0:A_sparse.shape[0]]
-                ub = self.F_high[0:A_sparse.shape[0]]
-
-                osqp_solver = osqp.OSQP()
-                osqp_solver.setup(Q_sparse, self.q_F + 2*self.rho*A_x.T*z_x, A_sparse, lb, ub, verbose=False,
-                             eps_abs=1e-5, eps_rel=1e-5, eps_prim_inf=1e-5, eps_dual_inf=1e-5,
-                             check_termination = 5, max_iter = 200, polish=False, scaling = 1)
-                result = osqp_solver.solve()
-                print("norm f", np.linalg.norm(result.x - F_k_1))
-                osqp_solve_time = result.info.solve_time
-                print("OSQP solve time: " + str(osqp_solve_time*1000)+"ms")
-
-
-
-            else:
-                F_k_1 = F_k
-
-            # self.fista.reset(L0_reset=1e7)
-            
-            # optimizing for x
-            print("Optimizing x --------------------------------")
-            st = time.time()
-            A_f, b_f = self.compute_F_mat(F_k_1, self.r_arr, self.cnt_arr, X_init)
-            et = time.time()
-            arr += et - st
-
-            self.fista.set_data(self.Q_X, self.q_X, A_f, b_f, P_k, self.X_low, self.X_high, self.rho, maxit)
-            self.fista.set_l0(1e6)
-            X_k_1 = self.fista.optimize(X_k)[:,None]
-
-            A_f_ineq = np.identity(A_f.shape[1])
-            A_sparse = csc_matrix(A_f_ineq)
-            Q_sparse = csc_matrix(np.matrix(2*self.Q_X + 2*self.rho*(A_f.T)*A_f))
-            z_f = -b_f + P_k
-
-            lb = self.X_low[0:A_sparse.shape[0]]
-            ub = self.X_high[0:A_sparse.shape[0]]
-
-            osqp_solver = osqp.OSQP()
-            osqp_solver.setup(Q_sparse, self.q_X + 2*self.rho*A_f.T*z_f, A_sparse, lb, ub, verbose=False,
-                            eps_abs=1e-5, eps_rel=1e-5, eps_prim_inf=1e-5, eps_dual_inf=1e-5,
-                            check_termination = 5, max_iter = 200, polish=False, scaling = 1)
-            result = osqp_solver.solve()
-            print("norm x", np.linalg.norm(result.x - X_k_1))
-            osqp_solve_time = result.info.solve_time
-            print("OSQP solve time: " + str(osqp_solve_time*1000)+"ms")
-
-
-            # update of P_k
-            P_k_1 = P_k + ((A_f*X_k_1) - b_f)
-
-            # preparing for next iteration
-            self.X_opt_old = X_wm
-            self.F_opt_old = F_wm
-
-            X_k = X_k_1
-            F_k = F_k_1
-            P_k = P_k_1
-            
-            # computing cost of total optimization problem
-            dyn_violation = np.linalg.norm(A_f*X_k - b_f)
-            # print("dyn_violation", dyn_violation)
-            cost_x = X_k.T *self.Q_X*X_k + self.q_X.T*X_k + dyn_violation
-            cost_f = F_k.T *self.Q_F*F_k + self.q_F.T*F_k + dyn_violation
-
-            total_cost = cost_x + cost_f - dyn_violation
-            self.x_all.append(float(cost_x))            
-            self.f_all.append(float(cost_f)) 
-            self.dyn_all.append(float(dyn_violation))           
-            self.total_all.append(float(total_cost))            
-
-            if dyn_violation < 0.01:
-                print("terminated because of exit condition ...")
-                break
-            
-            self.X_opt = X_k
-            self.F_opt = F_k
-            self.P_opt = P_k
-            # print("X_init_norm", np.linalg.norm(self.X_opt[0:9].T - X_init))
-        # self.stats()
-        
         com_opt = np.zeros((self.n_col + 1, 3))
         self.mom_opt = np.zeros((self.n_col + 1, 6))
         for i in range(6):
@@ -286,7 +182,7 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
             self.mom_opt[:,i] = self.X_opt[i+3::9].T
 
         self.mom_opt[:,0:3] = self.m*self.mom_opt[:,0:3]
-        print("alocation time:", arr)
+
         return com_opt, F_k, self.mom_opt
 
     def get_optimal_x_p(self):
@@ -294,7 +190,6 @@ class BiConvexMP(CentroidalDynamics, BiConvexCosts):
         return self.X_opt, self.P_opt
 
     def stats(self):
-        print("solver terminated in {} iterations".format(len(self.f_all)))
 
         fig, ax = plt.subplots(3,1)
         ax[0].plot(self.X_opt[0::9], label = "Cx")

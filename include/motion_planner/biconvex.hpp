@@ -8,7 +8,7 @@
 #include <iostream>
 #include "centroidal.hpp"
 #include "problem.hpp"
-
+#include "fista.hpp"
 
 namespace motion_planner
 {
@@ -16,16 +16,13 @@ class BiConvexMP{
 
     public:
         
-        BiConvexMP(double m, double dt, double T, int n_eff):
-        m_(m), centroidal_dynamics(m, dt, T, n_eff){
-
-        };
+        BiConvexMP(double m, double dt, double T, int n_eff);
 
         void set_contact_plan(Eigen::MatrixXd cnt_plan){
             centroidal_dynamics.cnt_plan_.push_back(cnt_plan);
         };
 
-        void return_cnt_plan(){
+        void create_cnt_array(){
             centroidal_dynamics.create_contact_array();  
         }
 
@@ -52,13 +49,70 @@ class BiConvexMP{
             return centroidal_dynamics.b_f;
         }
     
+        // function to set cost function
+        void set_cost_x(Eigen::SparseMatrix<double> Q_x, Eigen::VectorXd q_x){
+            prob_data_x.Q_ = Q_x; prob_data_x.q_ = q_x;
+        }
+
+        void set_cost_f(Eigen::SparseMatrix<double> Q_f, Eigen::VectorXd q_f){
+            prob_data_f.Q_ = Q_f; prob_data_f.q_ = q_f;
+        }
+        
+        void set_warm_start_vars(Eigen::VectorXd x_wm, Eigen::VectorXd f_wm, Eigen::VectorXd P_wm){
+            prob_data_x.set_warm_x(x_wm);
+            prob_data_f.set_warm_x(f_wm);
+            P_k_ = P_wm;
+        }
+
+        void set_bounds_x(Eigen::VectorXd lb, Eigen::VectorXd ub) 
+                {prob_data_x.lb_ = lb; prob_data_x.ub_ = ub;}
+
+        void set_bounds_f(Eigen::VectorXd lb, Eigen::VectorXd ub) 
+                {prob_data_f.lb_ = lb; prob_data_f.ub_ = ub;}
+
+        void optimize(Eigen::VectorXd x_init, int no_iters);
+
+        Eigen::VectorXd return_opt_x(){
+            return prob_data_x.x_k;
+        }
+
+        Eigen::VectorXd return_opt_f(){
+            return prob_data_f.x_k;
+        }
+
+        Eigen::VectorXd return_opt_p(){
+            return P_k_;
+        }
 
     private:
         // mass of the robot 
         const double m_;
         // centroidal dynamics class
         dynamics::CentroidalDynamics centroidal_dynamics;
-    
+        // penalty term on dynamic violation
+        double rho_ = 1e+5;
+        // initial step length
+        double L0_ = 1e2;
+        // line search parameter
+        double beta_ = 1.5;
+        // max iters in Fista
+        int maxit = 150;
+        // tolerarce for exit criteria of Fista
+        double tol = 1e-5;
+        // tolerarce for exiting biconvex
+        double exit_tol = 1e-2;
+        // problem data for x optimization
+        function::ProblemData prob_data_x;
+        // solver for x optimization
+        solvers::FISTA fista_x;
+        // problem data for f optimization
+        function::ProblemData prob_data_f;
+        // solver for f optimization
+        solvers::FISTA fista_f;
+
+        Eigen::VectorXd dyn_violation;
+
+        Eigen::VectorXd P_k_;
 
     };
 }

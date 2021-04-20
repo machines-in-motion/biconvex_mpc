@@ -6,7 +6,9 @@ import time
 import numpy as np
 import pinocchio as pin
 
-from py_biconvex_mpc.motion_planner.biconvex import BiConvexMP
+# from py_biconvex_mpc.motion_planner.biconvex import BiConvexMP
+from py_biconvex_mpc.motion_planner.cpp_biconvex import BiConvexMP
+
 from robot_properties_solo.config import Solo12Config
 from py_biconvex_mpc.ik.inverse_kinematics import InverseKinematics
 from py_biconvex_mpc.ik_utils.gait_generator import GaitGenerator
@@ -57,7 +59,7 @@ fx_max = 15
 fy_max = 15
 fz_max = 15
 
-optimize = False
+optimize = True
 
 if optimize:
     # optimization
@@ -67,7 +69,11 @@ if optimize:
     mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
     mp.create_cost_X(W_X, W_X_ter, X_ter, X_nom)
     mp.create_cost_F(W_F)
+
+    st = time.time()
     com_opt, F_opt, mom_opt = mp.optimize(X_init, 30)
+    et = time.time()
+    print("net time:", et - st)
 
     cnt_planner.create_ik_step_costs(cnt_plan, sh, [1e+5, 1e+6])
     cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+4, 1e+3], [1e+4, 1e+3])

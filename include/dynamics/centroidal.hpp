@@ -16,13 +16,6 @@ namespace dynamics{
         public:
             CentroidalDynamics(double m, double dt, double T, int n_eff);
         
-            Eigen::SparseMatrix<double> A_x;
-            Eigen::VectorXd b_x;
-            Eigen::SparseMatrix<double> A_f;
-            Eigen::VectorXd b_f;
-            Eigen::VectorXd x_init_;
-            // void set_contact_plan(Eigen::MatrixXd r, Eigen::MatrixXd cnt_plan);
-
             void compute_x_mat(Eigen::VectorXd &X);
             void compute_f_mat(Eigen::VectorXd &F);
             
@@ -38,6 +31,12 @@ namespace dynamics{
             // contact plan provided by the user (# x [1/0, x, y, z, start, end])
             std::vector<Eigen::MatrixXd> cnt_plan_;
 
+            Eigen::SparseMatrix<double> A_x;
+            Eigen::VectorXd b_x;
+            Eigen::SparseMatrix<double> A_f;
+            Eigen::VectorXd b_f;
+            Eigen::VectorXd x_init_;
+        
         // private:
             // location of the contact point array used to create constraints
             std::vector<Eigen::MatrixXd> r_;

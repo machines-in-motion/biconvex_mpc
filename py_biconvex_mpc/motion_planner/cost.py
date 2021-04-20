@@ -4,6 +4,8 @@
 ## Date : 12/03/2021
 
 import numpy as np
+from scipy.sparse import csc_matrix
+
 
 class BiConvexCosts:
 
@@ -98,4 +100,12 @@ class BiConvexCosts:
         self.q_X = np.reshape(self.q_X, (len(self.q_X), 1))
         
         self.Q_X = np.matrix(self.Q_X)
-        self.q_X = np.matrix(self.q_X)    
+        self.q_X = np.matrix(self.q_X)
+        
+        # C++
+        try:
+            print("using C++")
+            self.dyn_planer.set_cost_x(csc_matrix(self.Q_X), self.q_X)
+        except:
+            print("running python version")
+    

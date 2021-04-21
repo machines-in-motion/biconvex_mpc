@@ -17,6 +17,9 @@ namespace function
         
         gradient.resize(nx); gradient.setZero();
         y_diff.resize(nx); y_diff.setZero();
+
+        lb_.resize(nx); lb_.setZero();
+        ub_.resize(nx); ub_.setZero();
         // Should we create memory for the sparse matrices as well?
     }
 

@@ -30,7 +30,7 @@ X_ter = X_init.copy()
 st = 0.2 # step time 
 sh = 0.15 # step height
 sl = np.array([0.1,0.0,0]) # step length
-n_steps = 2 # number of steps
+n_steps = 6 # number of steps
 T = st*(n_steps + 2)
 dt = 5e-2
 

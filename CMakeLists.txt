@@ -12,9 +12,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 #Configure packages
 find_package(pybind11 CONFIG REQUIRED)
 find_package(Eigen3 REQUIRED)
-if ( OSQP )
-    find_package(OsqpEigen REQUIRED)
-endif()
+#if ( OSQP )
+#    find_package(OsqpEigen REQUIRED)
+#endif()
+find_package(OsqpEigen)
 
 # TODO: Create individual directories for each sub-module (i.e. optimizer, etc.)
 include_directories(
@@ -35,7 +36,7 @@ add_library(${PROJECT_NAME} SHARED
 # add_dependencies(test_fista ${PROJECT_NAME})
 # target_link_libraries(test_fista PUBLIC ${PROJECT_NAME})
 target_link_libraries(biconvex_mpc Eigen3::Eigen)
-if ( OSQP )
+if ( OsqpEigen_FOUND )
     target_link_libraries(biconvex_mpc OsqpEigen::OsqpEigen)
     target_compile_definitions(biconvex_mpc PUBLIC USE_OSQP="True")
 endif()

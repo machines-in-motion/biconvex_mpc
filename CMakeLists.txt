@@ -6,12 +6,15 @@ project(biconvex_mpc VERSION 0.0.1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/python3.6/dist-packages/")
-set (python_install_dir "/usr/local/lib/python3.6/dist-packages/")
+#list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/python3.6/dist-packages/")
+#set (python_install_dir "/usr/local/lib/python3.6/dist-packages/")
 
 #Configure packages
 find_package(pybind11 CONFIG REQUIRED)
 find_package(Eigen3 REQUIRED)
+if ( OSQP )
+    find_package(OsqpEigen REQUIRED)
+endif()
 
 # TODO: Create individual directories for each sub-module (i.e. optimizer, etc.)
 include_directories(
@@ -32,6 +35,10 @@ add_library(${PROJECT_NAME} SHARED
 # add_dependencies(test_fista ${PROJECT_NAME})
 # target_link_libraries(test_fista PUBLIC ${PROJECT_NAME})
 target_link_libraries(biconvex_mpc Eigen3::Eigen)
+if ( OSQP )
+    target_link_libraries(biconvex_mpc OsqpEigen::OsqpEigen)
+    target_compile_definitions(biconvex_mpc PUBLIC USE_OSQP="True")
+endif()
 
 #Pybind setup
 # pybind11_add_module(fista_py MODULE srcpy/solvers/fista.cpp)

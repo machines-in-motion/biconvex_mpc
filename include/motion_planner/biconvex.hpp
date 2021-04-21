@@ -1,11 +1,16 @@
 // This file contains the biconvex motion planner
-// Author : Avadesh Meduri  
+// Author : Avadesh Meduri
 // Date : 15/04/2021
-
 
 #ifndef MOTION_PLANNER_HPP
 #define MOTION_PLANNER_HPP
+
+#ifdef USE_OSQP
+#include "OsqpEigen/OsqpEigen.h"
+#endif
+
 #include <iostream>
+
 #include "centroidal.hpp"
 #include "problem.hpp"
 #include "fista.hpp"
@@ -13,9 +18,7 @@
 namespace motion_planner
 {
 class BiConvexMP{
-
     public:
-        
         BiConvexMP(double m, double dt, double T, int n_eff);
 
         void set_contact_plan(Eigen::MatrixXd cnt_plan){
@@ -99,9 +102,9 @@ class BiConvexMP{
         int init_maxit = 150;
         // max iters in Fista reduced based on outer loops
         int maxit = 150;
-        // tolerarce for exit criteria of Fista
+        // tolerance for exit criteria of Fista
         double tol = 1e-5;
-        // tolerarce for exiting biconvex
+        // tolerance for exiting biconvex
         double exit_tol = 1e-2;
         // problem data for x optimization
         function::ProblemData prob_data_x;
@@ -111,6 +114,11 @@ class BiConvexMP{
         function::ProblemData prob_data_f;
         // solver for f optimization
         solvers::FISTA fista_f;
+
+        #ifdef USE_OSQP
+            OsqpEigen::Solver osqp_x;
+            OsqpEigen::Solver osqp_f;
+        #endif
 
         Eigen::VectorXd dyn_violation;
 

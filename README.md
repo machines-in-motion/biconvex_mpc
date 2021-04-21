@@ -21,8 +21,14 @@ For C++:
 
 ```
 mkdir build && cd build
-cmake ..
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make install
+```
+
+If you want to use OSQP, the cmake instructions should be modified to the following:
+
+```
+cmake .. -DCMAKE_BUILD_TYPE=Release -DOSQP=TRUE
 ```
 
 

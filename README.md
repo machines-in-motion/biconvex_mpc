@@ -6,6 +6,7 @@ This repo contains the centroidal motion planner based on a Biconvex solver and 
 ```
 - Pinocchio
 - Crocoddyl
+- OsqpEigen (Optional, to use OSQP as the solver) [Link here: https://github.com/robotology/osqp-eigen]
 - Matplotlib (Optional, needed to run demos)
 - Robot_Properties_Solo (Optional, needed to run demos)
 - Robot_Properties_Bolt (Optional, needed to run demos)
@@ -21,8 +22,14 @@ For C++:
 
 ```
 mkdir build && cd build
-cmake ..
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make install
+```
+
+If you want to use OSQP, the cmake instructions should be modified to the following:
+
+```
+cmake .. -DCMAKE_BUILD_TYPE=Release -DOSQP=TRUE
 ```
 
 

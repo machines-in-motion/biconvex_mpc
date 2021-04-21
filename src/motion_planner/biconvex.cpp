@@ -15,6 +15,17 @@ namespace motion_planner{
             fista_x.set_l0(2.25e6);
             fista_f.set_l0(506.25);
 
+            //Set number of variables and constraints for osqp-eigen
+            #ifdef USE_OSQP
+                //osqp_x();
+                //osqp_f();
+                std::cout << "OSQP found" << std::endl;
+                osqp_x.data()->setNumberOfVariables(9*(int (T/dt)+1));
+                osqp_x.data()->setNumberOfConstraints( 2 * 9*(int (T/dt)+1));
+
+                osqp_f.data()->setNumberOfVariables(3*n_eff*int (T/dt));
+                osqp_f.data()->setNumberOfConstraints(2 * 3*n_eff*int (T/dt));
+            #endif
     };
 
     void BiConvexMP::optimize(Eigen::VectorXd x_init, int no_iters){
@@ -42,7 +53,8 @@ namespace motion_planner{
                 std::cout << "breaking outerloop due to norm ..." << std::endl;
                 break;
             };       
-        }        
+        }
+        std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }    
 
 };

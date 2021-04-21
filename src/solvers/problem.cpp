@@ -50,7 +50,6 @@ namespace function
 
 
     void ProblemData::compute_grad_obj() {
-
         gradient = ATA_*y_k + ATbPk_;
     }
 

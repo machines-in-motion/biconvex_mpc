@@ -6,16 +6,16 @@ project(biconvex_mpc VERSION 0.0.1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-#list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/python3.6/dist-packages/")
-#set (python_install_dir "/usr/local/lib/python3.6/dist-packages/")
+list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/python3.6/dist-packages/")
+set (python_install_dir "/usr/local/lib/python3.6/dist-packages/")
 
 #Configure packages
 find_package(pybind11 CONFIG REQUIRED)
 find_package(Eigen3 REQUIRED)
-#if ( OSQP )
-#    find_package(OsqpEigen REQUIRED)
-#endif()
-find_package(OsqpEigen)
+if ( OSQP )
+    find_package(OsqpEigen REQUIRED)
+endif()
+# find_package(OsqpEigen)
 
 # TODO: Create individual directories for each sub-module (i.e. optimizer, etc.)
 include_directories(

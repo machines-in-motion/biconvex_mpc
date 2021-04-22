@@ -75,14 +75,16 @@ if optimize:
     et = time.time()
     print("net time:", et - st)
     
-    assert False
     cnt_planner.create_ik_step_costs(cnt_plan, sh, [1e+5, 1e+6])
     cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+4, 1e+3], [1e+4, 1e+3])
     ik_solver = cnt_planner.return_gait_generator()
     state_wt = np.array([0.] * 3 + [500.] * 3 + [5.0] * (robot.model.nv - 6) \
                         + [0.01] * 6 + [5.0] *(robot.model.nv - 6))
 
+    st = time.time()
     xs, us = ik_solver.optimize(x0, wt_xreg=7e-3, state_wt=state_wt)
+    et = time.time()
+    print("net time:", et - st)
     com_opt_ik, mom_opt_ik = ik_solver.ik.compute_optimal_com_and_mom()
 
     W_X = np.array([1e-3, 1e-3, 1e-3, 1e+3, 1e+3, 1e+3, 3e3, 3e3, 3e3])

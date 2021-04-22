@@ -53,8 +53,8 @@ class DifferentialFwdKinematics(crocoddyl.DifferentialActionModelAbstract):
             v : joint velocity
             u : torque applied at the end of manipulator
         '''
-        A_lin = np.zeros((int(self.no_states/2),self.no_states))
-        
+        A_lin = np.zeros((self.state.nv,self.no_states))
+
         return A_lin
     
     def dynamics_u(self, x, u, dt):
@@ -65,8 +65,8 @@ class DifferentialFwdKinematics(crocoddyl.DifferentialActionModelAbstract):
             v : joint velocity
             u : torque applied at the end of manipulator
         '''
-        B_lin = np.eye(int(self.no_states/2))
-
+        B_lin = np.eye(self.state.nv)
+        
         return B_lin
     
     def set_armature(self, armature):

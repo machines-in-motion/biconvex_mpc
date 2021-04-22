@@ -11,6 +11,8 @@ from . end_effector_tasks import EndEffectorTasks
 from . regularization_costs import RegularizationCosts
 from . com_tasks import CenterOfMassTasks
 
+import time
+
 class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks):
 
     def __init__(self, rmodel, dt, T):
@@ -63,12 +65,14 @@ class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks
         problem = crocoddyl.ShootingProblem(x0, self.rcost_arr, self.terminalModel)
         ddp = crocoddyl.SolverDDP(problem)
         log = crocoddyl.CallbackLogger()
-        ddp.setCallbacks([log,
-                        crocoddyl.CallbackVerbose(),
-                        ])
+        # ddp.setCallbacks([log,
+        #                 crocoddyl.CallbackVerbose(),
+        #                 ])
         # # Solving it with the DDP algorithm
+        st = time.time()    
         ddp.solve()
-
+        et = time.time()
+        print("net time:", et - st)
         self.opt_sol = ddp.xs
 
         return self.opt_sol, ddp.us

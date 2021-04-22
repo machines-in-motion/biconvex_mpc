@@ -15,5 +15,9 @@ namespace ik{
         pinocchio::urdf::buildModel(rmodel_path,rmodel_);
         pinocchio::Data rdata_(rmodel_);
 
+    };
+
+    void InverseKinematics::tmp(){
+        std::cout << rdata_.oMi[0] << std::endl;
     }
 }

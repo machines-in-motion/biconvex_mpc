@@ -19,13 +19,14 @@ namespace ik{
 
             InverseKinematics(std::string rmodel_path, double dt, double T);
 
+            void tmp();
 
         protected:
 
             // robot model
             pinocchio::Model rmodel_;
             // robot data
-            // pinocchio::Data rdata_;
+            pinocchio::Data rdata_;
             
 
     };

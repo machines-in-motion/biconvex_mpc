@@ -13,3 +13,4 @@ dt = 5e-2
 T = 1.0
 
 ik = InverseKinematics(Solo12Config.urdf_path, dt, T)
+ik.tmp()

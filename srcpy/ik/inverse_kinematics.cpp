@@ -18,6 +18,8 @@ PYBIND11_MODULE(inverse_kinematics_cpp, m)
 
     py::class_<ik::InverseKinematics> ik (m, "InverseKinematics");
     ik.def(py::init<std::string, double, double>());
+    ik.def("tmp", &ik::InverseKinematics::tmp);
+
 
 };
 

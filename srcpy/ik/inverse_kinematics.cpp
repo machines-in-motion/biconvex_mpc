@@ -18,8 +18,9 @@ PYBIND11_MODULE(inverse_kinematics_cpp, m)
 
     py::class_<ik::InverseKinematics> ik (m, "InverseKinematics");
     ik.def(py::init<std::string, double, double>());
-    ik.def("tmp", &ik::InverseKinematics::tmp);
-
+    // ik.def("setup_costs", &ik::InverseKinematics::setup_costs);
+    // ik.def("optimize", &ik::InverseKinematics::optimize);
+    ik.def("add_position_tracking_task", &ik::InverseKinematics::add_position_tracking_task);
 
 };
 

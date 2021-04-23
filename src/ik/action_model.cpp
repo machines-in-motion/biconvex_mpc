@@ -10,7 +10,7 @@
 namespace crocoddyl{
     
     template <typename _Scalar>
-    DifferentialFwdKinematicsModel<_Scalar>::DifferentialFwdKinematicsModel(boost::shared_ptr<StateMultibody> state,
+    DifferentialFwdKinematicsModelTpl<_Scalar>::DifferentialFwdKinematicsModelTpl(boost::shared_ptr<StateMultibody> state,
                                    boost::shared_ptr<ActuationModelAbstract> actuation,
                                    boost::shared_ptr<CostModelSum> costs)
         :   Base(state, actuation->get_nu(), costs->get_nr()),
@@ -26,10 +26,10 @@ namespace crocoddyl{
     };
 
     template <typename Scalar>
-    DifferentialFwdKinematicsModel<Scalar>::~DifferentialFwdKinematicsModel() {};
+    DifferentialFwdKinematicsModelTpl<Scalar>::~DifferentialFwdKinematicsModelTpl() {};
 
     template <typename Scalar>
-    void DifferentialFwdKinematicsModel<Scalar>::calc(const boost::shared_ptr<DifferentialActionDataAbstract>& data, 
+    void DifferentialFwdKinematicsModelTpl<Scalar>::calc(const boost::shared_ptr<DifferentialActionDataAbstract>& data, 
                                 const Eigen::Ref<const VectorXs>& x,
                                 const Eigen::Ref<const VectorXs>& u){
 
@@ -59,7 +59,7 @@ namespace crocoddyl{
     };
 
     template <typename Scalar>
-    void DifferentialFwdKinematicsModel<Scalar>::calcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    void DifferentialFwdKinematicsModelTpl<Scalar>::calcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
                                     const Eigen::Ref<const VectorXs>& x, 
                                     const Eigen::Ref<const VectorXs>& u){
 
@@ -81,7 +81,7 @@ namespace crocoddyl{
 
     template <typename Scalar>
     boost::shared_ptr<DifferentialActionDataAbstractTpl<Scalar> >
-    DifferentialFwdKinematicsModel<Scalar>::createData() {
+    DifferentialFwdKinematicsModelTpl<Scalar>::createData() {
         return boost::allocate_shared<Data>(Eigen::aligned_allocator<Data>(), this);
     };
 }

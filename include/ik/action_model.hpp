@@ -5,7 +5,6 @@
 #ifndef CROCODDYL_DIFFERENTIAL_FWD_KINEMATICS
 #define CROCODDYL_DIFFERENTIAL_FWD_KINEMATICS
 
-#include "crocoddyl/multibody/fwd.hpp"
 #include "crocoddyl/core/diff-action-base.hpp"
 #include "crocoddyl/core/costs/cost-sum.hpp"
 #include "crocoddyl/core/actuation-base.hpp"
@@ -13,11 +12,74 @@
 #include "crocoddyl/multibody/states/multibody.hpp"
 #include "crocoddyl/core/utils/exception.hpp"
 
+
 namespace crocoddyl{
 
-    template <typename _Scalar>
-    struct DifferentialFwdKinematicsData : public DifferentialActionDataAbstractTpl<_Scalar> {
+    template <typename Scalar>
+    struct DifferentialFwdKinematicsDataTpl;
 
+    template <typename Scalar>
+    struct DifferentialFwdKinematicsModelTpl;
+
+    // template instatantiation
+    typedef DifferentialFwdKinematicsModelTpl<double> DifferentialFwdKinematicsModel; 
+    typedef DifferentialFwdKinematicsDataTpl<double> DifferentialFwdKinematicsData; 
+
+
+    template <typename _Scalar>
+
+    class DifferentialFwdKinematicsModelTpl : public DifferentialActionModelAbstractTpl<_Scalar> {
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        public:
+            typedef _Scalar Scalar;
+            typedef DifferentialActionModelAbstractTpl<Scalar> Base;
+            typedef DifferentialFwdKinematicsDataTpl<Scalar> Data;
+            typedef CostModelSumTpl<Scalar> CostModelSum;
+            typedef StateMultibodyTpl<Scalar> StateMultibody;
+            typedef ActuationModelAbstractTpl<Scalar> ActuationModelAbstract;
+            typedef DifferentialActionDataAbstractTpl<Scalar> DifferentialActionDataAbstract;
+            typedef MathBaseTpl<Scalar> MathBase;
+            typedef typename MathBase::VectorXs VectorXs;
+            typedef typename MathBase::MatrixXs MatrixXs;
+
+
+            DifferentialFwdKinematicsModelTpl(boost::shared_ptr<StateMultibody> state,
+                                      boost::shared_ptr<ActuationModelAbstract> actuation,
+                                      boost::shared_ptr<CostModelSum> costs);
+            
+            virtual ~DifferentialFwdKinematicsModelTpl();
+
+            virtual void calc(const boost::shared_ptr<DifferentialActionDataAbstract>& data, 
+                                const Eigen::Ref<const VectorXs>& x,
+                                const Eigen::Ref<const VectorXs>& u);
+
+            virtual void calcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+                                    const Eigen::Ref<const VectorXs>& x, 
+                                    const Eigen::Ref<const VectorXs>& u);
+
+            virtual boost::shared_ptr<DifferentialActionDataAbstract> createData();
+            
+        protected:
+            using Base::has_control_limits_;  //!< Indicates whether any of the control limits
+            using Base::nr_;                  //!< Dimension of the cost residual
+            using Base::nu_;                  //!< Control dimension
+            using Base::state_;               //!< Model of the state
+            using Base::u_lb_;                //!< Lower control limits
+            using Base::u_ub_;                //!< Upper control limits
+            using Base::unone_;               //!< Neutral state
+
+        private:
+            boost::shared_ptr<ActuationModelAbstract> actuation_;
+            boost::shared_ptr<CostModelSum> costs_;
+            pinocchio::ModelTpl<Scalar>& pinocchio_;
+
+    };
+
+
+
+    template <typename _Scalar>
+    struct DifferentialFwdKinematicsDataTpl : public DifferentialActionDataAbstractTpl<_Scalar> {
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         typedef _Scalar Scalar;
         typedef MathBaseTpl<Scalar> MathBase;
         typedef DifferentialActionDataAbstractTpl<Scalar> Base;
@@ -25,7 +87,7 @@ namespace crocoddyl{
         typedef typename MathBase::MatrixXs MatrixXs;
     
         template <template <typename Scalar> class Model>
-        explicit DifferentialFwdKinematicsData(Model<Scalar>* const model)
+        explicit DifferentialFwdKinematicsDataTpl(Model<Scalar>* const model)
             : Base(model),
                 pinocchio(pinocchio::DataTpl<Scalar>(model->get_pinocchio())),
                 multibody(&pinocchio, model->get_actuation()->createData()),
@@ -63,53 +125,6 @@ namespace crocoddyl{
         using Base::xout;
 
     };
-    
-    template <typename _Scalar>
-
-    class DifferentialFwdKinematicsModel : public DifferentialActionModelAbstractTpl<_Scalar> {
-
-        public:
-            typedef _Scalar Scalar;
-            typedef DifferentialActionModelAbstractTpl<Scalar> Base;
-            typedef DifferentialFwdKinematicsData<Scalar> Data;
-            typedef CostModelSumTpl<Scalar> CostModelSum;
-            typedef StateMultibodyTpl<Scalar> StateMultibody;
-            typedef ActuationModelAbstractTpl<Scalar> ActuationModelAbstract;
-            typedef DifferentialActionDataAbstractTpl<Scalar> DifferentialActionDataAbstract;
-            typedef MathBaseTpl<Scalar> MathBase;
-            typedef typename MathBase::VectorXs VectorXs;
-            typedef typename MathBase::MatrixXs MatrixXs;
-
-
-            DifferentialFwdKinematicsModel(boost::shared_ptr<StateMultibody> state,
-                                      boost::shared_ptr<ActuationModelAbstract> actuation,
-                                      boost::shared_ptr<CostModelSum> costs);
-            
-            virtual ~DifferentialFwdKinematicsModel();
-
-            virtual void calc(const boost::shared_ptr<DifferentialActionDataAbstract>& data, 
-                                const Eigen::Ref<const VectorXs>& x,
-                                const Eigen::Ref<const VectorXs>& u);
-
-            virtual void calcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
-                                    const Eigen::Ref<const VectorXs>& x, 
-                                    const Eigen::Ref<const VectorXs>& u);
-
-            virtual boost::shared_ptr<DifferentialActionDataAbstract> createData();
-            
-        protected:
-            using Base::nr_;                  //!< Dimension of the cost residual
-            using Base::nu_;                  //!< Control dimension
-            using Base::state_;               //!< Model of the state
-            using Base::unone_;               //!< Neutral state
-
-        private:
-            boost::shared_ptr<ActuationModelAbstract> actuation_;
-            boost::shared_ptr<CostModelSum> costs_;
-            pinocchio::ModelTpl<Scalar>& pinocchio_;
-
-    };
-
 }
 
 #endif

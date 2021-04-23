@@ -8,8 +8,26 @@
 
 #include <iostream>
 
+#include "action_model.hpp"
+
+#include <crocoddyl/multibody/actions/free-fwddyn.hpp>
+
 #include "pinocchio/parsers/urdf.hpp"
 #include "pinocchio/multibody/data.hpp"
+
+#include "crocoddyl/multibody/actuations/floating-base.hpp"
+#include "crocoddyl/multibody/costs/state.hpp"
+#include "crocoddyl/multibody/costs/com-position.hpp"
+#include "crocoddyl/multibody/costs/frame-translation.hpp"
+#include "crocoddyl/multibody/costs/frame-velocity.hpp"
+#include "crocoddyl/multibody/costs/state.hpp"
+#include "crocoddyl/core/costs/control.hpp"
+#include "crocoddyl/core/fwd.hpp"
+#include "crocoddyl/core/integrator/euler.hpp"
+#include <crocoddyl/core/solver-base.hpp>
+#include "crocoddyl/core/optctrl/shooting.hpp"
+#include <crocoddyl/core/solvers/ddp.hpp>
+
 
 namespace ik{
 
@@ -17,9 +35,16 @@ namespace ik{
 
         public:
 
+
             InverseKinematics(std::string rmodel_path, double dt, double T);
 
-            void tmp();
+            void setup_costs();
+
+            void optimize(const Eigen::VectorXd& x0);
+
+            // cost related functions
+            void add_position_tracking_task(pinocchio::FrameIndex fid, double st, double et, 
+                                                Eigen::MatrixXd traj, double wt, std::string cost_name);
 
         protected:
 
@@ -27,9 +52,39 @@ namespace ik{
             pinocchio::Model rmodel_;
             // robot data
             pinocchio::Data rdata_;
-            
+            // discretization
+            const double dt_;
+            // total horizon length
+            const double T_;
+            // number of colocation points
+            const int n_col_;
+            // crocoddyl state 
+            boost::shared_ptr<crocoddyl::StateMultibody> state_;
+            // crocoddyl 
+            boost::shared_ptr<crocoddyl::ActuationModelFloatingBase> actuation_;
+
+            // running cost model array
+            std::vector<boost::shared_ptr<crocoddyl::CostModelSum>> rcost_arr_;
+            // terminal cost model
+            boost::shared_ptr<crocoddyl::CostModelSum> tcost_model_;
+            // running integrated action model            
+            std::vector< boost::shared_ptr<crocoddyl::ActionModelAbstract>> rint_arr_;
+            // terminal intergration action model
+            boost::shared_ptr<crocoddyl::IntegratedActionModelEuler> tint_model_;
+
+            // ddp solver
+            boost::shared_ptr<crocoddyl::ShootingProblem> problem_;
+            boost::shared_ptr<crocoddyl::SolverDDP> ddp_;
+
+            // cost related variables
+            int sn;
+            int en;
+            // boost::shared_ptr<crocoddyl::FrameTranslation> Mref; 
+
+
 
     };
+    
 
 }
 

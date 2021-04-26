@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-#include "action_model.hpp"
+// #include "action_model.hpp"
 
 #include <crocoddyl/multibody/actions/free-fwddyn.hpp>
 

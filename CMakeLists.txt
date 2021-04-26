@@ -61,6 +61,7 @@ pybind11_add_module(inverse_kinematics_cpp MODULE srcpy/ik/inverse_kinematics.cp
 target_include_directories(inverse_kinematics_cpp PRIVATE pinocchio::pinocchio)
 target_include_directories(inverse_kinematics_cpp PRIVATE crocoddyl::crocoddyl)
 target_link_libraries(inverse_kinematics_cpp PRIVATE pybind11::module)
+target_include_directories(inverse_kinematics_cpp PRIVATE ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(inverse_kinematics_cpp PRIVATE biconvex_mpc)
 
 #Install Targets

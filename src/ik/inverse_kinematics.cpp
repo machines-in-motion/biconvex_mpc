@@ -28,15 +28,16 @@ namespace ik{
     void InverseKinematics::setup_costs(){
 
         for (unsigned i = 0; i < n_col_; i++){
-            // boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> running_DAM =
-            //             boost::make_shared<crocoddyl::DifferentialFwdKinematicsModel>(state_, actuation_, rcost_arr_[i]);
+            std::cout << "hello" << std::endl;
+            boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> running_DAM =
+                        boost::make_shared<crocoddyl::DifferentialFwdKinematicsModel>(state_, actuation_, rcost_arr_[i]);
             
             //// Changing to line below does not throw seg fault
             
             // boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> running_DAM =
             //             boost::make_shared<crocoddyl::DifferentialActionModelFreeFwdDynamics>(state_, actuation_, rcost_arr_[i]);
             
-            // std::cout << "hello" << std::endl;
+            std::cout << "hello" << std::endl;
 
             // rint_arr_[i] = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(running_DAM, dt_);
             // std::cout << "hello" << std::endl;

@@ -66,8 +66,12 @@ target_link_libraries(inverse_kinematics_cpp PRIVATE biconvex_mpc)
 
 #Install Targets
 
+#Adding some test function for c++ testing
+add_executable(test_ik src/test_ik.cpp)
+add_dependencies(test_ik biconvex_mpc)
+target_link_libraries(test_ik PUBLIC biconvex_mpc)
+install(TARGETS test_ik DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+
 #Install PyBind library
 install(TARGETS biconvex_mpc_cpp LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 install(TARGETS inverse_kinematics_cpp LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
-
-

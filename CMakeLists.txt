@@ -37,8 +37,8 @@ add_library(${PROJECT_NAME} SHARED
     src/motion_planner/biconvex.cpp
     src/dynamics/centroidal.cpp
 
-    src/ik/action_model.cpp
     src/ik/inverse_kinematics.cpp
+    src/ik/action_model.cpp
     src/ik/end_effector_tasks.cpp
     )
 

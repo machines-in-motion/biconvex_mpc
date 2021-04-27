@@ -13,6 +13,8 @@ T = 1.0
 
 des_pos = np.array([0,0,0])
 
+print(Solo12Config.urdf_path)
+
 ik = InverseKinematics(Solo12Config.urdf_path, dt, T)
-# ik.setup_costs()
-# ik.add_position_tracking_task(robot.model.getFrameId("FL_FOOT"), 0.0, 0.5, des_pos, 1e2, "FL_pos_task")
+ik.setup_costs()
+# ik.add_position_tracking_task(robqot.model.getFrameId("FL_FOOT"), 0.0, 0.5, des_pos, 1e2, "FL_pos_task")

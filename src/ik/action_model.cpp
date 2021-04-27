@@ -1,11 +1,13 @@
 #include "action_model.hpp"
 
+#include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/kinematics.hpp>
 #include <pinocchio/algorithm/kinematics-derivatives.hpp>
-#include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/center-of-mass.hpp>
 #include <pinocchio/algorithm/centroidal.hpp>
 #include <pinocchio/algorithm/centroidal-derivatives.hpp>
+#include <pinocchio/algorithm/rnea-derivatives.hpp>
+
 
 namespace crocoddyl{
     
@@ -16,12 +18,21 @@ namespace crocoddyl{
         :   Base(state, actuation->get_nu(), costs->get_nr()),
             actuation_(actuation),
             costs_(costs),
-            pinocchio_(*state->get_pinocchio().get()){
+            pinocchio_(*state->get_pinocchio().get()),
+            A_lin(state->get_nv(), state->get_ndx()),
+            B_lin(state->get_nv(), state->get_nv())
+            {
 
                 if (costs_->get_nu() != nu_) {
                     std::cout << "Invalid argument: Costs doesn't have the same control dimension. It should be - " 
                             << nu_ << std::endl;
-                }                  
+                }      
+
+                A_lin.setZero();
+                B_lin.setZero();
+                for (unsigned i = 0; i < state->get_nv(); i++){
+                    B_lin(i,i) = 1.0;
+                }
 
     };
 
@@ -47,7 +58,7 @@ namespace crocoddyl{
         const Eigen::VectorBlock<const Eigen::Ref<const VectorXs>, Eigen::Dynamic> v = x.tail(state_->get_nv());
 
         pinocchio::forwardKinematics(pinocchio_, d->pinocchio, q);
-        pinocchio::updateFramePlacements(pinocchio_, d->pinocchio, q);
+        pinocchio::updateFramePlacements(pinocchio_, d->pinocchio);
         pinocchio::centerOfMass(pinocchio_, d->pinocchio, q, v);
         pinocchio::computeCentroidalMomentum(pinocchio_, d->pinocchio, q, v);
 
@@ -70,10 +81,13 @@ namespace crocoddyl{
 
         pinocchio::computeForwardKinematicsDerivatives(pinocchio_, d->pinocchio, q, v, u);
         pinocchio::jacobianCenterOfMass(pinocchio_, d->pinocchio);
-        pinocchio::computeCentroidalDynamicsDerivatives(pinocchio_, d->pinocchio, q, v, u);
+        
+        // Maynot be the most effecient to call this function (must investigate)
+        pinocchio::computeRNEADerivatives(pinocchio_, d->pinocchio, q, v, u);
+        // pinocchio::computeCentroidalDynamicsDerivatives(pinocchio_, d->pinocchio, q, v, u);
 
-        d->Fx.noalias() = d->A_lin;
-        d->Fu.noalias() = d->B_lin;
+        d->Fx.noalias() = A_lin;
+        d->Fu.noalias() = B_lin;
         
         // Computing the cost derivatives
         costs_->calcDiff(d->costs, x, u);              
@@ -84,4 +98,26 @@ namespace crocoddyl{
     DifferentialFwdKinematicsModelTpl<Scalar>::createData() {
         return boost::allocate_shared<Data>(Eigen::aligned_allocator<Data>(), this);
     };
+
+    template <typename Scalar>
+    pinocchio::ModelTpl<Scalar>& DifferentialFwdKinematicsModelTpl<Scalar>::get_pinocchio() const {
+    return pinocchio_;
+    }
+
+    template <typename Scalar>
+    const boost::shared_ptr<ActuationModelAbstractTpl<Scalar> >&
+    DifferentialFwdKinematicsModelTpl<Scalar>::get_actuation() const {
+    return actuation_;
+    }
+
+    template <typename Scalar>
+    const boost::shared_ptr<CostModelSumTpl<Scalar> >& DifferentialFwdKinematicsModelTpl<Scalar>::get_costs()
+        const {
+    return costs_;
+    }
+
 }
+
+// // template instatantiation
+// typedef crocoddyl::DifferentialFwdKinematicsModelTpl<double> DifferentialFwdKinematicsModel; 
+// typedef crocoddyl::DifferentialFwdKinematicsDataTpl<double> DifferentialFwdKinematicsData; 

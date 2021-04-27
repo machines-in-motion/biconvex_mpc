@@ -1,4 +1,5 @@
 #include "inverse_kinematics.hpp"
+#include "action_model.cpp"
 
 namespace ik{
 
@@ -28,33 +29,30 @@ namespace ik{
     void InverseKinematics::setup_costs(){
 
         for (unsigned i = 0; i < n_col_; i++){
-//             boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> running_DAM =
-//                         boost::make_shared<crocoddyl::DifferentialFwdKinematicsModel>(state_, actuation_, rcost_arr_[i]);
-            
+            boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> running_DAM =
+                        boost::make_shared<crocoddyl::DifferentialFwdKinematicsModelTpl<double>>(state_, actuation_, rcost_arr_[i]);
+            // crocoddyl::DifferentialFwdKinematicsModelTpl<double> tmp(state_, actuation_, rcost_arr_[i]);
             //// Changing to line below does not throw seg fault
-            
-             boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> running_DAM =
-                         boost::make_shared<crocoddyl::DifferentialActionModelFreeFwdDynamics>(state_, actuation_, rcost_arr_[i]);
             
             std::cout << "hello" << std::endl;
 
-            // rint_arr_[i] = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(running_DAM, dt_);
-            // std::cout << "hello" << std::endl;
+            rint_arr_[i] = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(running_DAM, dt_);
+            std::cout << "hello" << std::endl;
 
         }
 
-        // boost::shared_ptr<crocoddyl::DifferentialFwdKinematicsModel> terminal_DAM =
-        //                 boost::make_shared<crocoddyl::DifferentialFwdKinematicsModel>(state_, actuation_, tcost_model_);
+        boost::shared_ptr<crocoddyl::DifferentialFwdKinematicsModelTpl<double>> terminal_DAM =
+                        boost::make_shared<crocoddyl::DifferentialFwdKinematicsModelTpl<double>>(state_, actuation_, tcost_model_);
 
-        // tint_model_ = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(terminal_DAM);
+        tint_model_ = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(terminal_DAM);
 
     };
 
-    // void InverseKinematics::optimize(const Eigen::VectorXd& x0){
+    void InverseKinematics::optimize(const Eigen::VectorXd& x0){
         
-    //     problem_ = boost::make_shared<crocoddyl::ShootingProblem>(x0, rint_arr_, tint_model_);
-    //     ddp_ = boost::make_shared<crocoddyl::SolverDDP>(problem_);
-    //     ddp_->solve();
+        problem_ = boost::make_shared<crocoddyl::ShootingProblem>(x0, rint_arr_, tint_model_);
+        ddp_ = boost::make_shared<crocoddyl::SolverDDP>(problem_);
+        ddp_->solve();
 
-    // };
+    };
 }

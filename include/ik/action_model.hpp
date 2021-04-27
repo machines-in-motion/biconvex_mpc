@@ -5,6 +5,8 @@
 #ifndef CROCODDYL_DIFFERENTIAL_FWD_KINEMATICS
 #define CROCODDYL_DIFFERENTIAL_FWD_KINEMATICS
 
+#include "template.hpp"
+
 #include "crocoddyl/core/diff-action-base.hpp"
 #include "crocoddyl/core/costs/cost-sum.hpp"
 #include "crocoddyl/core/actuation-base.hpp"
@@ -12,19 +14,9 @@
 #include "crocoddyl/multibody/states/multibody.hpp"
 #include "crocoddyl/core/utils/exception.hpp"
 
+#include <crocoddyl/multibody/actions/free-fwddyn.hpp>
 
 namespace crocoddyl{
-
-    template <typename Scalar>
-    struct DifferentialFwdKinematicsDataTpl;
-
-    template <typename Scalar>
-    struct DifferentialFwdKinematicsModelTpl;
-
-    // template instatantiation
-    typedef DifferentialFwdKinematicsModelTpl<double> DifferentialFwdKinematicsModel; 
-    typedef DifferentialFwdKinematicsDataTpl<double> DifferentialFwdKinematicsData; 
-
 
     template <typename _Scalar>
 
@@ -33,12 +25,14 @@ namespace crocoddyl{
         public:
             typedef _Scalar Scalar;
             typedef DifferentialActionModelAbstractTpl<Scalar> Base;
-            typedef DifferentialFwdKinematicsDataTpl<Scalar> Data;
+            // hack
+            typedef DifferentialActionDataFreeFwdDynamicsTpl<Scalar> Data;
+            // typedef DifferentialFwdKinematicsDataTpl<Scalar> Data;
+            typedef MathBaseTpl<Scalar> MathBase;
             typedef CostModelSumTpl<Scalar> CostModelSum;
             typedef StateMultibodyTpl<Scalar> StateMultibody;
             typedef ActuationModelAbstractTpl<Scalar> ActuationModelAbstract;
             typedef DifferentialActionDataAbstractTpl<Scalar> DifferentialActionDataAbstract;
-            typedef MathBaseTpl<Scalar> MathBase;
             typedef typename MathBase::VectorXs VectorXs;
             typedef typename MathBase::MatrixXs MatrixXs;
 
@@ -58,7 +52,11 @@ namespace crocoddyl{
                                     const Eigen::Ref<const VectorXs>& u);
 
             virtual boost::shared_ptr<DifferentialActionDataAbstract> createData();
-            
+
+            const boost::shared_ptr<ActuationModelAbstract>& get_actuation() const;
+            const boost::shared_ptr<CostModelSum>& get_costs() const;
+            pinocchio::ModelTpl<Scalar>& get_pinocchio() const;
+
         protected:
             using Base::has_control_limits_;  //!< Indicates whether any of the control limits
             using Base::nr_;                  //!< Dimension of the cost residual
@@ -68,14 +66,17 @@ namespace crocoddyl{
             using Base::u_ub_;                //!< Upper control limits
             using Base::unone_;               //!< Neutral state
 
+            MatrixXs A_lin;
+            MatrixXs B_lin;
+
+
         private:
             boost::shared_ptr<ActuationModelAbstract> actuation_;
             boost::shared_ptr<CostModelSum> costs_;
             pinocchio::ModelTpl<Scalar>& pinocchio_;
 
+
     };
-
-
 
     template <typename _Scalar>
     struct DifferentialFwdKinematicsDataTpl : public DifferentialActionDataAbstractTpl<_Scalar> {
@@ -126,5 +127,6 @@ namespace crocoddyl{
 
     };
 }
+// #include "action_model.cpp"
 
 #endif

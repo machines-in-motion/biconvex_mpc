@@ -8,10 +8,6 @@
 
 #include <iostream>
 
-// #include "action_model.hpp"
-
-#include <crocoddyl/multibody/actions/free-fwddyn.hpp>
-
 #include "pinocchio/parsers/urdf.hpp"
 #include "pinocchio/multibody/data.hpp"
 
@@ -27,6 +23,9 @@
 #include <crocoddyl/core/solver-base.hpp>
 #include "crocoddyl/core/optctrl/shooting.hpp"
 #include <crocoddyl/core/solvers/ddp.hpp>
+
+#include "action_model.hpp"
+
 
 
 namespace ik{

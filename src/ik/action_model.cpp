@@ -15,14 +15,13 @@ namespace crocoddyl{
     DifferentialFwdKinematicsModelTpl<_Scalar>::DifferentialFwdKinematicsModelTpl(boost::shared_ptr<StateMultibody> state,
                                    boost::shared_ptr<ActuationModelAbstract> actuation,
                                    boost::shared_ptr<CostModelSum> costs)
-        :   Base(state, actuation->get_nu(), costs->get_nr()),
+        :   Base(state, costs_->get_nu(), costs->get_nr()),
             actuation_(actuation),
             costs_(costs),
             pinocchio_(*state->get_pinocchio().get()),
             A_lin(state->get_nv(), state->get_ndx()),
             B_lin(state->get_nv(), state->get_nv())
             {
-
                 if (costs_->get_nu() != nu_) {
                     std::cout << "Invalid argument: Costs doesn't have the same control dimension. It should be - " 
                             << nu_ << std::endl;
@@ -30,6 +29,7 @@ namespace crocoddyl{
 
                 A_lin.setZero();
                 B_lin.setZero();
+
                 for (unsigned i = 0; i < state->get_nv(); i++){
                     B_lin(i,i) = 1.0;
                 }

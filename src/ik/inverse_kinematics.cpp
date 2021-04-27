@@ -15,6 +15,8 @@ namespace ik{
 
         actuation_ = boost::make_shared<crocoddyl::ActuationModelFloatingBase>(state_);
 
+        std::cout << rmodel_.nq << " " << rmodel_.nv << std::endl;
+
         for (unsigned i = 0; i < n_col_; i++){
             boost::shared_ptr<crocoddyl::CostModelSum> rcost_model =
                                         boost::make_shared<crocoddyl::CostModelSum>(state_);
@@ -31,13 +33,7 @@ namespace ik{
         for (unsigned i = 0; i < n_col_; i++){
             boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> running_DAM =
                         boost::make_shared<crocoddyl::DifferentialFwdKinematicsModelTpl<double>>(state_, actuation_, rcost_arr_[i]);
-            // crocoddyl::DifferentialFwdKinematicsModelTpl<double> tmp(state_, actuation_, rcost_arr_[i]);
-            //// Changing to line below does not throw seg fault
-            
-            std::cout << "hello" << std::endl;
-
             rint_arr_[i] = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(running_DAM, dt_);
-            std::cout << "hello" << std::endl;
 
         }
 

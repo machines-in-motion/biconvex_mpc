@@ -1,4 +1,4 @@
-#include "centroidal.hpp"
+#include "dynamics/centroidal.hpp"
 
 
 namespace dynamics{

@@ -1,6 +1,6 @@
 // This file contains com tracking tasks
 
-#include "inverse_kinematics.hpp"
+#include "ik/inverse_kinematics.hpp"
 
 
 namespace ik{

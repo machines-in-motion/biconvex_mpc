@@ -11,9 +11,9 @@
 
 #include <iostream>
 
-#include "centroidal.hpp"
-#include "problem.hpp"
-#include "fista.hpp"
+#include "dynamics/centroidal.hpp"
+#include "solvers/problem.hpp"
+#include "solvers/fista.hpp"
 
 namespace motion_planner
 {

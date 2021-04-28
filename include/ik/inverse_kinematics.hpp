@@ -28,7 +28,7 @@
 #include "crocoddyl/multibody/costs/state.hpp"
 #include "crocoddyl/core/costs/control.hpp"
 
-#include "action_model.hpp"
+#include "ik/action_model.hpp"
 
 
 

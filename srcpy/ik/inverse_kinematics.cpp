@@ -6,7 +6,7 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
-#include <inverse_kinematics.hpp>
+#include <ik/inverse_kinematics.hpp>
 
 using namespace ik;
 namespace py = pybind11;

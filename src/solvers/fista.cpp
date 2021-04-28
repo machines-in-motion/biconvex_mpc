@@ -1,4 +1,4 @@
-#include "fista.hpp"
+#include "solvers/fista.hpp"
 
 
 namespace solvers

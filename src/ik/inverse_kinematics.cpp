@@ -1,4 +1,4 @@
-#include "inverse_kinematics.hpp"
+#include "ik/inverse_kinematics.hpp"
 #include "action_model.cpp"
 
 namespace ik{

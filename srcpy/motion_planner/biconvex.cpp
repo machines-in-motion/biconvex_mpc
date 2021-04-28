@@ -5,8 +5,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/eigen.h>
 
-#include <biconvex.hpp>
-#include <centroidal.hpp>
+#include <motion_planner/biconvex.hpp>
 
 using namespace motion_planner;
 using namespace dynamics;

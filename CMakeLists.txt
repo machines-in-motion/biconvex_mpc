@@ -24,10 +24,10 @@ endif()
 
 # TODO: Create individual directories for each sub-module (i.e. optimizer, etc.)
 include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/solvers/
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/motion_planner/
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/dynamics/
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/ik/
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+#  ${CMAKE_CURRENT_SOURCE_DIR}/include/motion_planner/
+#  ${CMAKE_CURRENT_SOURCE_DIR}/include/dynamics/
+#  ${CMAKE_CURRENT_SOURCE_DIR}/include/ik/
 
 )
 

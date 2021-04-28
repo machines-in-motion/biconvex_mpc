@@ -15,7 +15,7 @@ namespace crocoddyl{
     DifferentialFwdKinematicsModelTpl<_Scalar>::DifferentialFwdKinematicsModelTpl(boost::shared_ptr<StateMultibody> state,
                                    boost::shared_ptr<ActuationModelAbstract> actuation,
                                    boost::shared_ptr<CostModelSum> costs)
-        :   Base(state, costs_->get_nu(), costs->get_nr()),
+        :   Base(state, state->get_nv(), costs->get_nr()),
             actuation_(actuation),
             costs_(costs),
             pinocchio_(*state->get_pinocchio().get()),
@@ -23,7 +23,7 @@ namespace crocoddyl{
             B_lin(state->get_nv(), state->get_nv())
             {
                 if (costs_->get_nu() != nu_) {
-                    std::cout << "Invalid argument: Costs doesn't have the same control dimension. It should be - " 
+                    std::cout << "Invalid argument (from action model): Costs doesn't have the same control dimension. It should be - " 
                             << nu_ << std::endl;
                 }      
 
@@ -45,11 +45,11 @@ namespace crocoddyl{
                                 const Eigen::Ref<const VectorXs>& u){
 
         if (static_cast<std::size_t>(x.size()) != state_->get_nx()) {
-            std::cout << "Dimenstion of state incorrect" << std::endl;
+            std::cout << "Dimenstion of state incorrect (from action model) " << std::endl;
         }
     
         if (static_cast<std::size_t>(u.size()) != nu_) {
-            std::cout << "Dimenstion of action incorrect" << std::endl;
+            std::cout << "Dimenstion of action incorrect (from action model)" << std::endl;
         }
         
         Data* d = static_cast<Data*>(data.get());

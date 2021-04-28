@@ -7,15 +7,13 @@ namespace ik{
         T_(T), dt_(dt), n_col_(int (T/dt))
     {
 
-        pinocchio::urdf::buildModel(rmodel_path,rmodel_);
+        pinocchio::urdf::buildModel(rmodel_path,pinocchio::JointModelFreeFlyer(), rmodel_) ;
         // temporaryily created 
         pinocchio::Data rdata_tmp(rmodel_);
         rdata_ = rdata_tmp;
         state_ = boost::make_shared<crocoddyl::StateMultibody>(boost::make_shared<pinocchio::Model>(rmodel_));
 
         actuation_ = boost::make_shared<crocoddyl::ActuationModelFloatingBase>(state_);
-
-        std::cout << rmodel_.nq << " " << rmodel_.nv << std::endl;
 
         for (unsigned i = 0; i < n_col_; i++){
             boost::shared_ptr<crocoddyl::CostModelSum> rcost_model =

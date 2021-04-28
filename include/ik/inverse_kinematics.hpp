@@ -11,18 +11,20 @@
 #include "pinocchio/parsers/urdf.hpp"
 #include "pinocchio/multibody/data.hpp"
 
-#include "crocoddyl/multibody/actuations/floating-base.hpp"
-#include "crocoddyl/multibody/costs/state.hpp"
-#include "crocoddyl/multibody/costs/com-position.hpp"
-#include "crocoddyl/multibody/costs/frame-translation.hpp"
-#include "crocoddyl/multibody/costs/frame-velocity.hpp"
-#include "crocoddyl/multibody/costs/state.hpp"
-#include "crocoddyl/core/costs/control.hpp"
 #include "crocoddyl/core/fwd.hpp"
+#include "crocoddyl/multibody/actuations/floating-base.hpp"
 #include "crocoddyl/core/integrator/euler.hpp"
 #include <crocoddyl/core/solver-base.hpp>
 #include "crocoddyl/core/optctrl/shooting.hpp"
 #include <crocoddyl/core/solvers/ddp.hpp>
+
+#include "crocoddyl/multibody/costs/state.hpp"
+#include "crocoddyl/multibody/costs/com-position.hpp"
+#include "crocoddyl/multibody/costs/centroidal-momentum.hpp"
+#include "crocoddyl/multibody/costs/frame-translation.hpp"
+#include "crocoddyl/multibody/costs/frame-velocity.hpp"
+#include "crocoddyl/multibody/costs/state.hpp"
+#include "crocoddyl/core/costs/control.hpp"
 
 #include "action_model.hpp"
 
@@ -41,9 +43,20 @@ namespace ik{
 
             void optimize(const Eigen::VectorXd& x0);
 
+            std::vector<Eigen::VectorXd> get_xs() {return ddp_->get_xs();};
+
+
             // cost related functions
             void add_position_tracking_task(pinocchio::FrameIndex fid, double st, double et, 
                                                 Eigen::MatrixXd traj, double wt, std::string cost_name);
+            
+            void add_velocity_tracking_task(pinocchio::FrameIndex fid, double st, double et, 
+                                                Eigen::MatrixXd traj, double wt, std::string cost_name);
+
+            void add_com_position_tracking_task(double st, double et, Eigen::MatrixXd traj, 
+                                                double wt, std::string cost_name, bool isTerminal = false);
+            void add_centroidal_momentum_tracking_task(double st, double et, Eigen::MatrixXd traj, 
+                                                double wt, std::string cost_name, bool isTerminal = false);
 
         protected:
 

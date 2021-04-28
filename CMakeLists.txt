@@ -40,6 +40,8 @@ add_library(${PROJECT_NAME} SHARED
     src/ik/inverse_kinematics.cpp
     src/ik/action_model.cpp
     src/ik/end_effector_tasks.cpp
+    src/ik/com_tasks.cpp
+
     )
 
 target_link_libraries(biconvex_mpc Eigen3::Eigen)

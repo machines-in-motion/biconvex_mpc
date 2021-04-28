@@ -54,7 +54,7 @@ namespace solvers
 
     void FISTA::SoC_projection(function::ProblemData & prob_data_) {
         prob_data_.y_k_1 = (prob_data_.y_k - prob_data_.gradient/L_);
-        for (unsigned int i=0; i < prob_data_.num_vars; i+3) {
+        for (unsigned int i=0; i < prob_data_.num_vars; i+=3) {
             auto norm = prob_data_.y_k_1.segment(i, i + 3).squaredNorm();
             auto z = prob_data_.y_k_1[i + 2];
             if (mu * z < norm && norm < -z / mu) {

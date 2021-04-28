@@ -35,14 +35,18 @@ class FISTA
     private:
         //Computes step length
         void compute_step_length(Eigen::VectorXd y_k);
+
+        //Computes second order cone projection for constraints
+        void SoC_projection(function::ProblemData & prob_data_);
         
         //Solver parameters
         double L_ = 150;
         double beta_ = 1.5;
 
         double t_k;
-        double t_k_1;        
+        double t_k_1;
 
+        double mu = 0.6;
     };
 } //namespace solvers
 

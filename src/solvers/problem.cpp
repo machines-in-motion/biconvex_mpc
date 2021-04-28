@@ -21,6 +21,7 @@ namespace function
         lb_.resize(nx); lb_.setZero();
         ub_.resize(nx); ub_.setZero();
         // Should we create memory for the sparse matrices as well?
+        num_vars = nx;
     }
 
     void ProblemData::set_data(Eigen::SparseMatrix<double> A, Eigen::VectorXd b, 

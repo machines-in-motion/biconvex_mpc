@@ -41,6 +41,7 @@ add_library(${PROJECT_NAME} SHARED
     src/ik/action_model.cpp
     src/ik/end_effector_tasks.cpp
     src/ik/com_tasks.cpp
+    src/ik/regularization_costs.cpp
 
     )
 

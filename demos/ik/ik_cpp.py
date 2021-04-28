@@ -16,6 +16,9 @@ T = 0.2
 q0 = np.array(Solo12Config.initial_configuration)
 x0 = np.concatenate([q0, np.zeros(robot.model.nv)])
 
+stateWeights = np.array([0.] * 3 + [500.] * 3 + [0.01] * (robot.model.nv - 6) \
+                    + [10.] * 6 + [5.0] *(robot.model.nv - 6))
+
 # print(robot.model.nq, robot.model.nv)
 
 des_pos_fl = np.tile(np.array([0.3946,   0.14695,  0]), (int(T/dt),1))
@@ -48,6 +51,9 @@ ik.add_position_tracking_task(robot.model.getFrameId("HR_FOOT"), 0.0, T, des_pos
 
 # ik.add_com_position_tracking_task(0.0, T, des_com_pos, 1e3, "com_track", False)
 ik.add_centroidal_momentum_tracking_task(0.0, T, des_mom, 1e3, "mom_track", False)
+
+ik.add_state_regularization_cost(0, T, 5e-3, "state_reg", stateWeights, x0)
+ik.add_ctrl_regularization_cost(0, T, 5e-4, "ctrl_reg")
 
 
 ik.setup_costs()

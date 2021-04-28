@@ -1,7 +1,3 @@
-## This file contains costs that regularize state and control
-## Author : Avadesh Meduri 
-## Date : 25/02/2021
-
 import numpy as np
 import pinocchio as pin
 import crocoddyl
@@ -56,4 +52,3 @@ class RegularizationCosts:
             # uRegCost = crocoddyl.CostModelControl(self.state, self.actuation.nu)
             uRegCost = crocoddyl.CostModelControl(self.state)
             self.rcost_model_arr[i].addCost(cost_name+str(i), uRegCost, wt)
-    

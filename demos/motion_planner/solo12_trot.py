@@ -6,7 +6,9 @@ import time
 import numpy as np
 import pinocchio as pin
 
-from py_biconvex_mpc.motion_planner.biconvex import BiConvexMP
+# from py_biconvex_mpc.motion_planner.biconvex import BiConvexMP
+from py_biconvex_mpc.motion_planner.cpp_biconvex import BiConvexMP
+
 from robot_properties_solo.config import Solo12Config
 from py_biconvex_mpc.ik.inverse_kinematics import InverseKinematics
 from py_biconvex_mpc.ik_utils.gait_generator import GaitGenerator

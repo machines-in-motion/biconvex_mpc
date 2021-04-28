@@ -65,10 +65,10 @@ class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks
         problem = crocoddyl.ShootingProblem(x0, self.rcost_arr, self.terminalModel)
         ddp = crocoddyl.SolverDDP(problem)
         log = crocoddyl.CallbackLogger()
-        # ddp.setCallbacks([log,
-        #                 crocoddyl.CallbackVerbose(),
-        #                 ])
-        # # Solving it with the DDP algorithm
+        ddp.setCallbacks([log,
+                        crocoddyl.CallbackVerbose(),
+                        ])
+        # Solving it with the DDP algorithm
         st = time.time()    
         ddp.solve()
         et = time.time()

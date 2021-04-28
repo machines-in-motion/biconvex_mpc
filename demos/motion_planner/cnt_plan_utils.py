@@ -148,7 +148,6 @@ class SoloCntGen():
             com_opt : optimal center of mass trajectory
             wt_arr : [weight for momentum tracking, weight for center of mass tracking]
             ter_wt_arr : terminal [weight for momentum tracking, weight for center of mass tracking]
-
         """
         self.gg.ik.add_com_position_tracking_task(0, self.T, com_opt, wt_arr[1], "com_track_cost")
         self.gg.create_centroidal_task(mom_opt, 0, self.T, "mom_track_cost", wt_arr[0])

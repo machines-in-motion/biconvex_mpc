@@ -18,6 +18,8 @@
 #include "crocoddyl/core/optctrl/shooting.hpp"
 #include <crocoddyl/core/solvers/ddp.hpp>
 
+#include "crocoddyl/core/activations/weighted-quadratic.hpp"
+
 #include "crocoddyl/multibody/costs/state.hpp"
 #include "crocoddyl/multibody/costs/com-position.hpp"
 #include "crocoddyl/multibody/costs/centroidal-momentum.hpp"
@@ -57,6 +59,13 @@ namespace ik{
                                                 double wt, std::string cost_name, bool isTerminal = false);
             void add_centroidal_momentum_tracking_task(double st, double et, Eigen::MatrixXd traj, 
                                                 double wt, std::string cost_name, bool isTerminal = false);
+
+            void add_state_regularization_cost(double st, double et, double wt, 
+                                        std::string cost_name, Eigen::VectorXd stateWeights, 
+                                        Eigen::VectorXd x_reg);
+
+            void add_ctrl_regularization_cost(double st, double et, double wt, std::string cost_name);
+
 
         protected:
 

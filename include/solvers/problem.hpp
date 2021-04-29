@@ -32,6 +32,7 @@ class ProblemData
         // warm starting x
         void set_warm_x(Eigen::VectorXd x_wm){x_k = x_wm;}
 
+        int num_vars;
         double rho_;
         double obj_ = 0.0;
 

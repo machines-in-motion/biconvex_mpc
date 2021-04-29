@@ -1,4 +1,4 @@
-#include "fista.hpp"
+#include "solvers/fista.hpp"
 
 
 namespace solvers
@@ -50,6 +50,20 @@ namespace solvers
         // duration<double, std::milli> ms_double = t2 - t1;
         // std::cout << "fista time" << ms_double.count() << "ms" << std::endl;
         // std::cout << "Terminating due to exit criteria ..." << max_iters_ << std::endl;
+    }
+
+    void FISTA::SoC_projection(function::ProblemData & prob_data_) {
+        prob_data_.y_k_1 = (prob_data_.y_k - prob_data_.gradient/L_);
+        for (unsigned int i=0; i < prob_data_.num_vars; i+=3) {
+            auto norm = prob_data_.y_k_1.segment(i, i + 3).squaredNorm();
+            auto z = prob_data_.y_k_1[i + 2];
+            if (mu * z < norm && norm < -z / mu) {
+                prob_data_.y_k_1.segment(i, i + 2) = Eigen::VectorXd::Zero(3);
+            } else if (norm > std::min(abs(z / mu), abs(mu * z))) {
+                prob_data_.y_k_1 *= ((mu * mu) * norm + mu * z) / ((mu * mu + 1) * norm);
+                prob_data_.y_k_1[i + 2] = (mu * norm + z) / (mu * mu + 1);
+            }
+        }
     }
 
 } //namespace solvers

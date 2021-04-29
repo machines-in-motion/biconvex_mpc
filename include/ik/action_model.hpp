@@ -5,7 +5,7 @@
 #ifndef CROCODDYL_DIFFERENTIAL_FWD_KINEMATICS
 #define CROCODDYL_DIFFERENTIAL_FWD_KINEMATICS
 
-#include "template.hpp"
+#include "ik/template.hpp"
 
 #include "crocoddyl/core/diff-action-base.hpp"
 #include "crocoddyl/core/costs/cost-sum.hpp"

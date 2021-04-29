@@ -1,4 +1,4 @@
-#include "action_model.hpp"
+#include "ik/action_model.hpp"
 
 #include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/kinematics.hpp>

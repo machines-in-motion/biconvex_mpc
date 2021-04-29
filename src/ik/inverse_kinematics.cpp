@@ -49,4 +49,8 @@ namespace ik{
         ddp_->solve();
 
     };
+
+    void InverseKinematics::compute_optimal_com_and_mom(){
+        
+    }
 }

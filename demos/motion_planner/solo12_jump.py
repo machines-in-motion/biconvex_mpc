@@ -83,18 +83,25 @@ if optimize :
 
         mp.create_cost_X(W_X, W_X_ter, X_ter)
         mp.create_cost_F(W_F)
+        t1 = time.time()
         com_opt, F_opt, mom_opt = mp.optimize(X_init, 50)
+        t2 = time.time()
 
         cnt_planner = SoloCntGen(T, dt, gait = 1)
         cnt_planner.create_contact_costs(cnt_plan, 1e5)
-        cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+4, 1e+1], [1e+4, 1e+1])
+        cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+4, 1e+2], [1e+4, 1e+3])
         ik_solver = cnt_planner.return_gait_generator()
 
-        state_wt = np.array([0.] * 3 + [100.] * 3 + [10.0] * (robot.model.nv - 6) \
+        state_wt = np.array([0.] * 3 + [100.] * 3 + [8.0] * (robot.model.nv - 6) \
                             + [0.01] * 6 + [3.0] *(robot.model.nv - 6))
+        t3 = time.time()
 
-        xs, us = ik_solver.optimize(x0, wt_xreg=7e-3, wt_ureg = 2e-3, state_wt=state_wt)
-        com_opt_ik, mom_opt_ik = ik_solver.ik.compute_optimal_com_and_mom()
+        xs, us = ik_solver.optimize(x0, x_reg  = x0, wt_xreg=7e-3, wt_ureg = 3e-3, state_wt=state_wt)
+        t4 = time.time()
+        print("mp time", t2 - t1)
+        print("ik time", t2 - t1)
+
+        com_opt_ik, mom_opt_ik = ik_solver.compute_optimal_com_and_mom()
 
         W_X = np.array([1e+3, 1e+3, 1e+3, 1e+3, 1e+3, 1e+3, 3e3, 3e3, 3e3])
         

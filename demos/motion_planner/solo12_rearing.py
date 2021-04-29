@@ -96,8 +96,8 @@ if optimize :
         state_wt = np.array([0.] * 3 + [0.] * 3 + [0.0] * (robot.model.nv - 6) \
                             + [10.0] * 6 + [20.0] *(robot.model.nv - 6))
 
-        xs, us = ik_solver.optimize(x0, wt_xreg=7e-3, state_wt=state_wt)
-        com_opt_ik, mom_opt_ik = ik_solver.ik.compute_optimal_com_and_mom()
+        xs, us = ik_solver.optimize(x0, state_wt, x0, wt_xreg=7e-3)
+        com_opt_ik, mom_opt_ik = ik_solver.compute_optimal_com_and_mom()
 
         W_X = np.array([1e+3, 1e+3, 1e+3, 1e+3, 1e+3, 1e+3, 3e3, 3e3, 3e3])
         

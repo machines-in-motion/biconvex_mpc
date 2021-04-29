@@ -62,9 +62,11 @@ namespace ik{
 
             void add_state_regularization_cost(double st, double et, double wt, 
                                         std::string cost_name, Eigen::VectorXd stateWeights, 
-                                        Eigen::VectorXd x_reg);
+                                        Eigen::VectorXd x_reg, bool isTerminal = false);
 
-            void add_ctrl_regularization_cost(double st, double et, double wt, std::string cost_name);
+            void add_ctrl_regularization_cost(double st, double et, double wt, std::string cost_name, bool isTerminal = false);
+
+            void compute_optimal_com_and_mom();
 
 
         protected:

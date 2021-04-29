@@ -6,15 +6,17 @@ import numpy as np
 import pinocchio as pin
 import crocoddyl
 
-from py_biconvex_mpc.ik.inverse_kinematics import InverseKinematics
+# from py_biconvex_mpc.ik.inverse_kinematics import InverseKinematics
+from inverse_kinematics_cpp import InverseKinematics
 
 
 class GaitGenerator:
 
-    def __init__(self, robot, T, dt):
+    def __init__(self, robot, r_urdf, T, dt):
         """
         Input:
-            robot : pinocchio robot 
+            robot : robot urdf
+            r_urdf : robot urdf 
             x0 : initial joint position and velocity configuration
             eff_names : foot names arr
             T : horizon of plan
@@ -23,7 +25,8 @@ class GaitGenerator:
 
         self.rmodel = robot.model
         self.rdata = robot.data
-        self.ik = InverseKinematics(self.rmodel, dt, T)
+        self.ik = InverseKinematics(r_urdf, dt, T)
+        # self.ik = InverseKinematics(self.rmodel, dt, T)
 
         self.t = 0
         self.T = T
@@ -45,15 +48,13 @@ class GaitGenerator:
         """
         xMid = 0.5*(xT + x0)
         xMid[2] = sh
-
         self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
                             st, st, x0, wt, cname)
         
         self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
                             0.5*(st + et), 0.5*(st + et), xMid, 1e-1*wt, cname)
         
-        self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
-        et, et, xT, wt, cname)
+        self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname),et, et, xT, wt, cname)
         
     def create_contact_task(self, x0, st, et, fname, cname, wt):
         """
@@ -72,7 +73,7 @@ class GaitGenerator:
         self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
                             st, et, pos_traj, wt, cname + "_pos")
 
-    def create_centroidal_task(self, traj, st, et, cname, wt):
+    def create_centroidal_task(self, traj, st, et, cname, wt, isTerminal = False):
         """
         This creates a centroidal tracking task
         Input:
@@ -81,10 +82,11 @@ class GaitGenerator:
             et : end time of step in second
             cname : cost name
             wt : weight of cost
+            isTerminal : True if this is to be added in the terminal cost
         """
-        self.ik.add_centroidal_momentum_tracking_task(st, et, traj, wt, cname)
+        self.ik.add_centroidal_momentum_tracking_task(st, et, traj, wt, cname, isTerminal)
 
-    def optimize(self, x0, wt_xreg = 1e-4, wt_ureg = 1e-5, state_wt = None):
+    def optimize(self, x0, state_wt, x_reg, wt_xreg = 1e-4, wt_ureg = 1e-5):
         """
         This function optimizes the Ik motion
         Input:
@@ -94,19 +96,36 @@ class GaitGenerator:
             state_wt : regularization of the states variables 
                         (look at add state regularization cost for more details)
         """
-        self.ik.add_state_regularization_cost(0, self.T, wt_xreg, "xReg", state_wt)
-        self.ik.add_ctrl_regularization_cost(0, self.T, wt_ureg, "uReg")
+        self.ik.add_state_regularization_cost(0, self.T, wt_xreg, "xReg", state_wt, x_reg, False)
+        self.ik.add_ctrl_regularization_cost(0, self.T, wt_ureg, "uReg", False)
 
-        # setting up terminal cost model
-        xRegCost = crocoddyl.CostModelState(self.ik.state)
-        uRegCost = crocoddyl.CostModelControl(self.ik.state)
-
-
-        self.ik.terminalCostModel.addCost("stateReg", xRegCost, wt_xreg)
-        self.ik.terminalCostModel.addCost("ctrlReg", uRegCost, wt_ureg) 
+        self.ik.add_state_regularization_cost(0, self.T, wt_xreg, "xReg", state_wt, x_reg, True)
+        self.ik.add_ctrl_regularization_cost(0, self.T, wt_ureg, "uReg", True)
 
         self.ik.setup_costs()
+        
+        self.ik.optimize(x0) 
 
-        xs = self.ik.optimize(x0) 
+        self.xs = np.array (self.ik.get_xs())
+        self.us = None
 
-        return xs
+        return self.xs, self.us
+    
+    def compute_optimal_com_and_mom(self):
+        """
+        This function computes the optimal momentum based on the solution
+        """
+
+        opt_mom = np.zeros((len(self.xs), 6))
+        opt_com = np.zeros((len(self.xs), 3))
+        m = pin.computeTotalMass(self.rmodel)
+        for i in range(len(self.xs)):
+            q = self.xs[i][:self.rmodel.nq]
+            v = self.xs[i][self.rmodel.nq:]
+            pin.forwardKinematics(self.rmodel, self.rdata, q, v)
+            pin.computeCentroidalMomentum(self.rmodel, self.rdata)
+            opt_com[i] = pin.centerOfMass(self.rmodel, self.rdata, q, v)
+            opt_mom[i] = np.array(self.rdata.hg)
+            opt_mom[i][0:3] /= m
+
+        return opt_com, opt_mom

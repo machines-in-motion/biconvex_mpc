@@ -27,6 +27,7 @@ class SoloCntGen():
         self.rdata = robot.data 
         self.f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
         q0 = np.array(Solo12Config.initial_configuration)
+        self.x_reg = np.concatenate([q0, np.zeros(robot.model.nv)])
 
         self.T = T        
         self.foot_size = 0.01 #foot size        
@@ -42,7 +43,7 @@ class SoloCntGen():
             self.init_arr[0][i][1:4] = f_loc
             self.init_arr[0][i][3] = 0
 
-        self.gg = GaitGenerator(robot, T, dt)
+        self.gg = GaitGenerator(robot, Solo12Config.urdf_path, T, dt)
 
         if gait == 1:
             self.gait_cnt_arr = [[1,0,0,1], [0,1,1,0]]
@@ -114,7 +115,6 @@ class SoloCntGen():
                     f_loc[2] += self.foot_size 
                     f_loc_next = cnt_plan[t][i][1:4].copy()
                     f_loc_next[2] += self.foot_size 
-
                     self.gg.create_swing_foot_task(f_loc, \
                         f_loc_next, st, et, sh, e_name, e_name + "_ftc_" + str(t), wt_arr[0])
                 
@@ -149,13 +149,11 @@ class SoloCntGen():
             wt_arr : [weight for momentum tracking, weight for center of mass tracking]
             ter_wt_arr : terminal [weight for momentum tracking, weight for center of mass tracking]
         """
-        self.gg.ik.add_com_position_tracking_task(0, self.T, com_opt, wt_arr[1], "com_track_cost")
+        self.gg.ik.add_com_position_tracking_task(0, self.T, com_opt, wt_arr[1], "com_track_cost", False)
         self.gg.create_centroidal_task(mom_opt, 0, self.T, "mom_track_cost", wt_arr[0])
-
         self.gg.ik.add_com_position_tracking_task(self.T, self.T, \
                                 com_opt[-1], ter_wt_arr[1], "com_track_cost", True)
-        self.gg.ik.add_centroidal_momentum_tracking_task(self.T, self.T, \
-                                mom_opt[-1], ter_wt_arr[0], "mom_track_cost", True)
+        self.gg.create_centroidal_task(mom_opt[-1], 0, self.T, "mom_track_cost", ter_wt_arr[0], True)
 
 
     def return_gait_generator(self):
@@ -165,4 +163,4 @@ class SoloCntGen():
     def reset(self, T, dt):
 
         robot = Solo12Config.buildRobotWrapper()
-        self.gg = GaitGenerator(robot, T, dt)
+        self.gg = GaitGenerator(robot, Solo12Config.urdf_path, T, dt)

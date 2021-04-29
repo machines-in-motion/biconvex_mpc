@@ -76,22 +76,3 @@ class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks
         self.opt_sol = ddp.xs
 
         return self.opt_sol, ddp.us
-
-    def compute_optimal_com_and_mom(self):
-        """
-        This function computes the optimal momentum based on the solution
-        """
-        opt_mom = np.zeros((len(self.opt_sol), 6))
-        opt_com = np.zeros((len(self.opt_sol), 3))
-        m = pin.computeTotalMass(self.rmodel)
-        for i in range(len(self.opt_sol)):
-            q = self.opt_sol[i][:self.rmodel.nq]
-            v = self.opt_sol[i][self.rmodel.nq:]
-            pin.forwardKinematics(self.rmodel, self.rdata, q, v)
-            pin.computeCentroidalMomentum(self.rmodel, self.rdata)
-            opt_com[i] = pin.centerOfMass(self.rmodel, self.rdata, q, v)
-            opt_mom[i] = np.array(self.rdata.hg)
-            opt_mom[i][0:3] /= m
-
-        return opt_com, opt_mom
-        

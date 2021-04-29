@@ -15,7 +15,7 @@ class RegularizationCosts:
             ## class
         pass
 
-    def add_state_regularization_cost(self, st, et, wt, cost_name, stateWeights = None):
+    def add_state_regularization_cost(self, st, et, wt, cost_name, stateWeights, xreg):
         """
         This funtions adds regularization cost on the state
         Input:
@@ -26,15 +26,10 @@ class RegularizationCosts:
         """
         sn, en = int(st/self.dt), int(et/self.dt)
         for i in range(sn, en):
-            if isinstance(stateWeights, np.ndarray) == None:
-                stateWeights = np.array([0.] * 3 + [500.] * 3 + [0.01] * (self.state.nv - 6) \
-                    + [10.] * 6 + [5.0] *(self.state.nv - 6))
 
-            q0 = np.array(Solo12Config.initial_configuration)
-            x0 = np.concatenate([q0, pin.utils.zero(self.state.nv)])
             xRegCost = crocoddyl.CostModelState(self.state, \
                             crocoddyl.ActivationModelWeightedQuad(stateWeights**2), \
-                                            x0)
+                                            xreg)
 
             self.rcost_model_arr[i].addCost(cost_name+str(i), xRegCost, wt)
         

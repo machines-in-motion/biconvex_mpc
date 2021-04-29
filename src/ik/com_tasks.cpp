@@ -8,13 +8,14 @@ namespace ik{
     void InverseKinematics::add_com_position_tracking_task(double st, double et, Eigen::MatrixXd traj, 
                                                 double wt, std::string cost_name, bool isTerminal)
         {
-            sn = st/dt_; 
-            en = et/dt_;
+            // wonder if this is slow?
+            sn = std::ceil(st/dt_*100)/100; 
+            en = std::ceil(et/dt_*100)/100;
 
             if (!isTerminal){
                 for (unsigned i = sn; i < en; ++i){
                     boost::shared_ptr<crocoddyl::CostModelAbstract> com_track =
-                            boost::make_shared<crocoddyl::CostModelCoMPosition>(state_, traj.row(i));
+                            boost::make_shared<crocoddyl::CostModelCoMPosition>(state_, traj.row(i - sn));
                     rcost_arr_[i].get()->addCost(cost_name, com_track, wt);
                 }
             }
@@ -28,13 +29,13 @@ namespace ik{
         void InverseKinematics::add_centroidal_momentum_tracking_task(double st, double et, Eigen::MatrixXd traj, 
                                                 double wt, std::string cost_name, bool isTerminal)
         {
-            sn = st/dt_; 
-            en = et/dt_;
+            sn = std::ceil(st/dt_*100)/100; 
+            en = std::ceil(et/dt_*100)/100;
 
             if (!isTerminal){
                 for (unsigned i = sn; i < en; ++i){
                     boost::shared_ptr<crocoddyl::CostModelAbstract> mom_track =
-                            boost::make_shared<crocoddyl::CostModelCentroidalMomentum>(state_, traj.row(i));
+                            boost::make_shared<crocoddyl::CostModelCentroidalMomentum>(state_, traj.row(i - sn));
                     rcost_arr_[i].get()->addCost(cost_name, mom_track, wt);
                 }
             }

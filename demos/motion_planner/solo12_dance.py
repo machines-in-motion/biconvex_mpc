@@ -1,4 +1,4 @@
-## This file contains a rearing demo for solo12
+## This file contains a flip demo of solo 12
 ## Author : Avadesh Meduri
 ## Date : 12/03/2021
 
@@ -22,24 +22,33 @@ q0 = np.array(Solo12Config.initial_configuration)
 x0 = np.concatenate([q0, pin.utils.zero(robot.model.nv)])
 
 # cnt plan
-rt = 0.5 # reartime 
-T = 0.5 + rt + 0.1
+T = 1.6
 dt = 5e-2
 
-cnt_plan = [[[ 1.,      0.3946,   0.14695,  0., 0.,  0.5    ],
-             [ 1.,      0.3946,  -0.14695,  0., 0.,  0.5    ],
-             [ 1.,      0.0054,   0.14695,  0., 0.,  0.5    ],
-             [ 1.,      0.0054,  -0.14695,  0., 0.,  0.5    ]],
+cnt_plan = [[[ 1.,      0.3946,   0.14695,  0., 0.,  0.4    ],
+             [ 1.,      0.3946,  -0.14695,  0., 0.,  0.4    ],
+             [ 1.,      0.0054,   0.14695,  0., 0.,  0.4    ],
+             [ 1.,      0.0054,  -0.14695,  0., 0.,  0.4    ]],
         
-            [[ 0.,      0.3946,   0.14695,  0., 0.5, 0.5 + rt   ],
-             [ 0.,      0.3946,  -0.14695,  0., 0.5, 0.5 + rt   ],
-             [ 0.,      0.0054,   0.14695,  0., 0.5, 0.5 + rt   ],
-             [ 0.,      0.0054,  -0.14695,  0., 0.5, 0.5 + rt   ]],
+            [[ 0.,      0.3946,   0.14695,  0., 0.4, 0.7   ],
+             [ 0.,      0.3946,  -0.14695,  0., 0.4, 0.7   ],
+             [ 1.,      0.0054,   0.14695,  0., 0.4, 0.7   ],
+             [ 1.,      0.0054,  -0.14695,  0., 0.4, 0.7   ]],
         
-            [[ 1.,      0.3946,   0.14695,  0., 0.5 + rt, T    ],
-             [ 1.,      0.3946,  -0.14695,  0., 0.5 + rt, T    ],
-             [ 1.,      0.0054,   0.14695,  0., 0.5 + rt, T    ],
-             [ 1.,      0.0054,  -0.14695,  0., 0.5 + rt, T    ]]]
+            [[ 1.,      0.3946,   0.21695,  0., 0.7, 1.0    ],
+             [ 1.,      0.3946,  -0.21695,  0., 0.7, 1.0    ],
+             [ 1.,      0.0054,   0.14695,  0., 0.7, 1.0    ],
+             [ 1.,      0.0054,  -0.14695,  0., 0.7, 1.0    ]],
+
+            [[ 0.,      0.3946,   0.21695,  0., 1.0, 1.3    ],
+             [ 0.,      0.3946,  -0.21695,  0., 1.0, 1.3    ],
+             [ 1.,      0.0054,   0.14695,  0., 1.0, 1.3    ],
+             [ 1.,      0.0054,  -0.14695,  0., 1.0, 1.3    ]],
+
+            [[ 1.,      0.3946,   0.14695,  0., 1.3, 1.6    ],
+             [ 1.,      0.3946,  -0.14695,  0., 1.3, 1.6    ],
+             [ 1.,      0.0054,   0.14695,  0., 1.3, 1.6    ],
+             [ 1.,      0.0054,  -0.14695,  0., 1.3, 1.6    ]]]
 
 cnt_plan = np.array(cnt_plan)
 
@@ -64,9 +73,9 @@ rho = 1e+5 # penalty on dynamic constraint violation
 bx = 0.25
 by = 0.25
 bz = 0.25
-fx_max = 21
-fy_max = 21
-fz_max = 21
+fx_max = 20
+fy_max = 20
+fz_max = 20
 
 # optimization
 optimize = True
@@ -74,32 +83,33 @@ optimize = True
 if optimize :
     mom_opt_ik = None
     com_opt_ik = None
-    for k in range(1):
+    for k in range(2):
         mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
         mp.create_contact_array(cnt_plan)
         mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
 
-        # mp.add_via_point([0.00, 0.0, 0.05], 0.1, [1e-5, 1e-5, 1e+5])
+        # mp.add_via_point([0.00, 0.0, 0.5], 0.6, [1e-5, 1e-5, 1e+6])
 
         mp.create_cost_X(W_X, W_X_ter, X_ter)
         mp.create_cost_F(W_F)
         t1 = time.time()
         com_opt, F_opt, mom_opt = mp.optimize(X_init, 50)
         t2 = time.time()
+        print("mp time", t2 - t1)
 
         cnt_planner = SoloCntGen(T, dt, gait = 1)
-        cnt_planner.create_contact_costs(cnt_plan, 5e5)
-        cnt_planner.create_com_tasks(mom_opt, com_opt, [5e+6, 1e+3], [5e+6, 1e+3])
+        cnt_planner.create_contact_costs(cnt_plan, 1e5)
+        cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+5, 1e+3], [1e+5, 1e+3])
+
         ik_solver = cnt_planner.return_gait_generator()
+    
+        state_wt = np.array([0.] * 3 + [0.] * 3 + [0.0] * (robot.model.nv - 6) \
+                            + [10.0] * 6 + [20.0] *(robot.model.nv - 6))
 
-        state_wt = np.array([0.] * 3 + [100.] * 3 + [8.0] * (robot.model.nv - 6) \
-                            + [0.01] * 6 + [3.0] *(robot.model.nv - 6))
+        t2 = time.time()
+        xs, us = ik_solver.optimize(x0, state_wt, x0, wt_xreg=7e-3)
         t3 = time.time()
-
-        xs, us = ik_solver.optimize(x0, x_reg  = x0, wt_xreg=7e-3, wt_ureg = 3e-3, state_wt=state_wt)
-        t4 = time.time()
-        print("mp time", t2 - t1)
-        print("ik time", t2 - t1)
+        print("ik time", t3 - t2)
 
         com_opt_ik, mom_opt_ik = ik_solver.compute_optimal_com_and_mom()
 
@@ -112,8 +122,7 @@ if optimize :
 
     np.savez("./dat_file/mom", com_opt = com_opt, mom_opt = mom_opt, F_opt = F_opt)
     np.savez("./dat_file/ik", xs = xs, us = us)
-    np.savetxt("./dat_file/jump.txt", xs[:,0:19])
-
+    np.savetxt("./dat_file/rearing.txt", xs[:,0:19])
 
 else:
     f = np.load("dat_file/mom.npz")
@@ -126,15 +135,15 @@ else:
     mp.create_contact_array(cnt_plan)
     
     # simulation
-    kp = 4*[5.0, 50.0, 50.0]
-    kd = 4*[.5, .0, .0]
-    kc = [400, 400, 400]
+    kp = 4*[50.0, 50.0, 50.0]
+    kd = 4*[0.5, 0.5, 0.5]
+    kc = [500, 500, 500]
     dc = [50,50,50]
-    kb = [100, 100, 100]
-    db = [10,10,10]
+    kb = [500, 500, 500]
+    db = [50,50,50]
     env = Solo12Env(X_init, T, dt, kp, kd, kc, dc, kb, db)
     env.generate_motion_plan(com_opt, mom_opt, F_opt, mp.cnt_arr.copy(), mp.r_arr.copy())
     env.generate_end_eff_plan(xs, us)
     # env.plot()
     env.sim(fr = 0.00, vname = None)
-    env.plot_real()
+    # env.plot_real()

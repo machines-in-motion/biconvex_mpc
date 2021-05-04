@@ -10,6 +10,10 @@ from py_biconvex_mpc.ik_utils.gait_generator import GaitGenerator
 
 from robot_properties_solo.config import Solo12Config
 
+print(Solo12Config.urdf_path)
+
+assert False
+
 robot = Solo12Config.buildRobotWrapper()
 dt = 5e-2
 T = 1

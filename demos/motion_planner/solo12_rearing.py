@@ -23,23 +23,23 @@ x0 = np.concatenate([q0, pin.utils.zero(robot.model.nv)])
 
 # cnt plan
 rt = 0.5 # reartime 
-T = 0.3 + rt + 0.2
+T = 0.4 + rt + 0.4
 dt = 5e-2
 
-cnt_plan = [[[ 1.,      0.3946,   0.14695,  0., 0.,  0.3    ],
-             [ 1.,      0.3946,  -0.14695,  0., 0.,  0.3    ],
-             [ 1.,      0.0054,   0.14695,  0., 0.,  0.3    ],
-             [ 1.,      0.0054,  -0.14695,  0., 0.,  0.3    ]],
+cnt_plan = [[[ 1.,      0.3946,   0.14695,  0., 0.,  0.4    ],
+             [ 1.,      0.3946,  -0.14695,  0., 0.,  0.4    ],
+             [ 1.,      0.0054,   0.14695,  0., 0.,  0.4    ],
+             [ 1.,      0.0054,  -0.14695,  0., 0.,  0.4    ]],
         
-            [[ 0.,      0.3946,   0.14695,  0., 0.3, 0.3 + rt   ],
-             [ 0.,      0.3946,  -0.14695,  0., 0.3, 0.3 + rt   ],
-             [ 1.,      0.0054,   0.14695,  0., 0.3, 0.3 + rt   ],
-             [ 1.,      0.0054,  -0.14695,  0., 0.3, 0.3 + rt   ]],
+            [[ 0.,      0.3946,   0.14695,  0., 0.4, 0.4 + rt   ],
+             [ 0.,      0.3946,  -0.14695,  0., 0.4, 0.4 + rt   ],
+             [ 1.,      0.0054,   0.14695,  0., 0.4, 0.4 + rt   ],
+             [ 1.,      0.0054,  -0.14695,  0., 0.4, 0.4 + rt   ]],
         
-            [[ 1.,      0.3946,   0.14695,  0., 0.3 + rt, T    ],
-             [ 1.,      0.3946,  -0.14695,  0., 0.3 + rt, T    ],
-             [ 1.,      0.0054,   0.14695,  0., 0.3 + rt, T    ],
-             [ 1.,      0.0054,  -0.14695,  0., 0.3 + rt, T    ]]]
+            [[ 1.,      0.3946,   0.14695,  0., 0.4 + rt, T    ],
+             [ 1.,      0.3946,  -0.14695,  0., 0.4 + rt, T    ],
+             [ 1.,      0.0054,   0.14695,  0., 0.4 + rt, T    ],
+             [ 1.,      0.0054,  -0.14695,  0., 0.4 + rt, T    ]]]
 
 cnt_plan = np.array(cnt_plan)
 
@@ -83,20 +83,32 @@ if optimize :
 
         mp.create_cost_X(W_X, W_X_ter, X_ter)
         mp.create_cost_F(W_F)
+        t1 = time.time()
         com_opt, F_opt, mom_opt = mp.optimize(X_init, 50)
+        t2 = time.time()
+        print("mp time", t2 - t1)
 
         cnt_planner = SoloCntGen(T, dt, gait = 1)
         cnt_planner.create_contact_costs(cnt_plan, 1e5)
         cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+5, 1e+3], [1e+5, 1e+3])
+
         ik_solver = cnt_planner.return_gait_generator()
-        
-        # ik_solver.ik.add_position_tracking_task(robot.model.getFrameId("FL_FOOT"), \
-                            # 0.6, 0.6, np.array([0.35, 0.14, 0.5]), 1e+5, "FL_high_five")
+        ik_solver.ik.add_position_tracking_task(robot.model.getFrameId("FL_FOOT"), \
+                            0.5, 0.5, np.array([0.45, 0.14, 0.55]), 5e+3, "FL_high_five")
+        ik_solver.ik.add_position_tracking_task(robot.model.getFrameId("FL_FOOT"), \
+                            0.6, 0.6, np.array([0.55, 0.14, 0.55]), 5e+3, "FL_high_five")
+
+        ik_solver.ik.add_position_tracking_task(robot.model.getFrameId("FR_FOOT"), \
+                            0.6, 0.6, np.array([0.5, -0.14, 0.3]), 1e+3, "FR_high_five")
 
         state_wt = np.array([0.] * 3 + [0.] * 3 + [0.0] * (robot.model.nv - 6) \
                             + [10.0] * 6 + [20.0] *(robot.model.nv - 6))
 
+        t2 = time.time()
         xs, us = ik_solver.optimize(x0, state_wt, x0, wt_xreg=7e-3)
+        t3 = time.time()
+        print("ik time", t3 - t2)
+
         com_opt_ik, mom_opt_ik = ik_solver.compute_optimal_com_and_mom()
 
         W_X = np.array([1e+3, 1e+3, 1e+3, 1e+3, 1e+3, 1e+3, 3e3, 3e3, 3e3])
@@ -104,10 +116,11 @@ if optimize :
         # adding center of mass and momentum tracking cost
         mp.add_ik_com_cost(com_opt_ik)
         mp.add_ik_momentum_cost(mom_opt_ik)
-        mp.stats()
+        # mp.stats()
 
     np.savez("./dat_file/mom", com_opt = com_opt, mom_opt = mom_opt, F_opt = F_opt)
     np.savez("./dat_file/ik", xs = xs, us = us)
+    np.savetxt("./dat_file/rearing.txt", xs[:,0:19])
 
 else:
     f = np.load("dat_file/mom.npz")

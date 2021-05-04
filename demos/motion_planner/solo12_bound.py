@@ -30,7 +30,7 @@ X_ter = X_init.copy()
 st = 0.2 # step time 
 sh = 0.10 # step height
 sl = np.array([0.1,0.0,0]) # step length
-n_steps = 6 # number of steps
+n_steps = 10 # number of steps
 T = st*(n_steps + 2)
 dt = 5e-2
 
@@ -73,14 +73,14 @@ if optimize:
     et = time.time()
     print("net time:", et - st)
     
-    cnt_planner.create_ik_step_costs(cnt_plan, sh, [1e+5, 1e+6])
+    cnt_planner.create_ik_step_costs(cnt_plan, sh, [1e+5, 1e+5])
     cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+4, 1e+3], [1e+4, 1e+3])
     ik_solver = cnt_planner.return_gait_generator()
     stateWeights = np.array([0.] * 3 + [500.] * 3 + [5.0] * (robot.model.nv - 6) \
-                        + [0.01] * 6 + [5.0] *(robot.model.nv - 6))
+                        + [0.01] * 6 + [15.0] *(robot.model.nv - 6))
 
     st = time.time()
-    xs, us = ik_solver.optimize(x0, stateWeights, x0, wt_xreg=7e-3)
+    xs, us = ik_solver.optimize(x0, stateWeights, x0, wt_xreg=7e-3, wt_ureg=1e-3)
     et = time.time()
     print("net time:", et - st)
     com_opt_ik, mom_opt_ik = ik_solver.compute_optimal_com_and_mom()
@@ -89,10 +89,12 @@ if optimize:
 
     mp.add_ik_com_cost(com_opt_ik)
     mp.add_ik_momentum_cost(mom_opt_ik)    
-    mp.stats()
+    # mp.stats()
 
     np.savez("./dat_file/mom", com_opt = com_opt, mom_opt = mom_opt, F_opt = F_opt)
     np.savez("./dat_file/ik", xs = xs, us = us)
+    np.savetxt("./dat_file/bound.txt", xs[:,0:19])
+
 else:
     # simulation
     f = np.load("dat_file/mom.npz")

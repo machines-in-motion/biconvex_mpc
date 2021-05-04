@@ -30,7 +30,7 @@ X_ter = X_init.copy()
 st = 0.2 # step time 
 sh = 0.15 # step height
 sl = np.array([0.1,0.0,0]) # step length
-n_steps = 6 # number of steps
+n_steps = 12 # number of steps
 T = st*(n_steps + 2)
 dt = 5e-2
 
@@ -79,17 +79,19 @@ if optimize:
     state_wt = np.array([0.] * 3 + [500.] * 3 + [5.0] * (robot.model.nv - 6) \
                         + [0.01] * 6 + [5.0] *(robot.model.nv - 6))
 
-    xs, us = ik_solver.optimize(x0, state_wt, x0, wt_xreg=7e-3)
+    xs, us = ik_solver.optimize(x0, state_wt, x0, wt_xreg=7e-3, wt_ureg=2e-4)
     com_opt_ik, mom_opt_ik = ik_solver.compute_optimal_com_and_mom()
 
     W_X = np.array([1e-3, 1e-3, 1e-3, 1e+3, 1e+3, 1e+3, 3e3, 3e3, 3e3])
 
     mp.add_ik_com_cost(com_opt_ik)
     mp.add_ik_momentum_cost(mom_opt_ik)    
-    mp.stats()
-
+    # mp.stats()
+    print(xs.shape)
     np.savez("./dat_file/mom", com_opt = com_opt, mom_opt = mom_opt, F_opt = F_opt)
     np.savez("./dat_file/ik", xs = xs, us = us)
+    np.savetxt("./dat_file/trotting.txt", xs[:,0:19])
+
 else:
     # simulation
     f = np.load("dat_file/mom.npz")

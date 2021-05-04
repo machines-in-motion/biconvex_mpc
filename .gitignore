@@ -2,6 +2,7 @@
 *npz
 *pyc
 *mkv
+*txt
 build/*
 build
 .idea/*

@@ -105,7 +105,7 @@ class BiConvexMP{
         // tolerance for exit criteria of Fista
         double tol = 1e-5;
         // tolerance for exiting biconvex
-        double exit_tol = 1e-2;
+        double exit_tol = 1e-3;
         // problem data for x optimization
         function::ProblemData prob_data_x;
         // solver for x optimization

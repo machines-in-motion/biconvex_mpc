@@ -6,7 +6,12 @@ namespace solvers
     void FISTA::compute_step_length(function::ProblemData & prob_data_) {
         prob_data_.compute_grad_obj();    
         while (1) {
-            prob_data_.y_k_1 = (prob_data_.y_k - prob_data_.gradient/L_).cwiseMin(prob_data_.ub_).cwiseMax(prob_data_.lb_);
+            if (!use_soc_projection_) {
+                prob_data_.y_k_1 = (prob_data_.y_k - prob_data_.gradient/L_).cwiseMin(prob_data_.ub_).cwiseMax(prob_data_.lb_);
+            }
+            else {
+                SoC_projection(prob_data_);
+            }
             prob_data_.y_diff = (prob_data_.y_k_1 - prob_data_.y_k); // proximal gradient
             prob_data_.G_k_norm = prob_data_.y_diff.norm(); // proximal gradient norm
             if (prob_data_.compute_obj_diff() > prob_data_.gradient.transpose()*(prob_data_.y_diff) +
@@ -54,14 +59,18 @@ namespace solvers
 
     void FISTA::SoC_projection(function::ProblemData & prob_data_) {
         prob_data_.y_k_1 = (prob_data_.y_k - prob_data_.gradient/L_);
+        // for (unsigned int j=0; j < 12; ++j) {
+        //     std::cout << prob_data_.y_k_1[j] << std::endl;
+        // }
         for (unsigned int i=0; i < prob_data_.num_vars; i+=3) {
-            auto norm = prob_data_.y_k_1.segment(i, i + 3).squaredNorm();
+            //std::cout << prob_data_.y_k_1.segment(i,3) << std::endl;;
+            soc_norm = prob_data_.y_k_1.segment(i,2).squaredNorm();
             auto z = prob_data_.y_k_1[i + 2];
-            if (mu * z < norm && norm < -z / mu) {
-                prob_data_.y_k_1.segment(i, i + 2) = Eigen::VectorXd::Zero(3);
-            } else if (norm > std::min(abs(z / mu), abs(mu * z))) {
-                prob_data_.y_k_1 *= ((mu * mu) * norm + mu * z) / ((mu * mu + 1) * norm);
-                prob_data_.y_k_1[i + 2] = (mu * norm + z) / (mu * mu + 1);
+            if (mu * z < soc_norm && soc_norm < -z / mu) {
+                prob_data_.y_k_1.segment(i,3) = Eigen::VectorXd::Zero(3);
+            } else if (soc_norm > std::min(abs(z / mu), abs(mu * z))) {
+                prob_data_.y_k_1.segment(i,2) *= ((mu * mu) * soc_norm + mu * z) / ( ((mu * mu) + 1) * soc_norm);
+                prob_data_.y_k_1[i + 2] = (mu * soc_norm + z) / (mu * mu + 1);
             }
         }
     }

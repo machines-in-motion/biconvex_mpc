@@ -32,21 +32,27 @@ class FISTA
         //Set l0
         void set_l0(double l0) { L_ = l0; }
 
+        //Use Second Order Cone Projection
+        void set_soc_true() { use_soc_projection_ = true; }
+
     private:
         //Computes step length
         void compute_step_length(Eigen::VectorXd y_k);
 
         //Computes second order cone projection for constraints
         void SoC_projection(function::ProblemData & prob_data_);
+        bool use_soc_projection_ = false;
         
         //Solver parameters
         double L_ = 150;
         double beta_ = 1.5;
 
+        double soc_norm = 0;
+
         double t_k;
         double t_k_1;
 
-        double mu = 0.6;
+        double mu = 1.0;
     };
 } //namespace solvers
 

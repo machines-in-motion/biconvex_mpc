@@ -15,6 +15,9 @@ namespace motion_planner{
             fista_x.set_l0(2.25e6);
             fista_f.set_l0(506.25);
 
+            //Use Second Order Cone Projection
+            fista_f.set_soc_true();
+
             //Set number of variables and constraints for osqp-eigen
             #ifdef USE_OSQP
                 //osqp_x();
@@ -33,7 +36,10 @@ namespace motion_planner{
 
         centroidal_dynamics.update_x_init(x_init);
         for (unsigned i = 0; i < no_iters; ++i){
+            // We need to look into this line...it causes a very high dynamic violation...
             maxit = init_maxit/(int(i)/10 + 1);
+
+
             // optimizing for F
             // std::cout << "optimizing F..." << std::endl;
             centroidal_dynamics.compute_x_mat(prob_data_x.x_k);

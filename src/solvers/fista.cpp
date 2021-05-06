@@ -66,11 +66,11 @@ namespace solvers
             //std::cout << prob_data_.y_k_1.segment(i,3) << std::endl;;
             soc_norm = prob_data_.y_k_1.segment(i,2).squaredNorm();
             auto z = prob_data_.y_k_1[i + 2];
-            if (mu * z < soc_norm && soc_norm < -z / mu) {
+            if (soc_norm*mu < -z || z < 0) {
                 prob_data_.y_k_1.segment(i,3) = Eigen::VectorXd::Zero(3);
-            } else if (soc_norm > std::min(abs(z / mu), abs(mu * z))) {
-                prob_data_.y_k_1.segment(i,2) *= ((mu * mu) * soc_norm + mu * z) / ( ((mu * mu) + 1) * soc_norm);
-                prob_data_.y_k_1[i + 2] = (mu * soc_norm + z) / (mu * mu + 1);
+            } else if (soc_norm > mu * z) {
+                prob_data_.y_k_1.segment(i,2) *= ((mu * mu) * soc_norm + (mu * z)) / ( ((mu * mu) + 1) * soc_norm);
+                prob_data_.y_k_1[i + 2] = (mu * soc_norm + z) / ((mu * mu )+ 1);
             }
         }
     }

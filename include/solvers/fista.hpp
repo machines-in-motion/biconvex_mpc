@@ -52,7 +52,7 @@ class FISTA
         double t_k;
         double t_k_1;
 
-        double mu = 1.0;
+        double mu = 0.01;
     };
 } //namespace solvers
 

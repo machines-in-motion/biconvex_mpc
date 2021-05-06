@@ -23,29 +23,68 @@ X_ter = X_init.copy()
 
 # contact plan
 dt = 5e-2
-v_des = np.array([0.3, 0, 0])
+v_des = np.array([0.5, 0, 0])
 st = 0.25
-T = st
+T = 2*st
 eff_arr = ["FL", "FR", "HL", "HR"]
 a, b, c, d = 1, 0, 0, 1
+sl_arr = v_des*st
+
 cnt_plan = [[[ a*1.,      0.3946,   0.14695,  0., 0,  st ],
              [ b*1.,      0.3946,  -0.14695,  0., 0,  st ],
              [ c*1.,      0.0054,   0.14695,  0., 0,  st ],
-             [ d*1.,      0.0054,  -0.14695,  0., 0,  st ]]]
+             [ d*1.,      0.0054,  -0.14695,  0., 0,  st ]],
 
-sl_arr = v_des*st
+            [[ (1-a)*1.,      0.3946 + (1-a)*sl_arr[0],   0.14695 + (1-a)*sl_arr[1],  0., st,  2*st ],
+             [ (1-b)*1.,      0.3946 + (1-b)*sl_arr[0],  -0.14695 + (1-b)*sl_arr[1],  0., st,  2*st ],
+             [ (1-c)*1.,      0.0054 + (1-c)*sl_arr[0],   0.14695 + (1-c)*sl_arr[1],  0., st,  2*st ],
+             [ (1-d)*1.,      0.0054 + (1-d)*sl_arr[0],  -0.14695 + (1-d)*sl_arr[1],  0., st,  2*st ]]]
 
-gg = GaitGenerator(robot, Solo12Config.urdf_path, st, dt)
+
+cnt_plan = [[[ 1.,      0.5,   0.1,  0., 0.5,  1.0],
+             [ 0.,      0.5,  -0.1,  0., 0.5,  1.0],
+             [ 0.,      0.0,   0.1,  0., 0.5,  1.0],
+             [ 1.,      0.0,  -0.1,  0., 0.5,  1.0]],
+
+            [[ 0.,      0.5,   0.1,  0., 1  ,  2 ],
+             [ 1.,      1.0,  -0.1,  0., 1  ,  2 ],
+             [ 1.,      1.0,   0.1,  0., 1  ,  2 ],
+             [ 0.,      0.0,  -0.1,  0., 1  ,  2 ]],
+
+            [[ 1.,      1.0,   0.1,  0., 2  ,  2.5 ],
+             [ 0.,      1.0,  -0.1,  0., 2  ,  2.5 ],
+             [ 0.,      1.0,   0.1,  0., 2  ,  2.5 ],
+             [ 1.,      0.5,  -0.1,  0., 2  ,  2.5 ]]]             ]
+
+
+
+
+gg = GaitGenerator(robot, Solo12Config.urdf_path, T, dt)
+for t in range(len(cnt_plan)):
+    for i in range(4):
+        st = cnt_plan[t][i][4]
+        et = cnt_plan[t][i][5]
+        if cnt_plan[t][i][0] == 0:
+            gg.create_swing_foot_task(np.array(cnt_plan[t][i][1:4]),np.array(cnt_plan[t][i][1:4]) + sl_arr,\
+                 st, et, 0.1, eff_arr[i] + "_FOOT", eff_arr[i] + "_step", 1e4, t)
+
+        else:
+            gg.create_contact_task(np.array(cnt_plan[t][i][1:4]), st, et, \
+                eff_arr[i] + "_FOOT", eff_arr[i] + "_step", 1e6)
+
+
+# teriminal tracking cost
+t = len(cnt_plan)-1
 for i in range(4):
-    if cnt_plan[0][i][0] == 0:
-        gg.create_swing_foot_task(np.array(cnt_plan[0][i][1:4]),np.array(cnt_plan[0][i][1:4]) + sl_arr, 0.0, st - dt, 0.1, eff_arr[i] + "_FOOT", eff_arr[i] + "_step", 1e5)
-        gg.create_contact_task(np.array(cnt_plan[0][i][1:4])+ sl_arr, st - dt, st, eff_arr[i] + "_FOOT", eff_arr[i] + "_step", 1e6)
-
+    if cnt_plan[t][i][0] == 0:
+        gg.create_contact_task(np.array(cnt_plan[t][i][1:4]) + 2*sl_arr, et, et, \
+                    eff_arr[i] + "_FOOT", eff_arr[i] + "_step", 1e6, True)
     else:
-        gg.create_contact_task(np.array(cnt_plan[0][i][1:4]), 0.0, st, eff_arr[i] + "_FOOT", eff_arr[i] + "_step", 1e6)
+        gg.create_contact_task(np.array(cnt_plan[t][i][1:4]), et, et, \
+                    eff_arr[i] + "_FOOT", eff_arr[i] + "_step", 1e6, True)
 
-X_ter[0:3] = X_init[0:3] + v_des*st
-X_ter[3:6] = v_des
+X_init[3:6] = v_des
+X_ter[0:3] = X_init[0:3] + v_des*T
 X_nom = np.zeros((9*int(T/dt)))
 
 # weights

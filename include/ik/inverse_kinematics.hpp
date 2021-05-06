@@ -52,6 +52,9 @@ namespace ik{
             void add_position_tracking_task(pinocchio::FrameIndex fid, double st, double et, 
                                                 Eigen::MatrixXd traj, double wt, std::string cost_name);
             
+            void add_terminal_position_tracking_task(pinocchio::FrameIndex fid, Eigen::MatrixXd traj, double wt, 
+                                                    std::string cost_name);
+
             void add_velocity_tracking_task(pinocchio::FrameIndex fid, double st, double et, 
                                                 Eigen::MatrixXd traj, double wt, std::string cost_name);
 

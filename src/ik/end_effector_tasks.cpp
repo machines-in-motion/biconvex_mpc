@@ -11,6 +11,7 @@ namespace ik{
 
         sn = std::ceil(st/dt_*100)/100; 
         en = std::ceil(et/dt_*100)/100;
+        // std::cout << "pos " << sn << " " << en << std::endl;
         if (et - st == 0){
             crocoddyl::FrameTranslation Mref(fid, traj);
             boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost = 
@@ -26,6 +27,16 @@ namespace ik{
                 rcost_arr_[i].get()->addCost(cost_name + std::to_string(i), goal_tracking_cost, wt);
             }
         };
+    };
+
+    void InverseKinematics::add_terminal_position_tracking_task(
+                    pinocchio::FrameIndex fid, Eigen::MatrixXd traj, 
+                                double wt, std::string cost_name){
+
+        crocoddyl::FrameTranslation Mref(fid, traj);
+        boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost = 
+            boost::make_shared<crocoddyl::CostModelFrameTranslation>(state_, Mref);   
+        tcost_model_.get()->addCost(cost_name, goal_tracking_cost, wt);
     };
 
     void InverseKinematics::add_velocity_tracking_task(

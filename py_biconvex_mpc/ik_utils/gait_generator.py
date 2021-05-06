@@ -32,7 +32,7 @@ class GaitGenerator:
         self.T = T
         self.dt = dt
         
-    def create_swing_foot_task(self, x0, xT, st, et, sh, fname, cname, wt):
+    def create_swing_foot_task(self, x0, xT, st, et, sh, fname, cname, wt, isTerminal = False):
         """
         This creates a swing foot cost where the foot trajectory is a simple line based
         interpolation
@@ -53,10 +53,10 @@ class GaitGenerator:
         
         self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
                             0.5*(st + et), 0.5*(st + et), xMid, 1e-1*wt, cname)
+        if not isTerminal:
+            self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname),et, et, xT, wt, cname)
         
-        self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname),et, et, xT, wt, cname)
-        
-    def create_contact_task(self, x0, st, et, fname, cname, wt):
+    def create_contact_task(self, x0, st, et, fname, cname, wt, isTerminal = False):
         """
         This creates a stationary trajectory for the foot that is on the ground
         Input:
@@ -67,11 +67,16 @@ class GaitGenerator:
             cname : cost name
             wt : weight of cost
         """
+        if not isTerminal:
+            N = int(np.round(((et - st)/self.dt),2))
+            pos_traj = np.tile(x0, (N,1))
+            self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
+                                st, et, pos_traj, wt, cname + "_pos")
 
-        N = int(np.round(((et - st)/self.dt),2))
-        pos_traj = np.tile(x0, (N,1))
-        self.ik.add_position_tracking_task(self.rmodel.getFrameId(fname), \
-                            st, et, pos_traj, wt, cname + "_pos")
+        else:
+            self.ik.add_terminal_position_tracking_task(self.rmodel.getFrameId(fname), \
+                                x0, wt, cname + "term_pos")
+
 
     def create_centroidal_task(self, traj, st, et, cname, wt, isTerminal = False):
         """

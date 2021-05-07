@@ -183,7 +183,7 @@ class BiConvexMP(BiConvexCosts):
 
         self.mom_opt[:,0:3] = self.m*self.mom_opt[:,0:3]
 
-        return com_opt, F_k, self.mom_opt
+        return com_opt, self.F_opt, self.mom_opt
 
     def get_optimal_x_p(self):
 

@@ -46,6 +46,7 @@ namespace ik{
             void optimize(const Eigen::VectorXd& x0);
 
             std::vector<Eigen::VectorXd> get_xs() {return ddp_->get_xs();};
+            std::vector<Eigen::VectorXd> get_us() {return ddp_->get_us();};
 
 
             // cost related functions

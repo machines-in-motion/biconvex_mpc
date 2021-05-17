@@ -33,8 +33,8 @@ class ProblemData
         void set_warm_x(Eigen::VectorXd x_wm){x_k = x_wm;}
 
         int num_vars; //Total number of variables to optimize over
-        const int state_; //Number of State Variables
-        const int horizon_; //Horizon Length (Number of knots)
+        const int state_ = 0; //Number of State Variables
+        const int horizon_ = 0; //Horizon Length (Number of knots)
         double rho_;
         double obj_ = 0.0;
 

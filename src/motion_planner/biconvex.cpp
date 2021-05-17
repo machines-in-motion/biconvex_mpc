@@ -62,8 +62,40 @@ namespace motion_planner{
         std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }
 
-    void BiConvexMp::update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter) {
-        
+    void BiConvexMP::update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter_nrml) {
+        //Change for loop to prob_data_x.num_vars - (2*prob_data.x.state)
+        //TODO: See if you can user the Eigen Sparse innerloop functionality to update faster...
+
+        //First loop: Loop through all of horizon except the last two knot points
+        for (unsigned int i = 0; i < prob_data_x.num_vars-(2*9); ++i) {
+            prob_data_x.Q_.coeffRef(i,i) = prob_data_x.Q_.coeffRef(i+9, i+9);
+            prob_data_x.q_[i] = prob_data_x.q_[i+9];
+        } 
+
+        //Second loop: Loop through second to last knot point: 
+        for (unsigned int i = 0; i < 9; ++i) {
+            prob_data_x.Q_.coeffRef(prob_data_x.num_vars-(2*9)+i,prob_data_x.num_vars-(2*9)+i) = X_ter_nrml[i];
+            prob_data_x.q_[prob_data_x.num_vars-(2*9)+i] = X_ter_nrml[i];
+        }
+
+        //Set Terminal Constraint (last knot point): 
+        for (unsigned int i = 0; i < 9; ++i) {
+            prob_data_x.Q_.coeffRef(prob_data_x.num_vars-(9)+i, prob_data_x.num_vars-(9)+i) = X_ter[i];
+            prob_data_x.q_[prob_data_x.num_vars-(9)+i] = X_ter[i];
+        }
+    }
+
+    void BiConvexMP::update_bounds_x(Eigen::VectorXd lb_fin, Eigen::VectorXd ub_fin) {
+        //Shift bounds
+        //prob_data_x.lb_.segment(1, prob_data_x.num_vars-9) = prob_data_x.lb_.segment(9, prob_data_x.num_vars)
+        //prob_data_x.ub_.segment(1, prob_data_x.num_vars-9) = prob_data_x.ub_.segment(9, prob_data_x.num_vars)
+
+        prob_data_x.lb_.head(prob_data_x.num_vars-9) = prob_data_x.lb_.tail(prob_data_x.num_vars-9);
+        prob_data_x.ub_.head(prob_data_x.num_vars-9) = prob_data_x.ub_.tail(prob_data_x.num_vars-9);
+
+        //Update new bounds (end of bound vectors)
+        prob_data_x.lb_.tail(9) = lb_fin;
+        prob_data_x.ub_.tail(9) = ub_fin;
     }
 
 };

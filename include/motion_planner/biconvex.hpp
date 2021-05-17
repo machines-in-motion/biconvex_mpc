@@ -75,7 +75,13 @@ class BiConvexMP{
 
         void optimize(Eigen::VectorXd x_init, int no_iters);
 
-        void update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter)
+        //Shifting cost function for MPC
+        //TODO: Rename to shift_cost() ?
+        void update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter_nrml);
+
+        //Update bounds on X (states) for MPC
+        void update_bounds_x(Eigen::VectorXd lb, Eigen::VectorXd ub);
+        
 
         Eigen::VectorXd return_opt_x(){
             return prob_data_x.x_k;

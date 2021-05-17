@@ -41,7 +41,7 @@ class FISTA
 
         //Computes second order cone projection for constraints
         void SoC_projection(function::ProblemData & prob_data_);
-        bool use_soc_projection_ = true;
+        bool use_soc_projection_ = false;
         
         //Solver parameters
         double L_ = 150;

@@ -187,18 +187,32 @@ class SoloMpcGaitGen:
         X_ter[0:3] += v_des*self.st*2
         X_ter[3:6] = v_des*self.m
 
+
+        # Setup dynamic optimization
         self.mp.create_contact_array(np.array(self.cnt_plan))
         self.mp.create_bound_constraints(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(self.W_X, self.W_X_ter, X_ter, self.X_nom)
         self.mp.create_cost_F(self.W_F)
 
+        #Shift costs & constraints (Assumes shift of one knot point for now...)
+        # TODO: Make update_dynamics take in the time
+        self.mp.update_dynamics()
+
 
     def optimize(self, q, v, t, n, next_loc, v_des, sh, x_reg, u_reg):
       
+        #TODO: Move to C++
         self.create_cnt_plan(q, v, t, n, next_loc, v_des)
+
+        #Creates costs for IK and Dynamics
         self.create_costs(q, v, v_des, sh, t, x_reg, u_reg)
 
+        # --- Dynamics optimization ---
         com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 50)
+
+        # --- IK Optimization ---
+        
+        # Add tracking costs from Dynamic optimization
         self.ik.add_centroidal_momentum_tracking_task(0, self.st, mom_opt[0:int(self.st/self.dt)], 1e3, "mom_track", False)
         self.ik.add_centroidal_momentum_tracking_task(0, self.st, mom_opt[int(self.st/self.dt)], 1e3, "mom_track", True)
 
@@ -208,6 +222,7 @@ class SoloMpcGaitGen:
         self.ik.optimize(self.x0) 
         xs = self.ik.get_xs()
         us = self.ik.get_us()
+
         n_eff = 3*len(self.eff_names)
         self.f_int = np.linspace(F_opt[n_eff:n_eff*(2)], F_opt[n_eff*(2):n_eff*(3)], len(self.f_int))
         self.xs_int = np.linspace(xs[1], xs[2], len(self.xs_int))

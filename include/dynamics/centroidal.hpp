@@ -52,6 +52,9 @@ namespace dynamics{
             const double dt_;
             const double T_;
             const double n_eff_;
+
+            //TODO: 
+            //Change to horizon_ or knots_ (or something else)
             const int n_col_;
     };
 

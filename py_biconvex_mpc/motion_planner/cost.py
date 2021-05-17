@@ -73,7 +73,7 @@ class BiConvexCosts:
         
         if not isinstance(X_nom, np.ndarray):
             X_nom = np.zeros(9*(self.n_col))
-
+o
         for i in range(len(self.via_points)):
             X_nom[9*self.via_point_t[i]:9*self.via_point_t[i] + 3] = \
                 self.via_points[i]
@@ -94,7 +94,10 @@ class BiConvexCosts:
             X_ter[0:3] = self.ik_mom_opt[-1]
 
 
+        #Everything except the last 9 numbers
         self.q_X[:-9] *= -2*X_nom
+
+        #The last 9 numbers
         self.q_X[-9:] = -2*W_X_ter*X_ter
 
         self.q_X = np.reshape(self.q_X, (len(self.q_X), 1))

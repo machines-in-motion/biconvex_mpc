@@ -37,8 +37,7 @@ namespace motion_planner{
         centroidal_dynamics.update_x_init(x_init);
         for (unsigned i = 0; i < no_iters; ++i){
             // We need to look into this line...it causes a very high dynamic violation...
-            maxit = init_maxit/(int(i)/10 + 1);
-
+            //maxit = init_maxit/(int(i)/10 + 1);
 
             // optimizing for F
             // std::cout << "optimizing F..." << std::endl;
@@ -61,6 +60,10 @@ namespace motion_planner{
             };       
         }
         std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
-    }    
+    }
+
+    void BiConvexMp::update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter) {
+        
+    }
 
 };

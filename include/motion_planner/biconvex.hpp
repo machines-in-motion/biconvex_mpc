@@ -75,6 +75,8 @@ class BiConvexMP{
 
         void optimize(Eigen::VectorXd x_init, int no_iters);
 
+        void update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter)
+
         Eigen::VectorXd return_opt_x(){
             return prob_data_x.x_k;
         }

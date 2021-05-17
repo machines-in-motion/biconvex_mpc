@@ -6,7 +6,7 @@ namespace dynamics{
     CentroidalDynamics::CentroidalDynamics(double m, double dt, double T, int n_eff):
                 m_(m), dt_(dt), T_(T), n_eff_(n_eff), n_col_(int (T_/dt_))
         {
-            // setting up A_f, and b_f
+            // setting up A_f, and b_f (For optimizing for CoM, Vel, AMOM)
             A_f.resize(9*(n_col_+1), 9*(n_col_+1));
             b_f.resize(9*(n_col_+1));
             b_f.setZero();
@@ -24,6 +24,7 @@ namespace dynamics{
                 }
             }
 
+            // setting up A_x, b_x (For optimizing for forces and torques)
             A_x.resize(9*(n_col_+1), 3*n_eff_*n_col_);
             b_x.resize(9*(n_col_+1));
             b_x.setZero();
@@ -35,13 +36,10 @@ namespace dynamics{
             r_t.resize(n_eff_, 3);
             r_t.setZero();
             cnt_arr_.setZero();
-
     };
 
 
     void CentroidalDynamics::create_contact_array(){
-
-
         for (unsigned i = 0; i < cnt_plan_.size(); ++i){
             for (unsigned k = 0; k < n_eff_; ++k){
                 time_steps = (cnt_plan_[i](k,5) - cnt_plan_[i](k,4))/dt_;
@@ -61,7 +59,6 @@ namespace dynamics{
 
 
     void CentroidalDynamics::compute_x_mat(Eigen::VectorXd &X){
-
         for (unsigned t = 0; t < n_col_; ++t){
             b_x[9*t+3] = X[9*(t+1)+3] - X[9*t+3];
             b_x[9*t+4] = X[9*(t+1)+4] - X[9*t+4];

@@ -6,7 +6,7 @@ import time
 import numpy as np
 import pinocchio as pin
 
-# from py_biconvex_mpc.motion_planner.biconvex import BiConvexMP
+#from py_biconvex_mpc.motion_planner.biconvex import BiConvexMP
 from py_biconvex_mpc.motion_planner.cpp_biconvex import BiConvexMP
 
 from robot_properties_solo.config import Solo12Config
@@ -14,7 +14,7 @@ from py_biconvex_mpc.ik.inverse_kinematics import InverseKinematics
 from py_biconvex_mpc.ik_utils.gait_generator import GaitGenerator
 
 from cnt_plan_utils import SoloCntGen
-from py_biconvex_mpc.bullet_utils.solo_env import Solo12Env
+#from py_biconvex_mpc.bullet_utils.solo_env import Solo12Env
 
 
 robot = Solo12Config.buildRobotWrapper()

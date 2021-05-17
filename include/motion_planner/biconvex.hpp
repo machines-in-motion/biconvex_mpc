@@ -80,7 +80,12 @@ class BiConvexMP{
         void update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter_nrml);
 
         //Update bounds on X (states) for MPC
-        void update_bounds_x(Eigen::VectorXd lb, Eigen::VectorXd ub);
+        //Inputs: lb_fin = new final lower bound constraints, not ALL bounds (i.e. should be length = 9)
+        //      : ub_fin = new final upper bound constraints, not ALL bounds (i.e. should be length 
+        void update_bounds_x(Eigen::VectorXd lb_fin, Eigen::VectorXd ub_fin);
+
+        //Update constraint Matrix A_x, and b_x
+        void update_constraints_x();
         
 
         Eigen::VectorXd return_opt_x(){

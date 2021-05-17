@@ -57,6 +57,13 @@ namespace dynamics{
         }
     };
 
+    void CentroidalDynamics::update_contact_array(){
+        for (unsigned int i = 0; i < n_col_; ++i) {
+            cnt_arr_.row(i) = cnt_arr_.row(i+1);
+        }
+        
+    }
+
 
     void CentroidalDynamics::compute_x_mat(Eigen::VectorXd &X){
         for (unsigned t = 0; t < n_col_; ++t){
@@ -68,22 +75,23 @@ namespace dynamics{
             b_x[9*t+8] = X[9*(t+1)+8] - X[9*t+8];
 
             for (unsigned n = 0; n < n_eff_; ++n){
-                // velocity constraints
-                A_x.coeffRef(9*t+3, 3*n_eff_*t + 3*n) = cnt_arr_(t,n)*(dt_/m_);
+                if (cnt_arr_(t,n)) {
+                    // velocity constraints
+                    // Shouldn't these always be satisfied?
+                    A_x.coeffRef(9*t+3, 3*n_eff_*t + 3*n) = (dt_/m_);
+                    A_x.coeffRef(9*t+4, 3*n_eff_*t + 3*n + 1) = (dt_/m_);
+                    A_x.coeffRef(9*t+5, 3*n_eff_*t + 3*n + 2) = (dt_/m_);
 
-                A_x.coeffRef(9*t+4, 3*n_eff_*t + 3*n + 1) = cnt_arr_(t,n)*(dt_/m_);
-                A_x.coeffRef(9*t+5, 3*n_eff_*t + 3*n + 2) = cnt_arr_(t,n)*(dt_/m_);
+                    // AMOM constraints
+                    A_x.coeffRef(9*t+6, 3*n_eff_*t+3*n+1) = (X((9*t)+2) - r_[t](n,2))*dt_;
+                    A_x.coeffRef(9*t+6, 3*n_eff_*t+3*n+2) = (X((9*t)+1) - r_[t](n,1))*dt_;
 
-                // AMOM constraints
-                A_x.coeffRef(9*t+6, 3*n_eff_*t+3*n+1) = cnt_arr_(t,n)*(X((9*t)+2) - r_[t](n,2))*dt_;
-                A_x.coeffRef(9*t+6, 3*n_eff_*t+3*n+2) = -cnt_arr_(t,n)*(X((9*t)+1) - r_[t](n,1))*dt_;
-
-                A_x.coeffRef(9*t+7, 3*n_eff_*t+3*n+0) =-cnt_arr_(t,n)*(X((9*t)+2) - r_[t](n,2))*dt_;
-                A_x.coeffRef(9*t+7, 3*n_eff_*t+3*n+2) = cnt_arr_(t,n)*(X((9*t)+0) - r_[t](n,0))*dt_;
-    
-                A_x.coeffRef(9*t+8, 3*n_eff_*t+3*n+0) = cnt_arr_(t,n)*(X((9*t)+1) - r_[t](n,1))*dt_;
-                A_x.coeffRef(9*t+8, 3*n_eff_*t+3*n+1) = -cnt_arr_(t,n)*(X((9*t)+0) - r_[t](n,0))*dt_;
-
+                    A_x.coeffRef(9*t+7, 3*n_eff_*t+3*n+0) = (X((9*t)+2) - r_[t](n,2))*dt_;
+                    A_x.coeffRef(9*t+7, 3*n_eff_*t+3*n+2) = (X((9*t)+0) - r_[t](n,0))*dt_;
+        
+                    A_x.coeffRef(9*t+8, 3*n_eff_*t+3*n+0) = (X((9*t)+1) - r_[t](n,1))*dt_;
+                    A_x.coeffRef(9*t+8, 3*n_eff_*t+3*n+1) = (X((9*t)+0) - r_[t](n,0))*dt_;
+                }
             }
         }
     };

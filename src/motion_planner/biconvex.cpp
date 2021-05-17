@@ -67,12 +67,14 @@ namespace motion_planner{
         //TODO: See if you can user the Eigen Sparse innerloop functionality to update faster...
 
         //First loop: Loop through all of horizon except the last two knot points
-        for (unsigned int i = 0; i < prob_data_x.num_vars-(2*9); ++i) {
+        for (unsigned int i = 0; i < (prob_data_x.num_vars-(2*9))/9; ++i) {
             prob_data_x.Q_.coeffRef(i,i) = prob_data_x.Q_.coeffRef(i+9, i+9);
             prob_data_x.q_[i] = prob_data_x.q_[i+9];
         } 
 
         //Second loop: Loop through second to last knot point: 
+        //TODO: THis could also change to dividing this cost by some weighting factor (i.e. if the final cost is
+        // just multifplied by a weighting factor, we can divide by this weighting factor)
         for (unsigned int i = 0; i < 9; ++i) {
             prob_data_x.Q_.coeffRef(prob_data_x.num_vars-(2*9)+i,prob_data_x.num_vars-(2*9)+i) = X_ter_nrml[i];
             prob_data_x.q_[prob_data_x.num_vars-(2*9)+i] = X_ter_nrml[i];
@@ -96,6 +98,56 @@ namespace motion_planner{
         //Update new bounds (end of bound vectors)
         prob_data_x.lb_.tail(9) = lb_fin;
         prob_data_x.ub_.tail(9) = ub_fin;
+    }
+
+    void BiConvexMP::update_constraints_x() {
+        for (unsigned int t = 0; t < centroidal_dynamics.n_col_-1; ++t) {
+            centroidal_dynamics.A_f.coeffRef(9*t+6, 9*t+1) = centroidal_dynamics.A_f.coeffRef(9*(t+1)+6, 9*(t+1)+1);
+            centroidal_dynamics.A_f.coeffRef(9*t+6, 9*t+2) = centroidal_dynamics.A_f.coeffRef(9*(t+2)+6, 9*(t+2)+9);
+            
+            centroidal_dynamics.A_f.coeffRef(9*t+7, 9*t+0) = centroidal_dynamics.A_f.coeffRef(9*(t+1)+7, 9*(t+1)+0);
+            centroidal_dynamics.A_f.coeffRef(9*t+7, 9*t+2) = centroidal_dynamics.A_f.coeffRef(9*(t+1)+7, 9*(t+1)+2);
+            
+            centroidal_dynamics.A_f.coeffRef(9*t+8, 9*t+0) = centroidal_dynamics.A_f.coeffRef(9*(t+1)+8, 9*(t+1)+0);
+            centroidal_dynamics.A_f.coeffRef(9*t+8, 9*t+1) = centroidal_dynamics.A_f.coeffRef(9*(t+1)+8, 9*(t+1)+1);
+
+            //TODO: Use eigen::segment functionality
+            centroidal_dynamics.b_f[9*t+3] = centroidal_dynamics.b_f[9*(t+1)+3];
+            centroidal_dynamics.b_f[9*t+4] = centroidal_dynamics.b_f[9*(t+1)+4];
+            centroidal_dynamics.b_f[9*t+5] = centroidal_dynamics.b_f[9*(t+1)+5];
+            centroidal_dynamics.b_f[9*t+6] = centroidal_dynamics.b_f[9*(t+1)+6];
+            centroidal_dynamics.b_f[9*t+7] = centroidal_dynamics.b_f[9*(t+1)+7];
+            centroidal_dynamics.b_f[9*t+8] = centroidal_dynamics.b_f[9*(t+1)+8];
+        }
+
+        //Update final constraint
+        auto last_state = centroidal_dynamics.n_col_ - 1;
+        centroidal_dynamics.A_f.coeffRef(9*last_state + 6, 9*last_state + 1) = 0.0;
+        centroidal_dynamics.A_f.coeffRef(9*last_state + 6, 9*last_state + 2) = 0.0;
+        
+        centroidal_dynamics.A_f.coeffRef(9*last_state + 7, 9*last_state + 0) = 0.0;
+        centroidal_dynamics.A_f.coeffRef(9*last_state + 7, 9*last_state + 2) = 0.0;
+        
+        centroidal_dynamics.A_f.coeffRef(9*last_state + 8, 9*last_state + 0) = 0.0;
+        centroidal_dynamics.A_f.coeffRef(9*last_state + 8, 9*last_state + 1) = 0.0;
+
+        centroidal_dynamics.b_f.tail(9) = Eigen::VectorXd::Zero(9);
+
+        //If any of the incoming contacts are in contact
+        if (centroidal_dynamics.cnt_arr_.row(centroidal_dynamics.n_col_).sum() > 0) {
+            for (unsigned int i = 0; i < centroidal_dynamics.n_eff_; ++i) {
+                centroidal_dynamics.A_f.coeffRef(9*last_state + 6, 9*last_state + 1) = 0.0;
+                centroidal_dynamics.A_f.coeffRef(9*last_state + 6, 9*last_state + 2) = 0.0;
+                
+                centroidal_dynamics.A_f.coeffRef(9*last_state + 7, 9*last_state + 0) = 0.0;
+                centroidal_dynamics.A_f.coeffRef(9*last_state + 7, 9*last_state + 2) = 0.0;
+                
+                centroidal_dynamics.A_f.coeffRef(9*last_state + 8, 9*last_state + 0) = 0.0;
+                centroidal_dynamics.A_f.coeffRef(9*last_state + 8, 9*last_state + 1) = 0.0;
+
+                centroidal_dynamics.b_f.tail(9) = Eigen::VectorXd::Zero(9);
+            }
+        }
     }
 
 };

@@ -28,6 +28,9 @@ namespace dynamics{
 
             void create_contact_array();
 
+            //Update the binary contact array
+            void update_contact_array();
+
             // contact plan provided by the user (# x [1/0, x, y, z, start, end])
             std::vector<Eigen::MatrixXd> cnt_plan_;
 
@@ -40,7 +43,7 @@ namespace dynamics{
         // private:
             // location of the contact point array used to create constraints
             std::vector<Eigen::MatrixXd> r_;
-            // contact array that is used to create the constraints (tells if end effecto is in contact)
+            // contact array that is used to create the constraints (tells if end effector is in contact)
             Eigen::MatrixXd cnt_arr_; // = Eigen::MatrixXd::Zero(n_col_, n_eff_);
             // This array is used to create the cnt_arr_, r_arr_
             Eigen::VectorXd t_arr;

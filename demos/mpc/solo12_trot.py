@@ -47,7 +47,7 @@ sim_dt = 1e-3
 index = 0
 robot = Solo12Env(2.5, 0.05)
 
-while True:
+for o in range(int(3*(st/sim_dt))):
 
     next_loc = np.array([[ 0.3946 + sl_arr[0],   0.14695 + sl_arr[1], 0],
                     [ 0.3946 + sl_arr[0],  -0.14695 + sl_arr[1], 0],
@@ -74,6 +74,9 @@ while True:
 
     if np.round(step_t,3) == 0:
         n += 1
+
+
+gg.plot()
 
 # np.savez("../motion_planner/dat_file/ik", xs = xs)
 

@@ -237,6 +237,7 @@ class SoloMpcGaitGen:
 
         # --- Dynamics optimization ---
         com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 50)
+        self.com_traj.append(com_opt)
 
         # --- IK Optimization ---
         
@@ -247,7 +248,7 @@ class SoloMpcGaitGen:
         self.ik.add_com_position_tracking_task(0, self.st, com_opt[0:int(self.st/self.dt)], 1e2, "com_track_cost", False)
         self.ik.add_com_position_tracking_task(0, self.st, com_opt[int(self.st/self.dt)], 1e2, "com_track_cost", True)
 
-        self.ik.optimize(self.x0) 
+        self.ik.optimize(np.hstack((q,v))) 
         xs = self.ik.get_xs()
         us = self.ik.get_us()
 
@@ -261,23 +262,55 @@ class SoloMpcGaitGen:
         self.ik = InverseKinematics(self.r_urdf, self.dt, self.st)
         self.mp = BiConvexMP(self.m, self.dt, 2*self.st, len(self.eff_names), rho = self.rho)
     
-    def plot(self):
-        xs = self.ik.get_xs()
-        opt_mom = np.zeros((len(xs), 6))
-        opt_com = np.zeros((len(xs), 3))
-        for i in range(len(xs)):
-            q = xs[i][:self.rmodel.nq]
-            v = xs[i][self.rmodel.nq:]
-            pin.forwardKinematics(self.rmodel, self.rdata, q, v)
-            pin.computeCentroidalMomentum(self.rmodel, self.rdata)
-            opt_com[i] = pin.centerOfMass(self.rmodel, self.rdata, q, v)
-            opt_mom[i] = np.array(self.rdata.hg)
-            opt_mom[i][0:3] /= self.m
 
-        self.mp.add_ik_com_cost(opt_com)
-        self.mp.add_ik_momentum_cost(opt_mom) 
+    def plot(self):
+        self.com_traj = np.array(self.com_traj)
+        x = self.dt*np.arange(0, len(self.com_traj[1]) + len(self.com_traj), 1)
+
+        # com plots
+        fig, ax = plt.subplots(3,1)
+        
+        for i in range(0, len(self.com_traj)):
+            st_hor = i*int(self.plan_freq/self.dt)
+
+            if i == 0:
+                ax[0].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,0], label = "com x")
+                ax[1].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,1], label = "com y")
+                ax[2].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,2], label = "com z")
+
+            else:
+                ax[0].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,0])
+                ax[1].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,1])
+                ax[2].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,2])
+
+        ax[0].grid()
+        ax[0].legend()
+
+        ax[1].grid()
+        ax[1].legend()
+
+        ax[2].grid()
+        ax[2].legend()
+
+        plt.show()
+
+    # def plot(self):
+    #     xs = self.ik.get_xs()
+    #     opt_mom = np.zeros((len(xs), 6))
+    #     opt_com = np.zeros((len(xs), 3))
+    #     for i in range(len(xs)):
+    #         q = xs[i][:self.rmodel.nq]
+    #         v = xs[i][self.rmodel.nq:]
+    #         pin.forwardKinematics(self.rmodel, self.rdata, q, v)
+    #         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
+    #         opt_com[i] = pin.centerOfMass(self.rmodel, self.rdata, q, v)
+    #         opt_mom[i] = np.array(self.rdata.hg)
+    #         opt_mom[i][0:3] /= self.m
+
+    #     self.mp.add_ik_com_cost(opt_com)
+    #     self.mp.add_ik_momentum_cost(opt_mom) 
     
-        self.mp.stats()
+    #     self.mp.stats()
 
 
 

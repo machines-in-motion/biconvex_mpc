@@ -55,11 +55,11 @@ namespace motion_planner{
             P_k_ += dyn_violation;
 
             if (dyn_violation.norm() < exit_tol){
-                std::cout << "breaking outerloop due to norm ..." << std::endl;
+                // std::cout << "breaking outerloop due to norm ..." << std::endl;
                 break;
             };       
         }
-        std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
+        // std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }
 
     void BiConvexMP::update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter_nrml) {

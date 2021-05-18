@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 
 class SoloMpcGaitGen:
 
-    def __init__(self, robot, r_urdf, st, dt, state_wt, x_reg):
+    def __init__(self, robot, r_urdf, st, dt, state_wt, x_reg, plan_freq, gait = 1):
         """
         Input:
             robot : robot model
@@ -20,6 +20,8 @@ class SoloMpcGaitGen:
             dt : discretization
             state_wt : state regularization wt
             x_reg : joint config about which regulation is done
+            plan_freq : planning frequency in seconds
+            gait : which gait to generate
         """     
 
         ## Note : only creates plan for horizon of 2*st
@@ -29,17 +31,32 @@ class SoloMpcGaitGen:
         self.ik = InverseKinematics(r_urdf, dt, st)
         self.st = st
         self.dt = dt
+        self.plan_freq = plan_freq
 
         self.col_st = int(np.round(self.st/self.dt,2))
         self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
         self.f_id = []
         for i in range(len(self.eff_names)):
             self.f_id.append(self.rmodel.getFrameId(self.eff_names[i]))
+
+        # different gait options
+        self.stand = np.array([[1,1,1,1], [1,1,1,1]])
         self.trot = np.array([[1,0,0,1], [0,1,1,0]])
+        self.bound = np.array([[1,1,0,0], [0,0,1,1]])
+        self.pace = np.array([[1,0,1,0], [0,1,0,1]])
+
 
         self.wt = [1e6, 1e4]
 
-        self.cnt_gait = self.trot
+        if gait == 0:
+            self.cnt_gait = self.stand
+        elif gait == 1:
+            self.cnt_gait = self.trot
+        elif gait == 2:
+            self.cnt_gait = self.bound
+        elif gait == 3:
+            self.cnt_gait = self.pace
+
         self.state_wt = state_wt
 
         self.x_reg = x_reg
@@ -50,7 +67,7 @@ class SoloMpcGaitGen:
         self.mp = BiConvexMP(self.m, self.dt, 2*self.st, len(self.eff_names), rho = self.rho)
 
         # weights
-        self.W_X = np.array([1e-5, 1e-5, 1e-5, 1e-4, 1e-4, 1e-4, 3e3, 3e3, 3e3])
+        self.W_X = np.array([1e-5, 1e-5, 1e+4, 1e-4, 1e-4, 1e+4, 3e3, 3e3, 3e3])
 
         self.W_X_ter = 10*np.array([1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5])
 
@@ -70,6 +87,10 @@ class SoloMpcGaitGen:
         self.xs_int = np.zeros((len(self.x_reg), int(self.dt/0.001)))
         self.us_int = np.zeros((self.rmodel.nv, int(self.dt/0.001)))
         self.f_int = np.zeros((4*len(self.eff_names), int(self.dt/0.001)))
+
+        # plotting
+        self.com_traj = []
+
 
     def create_cnt_plan(self, q, v, t, n, next_loc, v_des):
 
@@ -183,7 +204,14 @@ class SoloMpcGaitGen:
         self.X_init = np.zeros(9)
         self.X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q, v)
         
-        X_ter = self.X_init.copy()
+        # self.X_nom[2::9] = self.X_init[2] - 0.1
+
+        # X_ter = self.X_init.copy()
+        # X_ter[2] = self.X_init[2] - 0.03
+        X_ter = np.zeros_like(self.X_init)
+        X_ter[0:3] = self.X_init[0:3].copy()
+        # X_ter[2] = 0.15
+
         X_ter[0:3] += v_des*self.st*2
         X_ter[3:6] = v_des*self.m
 
@@ -196,7 +224,7 @@ class SoloMpcGaitGen:
 
         #Shift costs & constraints (Assumes shift of one knot point for now...)
         # TODO: Make update_dynamics take in the time
-        self.mp.update_dynamics()
+        # self.mp.update_dynamics()
 
 
     def optimize(self, q, v, t, n, next_loc, v_des, sh, x_reg, u_reg):
@@ -224,10 +252,9 @@ class SoloMpcGaitGen:
         us = self.ik.get_us()
 
         n_eff = 3*len(self.eff_names)
-        self.f_int = np.linspace(F_opt[n_eff:n_eff*(2)], F_opt[n_eff*(2):n_eff*(3)], len(self.f_int))
-        self.xs_int = np.linspace(xs[1], xs[2], len(self.xs_int))
-        self.us_int = np.linspace(us[1], us[2], len(self.us_int))
-
+        self.f_int = np.linspace(F_opt[n_eff:n_eff*(2)], F_opt[n_eff*(2):n_eff*(3)], int(self.plan_freq/0.001))
+        self.xs_int = np.linspace(xs[1], xs[2], int(self.plan_freq/0.001))
+        self.us_int = np.linspace(us[1], us[2], int(self.plan_freq/0.001))
         return self.xs_int, self.us_int, self.f_int
 
     def reset(self):

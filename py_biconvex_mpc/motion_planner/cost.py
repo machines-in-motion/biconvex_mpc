@@ -73,7 +73,7 @@ class BiConvexCosts:
         
         if not isinstance(X_nom, np.ndarray):
             X_nom = np.zeros(9*(self.n_col))
-o
+
         for i in range(len(self.via_points)):
             X_nom[9*self.via_point_t[i]:9*self.via_point_t[i] + 3] = \
                 self.via_points[i]
@@ -107,7 +107,7 @@ o
         
         # C++
         try:
-            print("using C++")
+            # print("using C++")
             self.dyn_planer.set_cost_x(csc_matrix(self.Q_X), self.q_X)
         except:
             print("running python version")

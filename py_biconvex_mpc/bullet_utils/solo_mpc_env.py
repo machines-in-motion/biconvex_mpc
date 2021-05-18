@@ -17,7 +17,7 @@ class Solo12Env:
         self.kd = kd
 
         self.env = RaiEnv()
-        urdf_path =  "/home/ameduri/fun_stuff/solo/solo12.urdf"
+        urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
         self.robot = self.env.add_robot(Solo12Config, urdf_path)
         self.env.launch_server()
 
@@ -42,6 +42,6 @@ class Solo12Env:
             F_des : desired feed forward forces at current time step
         """
         q, v = self.robot.get_state()
-        tau = self.robot_id_ctrl.id_joint_torques(q, v, self.kp, self.kd, q_des, v_des, a_des, F)
+        tau = self.robot_id_ctrl.id_joint_torques(q, v, q_des, v_des, a_des, F_des)
         self.robot.send_joint_command(tau)
-
+        self.env.step() # You can sleep here if you want to slow down the replay

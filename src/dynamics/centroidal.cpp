@@ -36,8 +36,10 @@ namespace dynamics{
             r_t.resize(n_eff_, 3);
             r_t.setZero();
             cnt_arr_.setZero();
-    };
 
+            dt_adaptive_.resize(n_col_+1);
+            dt_adaptive_.setZero();
+    };
 
     void CentroidalDynamics::create_contact_array(){
         for (unsigned i = 0; i < cnt_plan_.size(); ++i){
@@ -61,9 +63,7 @@ namespace dynamics{
         for (unsigned int i = 0; i < n_col_; ++i) {
             cnt_arr_.row(i) = cnt_arr_.row(i+1);
         }
-        
     }
-
 
     void CentroidalDynamics::compute_x_mat(Eigen::VectorXd &X){
         for (unsigned t = 0; t < n_col_; ++t){
@@ -76,7 +76,7 @@ namespace dynamics{
 
             for (unsigned n = 0; n < n_eff_; ++n){
                 if (cnt_arr_(t,n)) {
-                // velocity constraints
+                    // velocity constraints
                     A_x.coeffRef(9*t+3, 3*n_eff_*t + 3*n) = (dt_/m_);
                     A_x.coeffRef(9*t+4, 3*n_eff_*t + 3*n + 1) = (dt_/m_);
                     A_x.coeffRef(9*t+5, 3*n_eff_*t + 3*n + 2) = (dt_/m_);
@@ -114,21 +114,23 @@ namespace dynamics{
             b_f[9*t+8] = (cnt_arr_(t,0)*F[3*t*n_eff_+0]*r_[t](0,1) - cnt_arr_(t,0)*F[3*t*n_eff_+1]*r_[t](0,0))*dt_;
             
             for (unsigned n = 1; n < n_eff_; ++n){
-                A_f.coeffRef(9*t+6, 9*t+1) += -cnt_arr_(t,n)*F[3*t*n_eff_+3*n+2]*dt_;
-                A_f.coeffRef(9*t+6, 9*t+2) += cnt_arr_(t,n)*F[3*t*n_eff_+3*n+1]*dt_;
-                
-                A_f.coeffRef(9*t+7, 9*t+0) += cnt_arr_(t,n)*F[3*t*n_eff_+3*n+2]*dt_;
-                A_f.coeffRef(9*t+7, 9*t+2) += -cnt_arr_(t,n)*F[3*t*n_eff_+3*n+0]*dt_;
-                
-                A_f.coeffRef(9*t+8, 9*t+0) += -cnt_arr_(t,n)*F[3*t*n_eff_+3*n+1]*dt_;
-                A_f.coeffRef(9*t+8, 9*t+1) += cnt_arr_(t,n)*F[3*t*n_eff_+3*n+0]*dt_;
-                
-                b_f[9*t+3] += -cnt_arr_(t,n)*F[3*t*n_eff_+3*n+0]*dt_/m_;
-                b_f[9*t+4] += -cnt_arr_(t,n)*F[3*t*n_eff_+3*n+1]*dt_/m_;
-                b_f[9*t+5] += -cnt_arr_(t,n)*F[3*t*n_eff_+3*n+2]*dt_/m_;
-                b_f[9*t+6] += (cnt_arr_(t,n)*F[3*t*n_eff_+3*n+1]*r_[t](n,2) - cnt_arr_(t,n)*F[3*t*n_eff_+3*n+2]*r_[t](n,1))*dt_;
-                b_f[9*t+7] += (cnt_arr_(t,n)*F[3*t*n_eff_+3*n+2]*r_[t](n,0) - cnt_arr_(t,n)*F[3*t*n_eff_+3*n+0]*r_[t](n,2))*dt_;
-                b_f[9*t+8] += (cnt_arr_(t,n)*F[3*t*n_eff_+3*n+0]*r_[t](n,1) - cnt_arr_(t,n)*F[3*t*n_eff_+3*n+1]*r_[t](n,0))*dt_;
+                if (cnt_arr_(t,n)) {
+                    A_f.coeffRef(9*t+6, 9*t+1) += -F[3*t*n_eff_+3*n+2]*dt_;
+                    A_f.coeffRef(9*t+6, 9*t+2) += F[3*t*n_eff_+3*n+1]*dt_;
+                    
+                    A_f.coeffRef(9*t+7, 9*t+0) += F[3*t*n_eff_+3*n+2]*dt_;
+                    A_f.coeffRef(9*t+7, 9*t+2) += -F[3*t*n_eff_+3*n+0]*dt_;
+                    
+                    A_f.coeffRef(9*t+8, 9*t+0) += -F[3*t*n_eff_+3*n+1]*dt_;
+                    A_f.coeffRef(9*t+8, 9*t+1) += F[3*t*n_eff_+3*n+0]*dt_;
+                    
+                    b_f[9*t+3] += -F[3*t*n_eff_+3*n+0]*dt_/m_;
+                    b_f[9*t+4] += -F[3*t*n_eff_+3*n+1]*dt_/m_;
+                    b_f[9*t+5] += -F[3*t*n_eff_+3*n+2]*dt_/m_;
+                    b_f[9*t+6] += (F[3*t*n_eff_+3*n+1]*r_[t](n,2) - F[3*t*n_eff_+3*n+2]*r_[t](n,1))*dt_;
+                    b_f[9*t+7] += (F[3*t*n_eff_+3*n+2]*r_[t](n,0) - F[3*t*n_eff_+3*n+0]*r_[t](n,2))*dt_;
+                    b_f[9*t+8] += (F[3*t*n_eff_+3*n+0]*r_[t](n,1) - F[3*t*n_eff_+3*n+1]*r_[t](n,0))*dt_;
+                }
             }
         }
     };

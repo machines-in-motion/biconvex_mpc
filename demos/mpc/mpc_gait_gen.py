@@ -92,6 +92,7 @@ class SoloMpcGaitGen:
         self.com_traj = []
 
 
+    #q = robot state, v = robot velocity state, 
     def create_cnt_plan(self, q, v, t, n, next_loc, v_des):
 
         pin.forwardKinematics(self.rmodel, self.rdata, q, v)

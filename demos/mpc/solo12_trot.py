@@ -47,7 +47,7 @@ sim_dt = 1e-3
 index = 0
 robot = Solo12Env(2.5, 0.05)
 
-print("here")
+print(range(int(3*(st/sim_dt))))
 
 for o in range(int(3*(st/sim_dt))):
 

@@ -15,7 +15,7 @@ from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 
 import threading
 
-## robot configf and init
+## robot config and init
 
 pin_robot = Solo12Config.buildRobotWrapper()
 urdf_path = Solo12Config.urdf_path
@@ -46,6 +46,8 @@ step_t = 0
 sim_dt = 1e-3
 index = 0
 robot = Solo12Env(2.5, 0.05)
+
+print("here")
 
 for o in range(int(3*(st/sim_dt))):
 

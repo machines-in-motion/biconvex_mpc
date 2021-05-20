@@ -17,7 +17,8 @@ class Solo12Env:
         self.kd = kd
 
         self.env = RaiEnv()
-        urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
+        #Change the urdf_path to load from raisim_utils
+        urdf_path =  "/Users/paarth/Software/raisim_utils/urdf/solo12/urdf/solo12.urdf"
         self.robot = self.env.add_robot(Solo12Config, urdf_path)
         self.env.launch_server()
 

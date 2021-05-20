@@ -35,11 +35,11 @@ namespace motion_planner{
             #endif
     };
 
-    void BiConvexMP::optimize(Eigen::VectorXd x_init, int no_iters){
+    void BiConvexMP::optimize(Eigen::VectorXd x_init, int num_iters){
         // updating x_init
         centroidal_dynamics.update_x_init(x_init);
 
-        for (unsigned i = 0; i < no_iters; ++i){
+        for (unsigned i = 0; i < num_iters; ++i){
             // We need to look into this line...it causes a very high dynamic violation...
             //maxit = init_maxit/(int(i)/10 + 1);
 
@@ -57,6 +57,11 @@ namespace motion_planner{
 
             dyn_violation = centroidal_dynamics.A_f * prob_data_x.x_k - centroidal_dynamics.b_f;
             P_k_ += dyn_violation;
+
+            //Keep track of any statistics that may be useful
+            if (log_statistics) {
+                dyn_violation_hist_.push_back(dyn_violation.norm());
+            }
 
             if (dyn_violation.norm() < exit_tol){
                 // std::cout << "breaking outerloop due to norm ..." << std::endl;
@@ -159,21 +164,28 @@ namespace motion_planner{
 
         //update X constraints
 
-        //update X bounds
+        //update bounds for state
 
         //update X cost function
 
         //Update previous solutions
-        prob_data_x.x_k.head(prob_data_x.num_vars_ - prob_data_x.state_) = \
-            prob_data_x.x_k.tail(prob_data_x.num_vars_ - prob_data_x.state_);
-        prob_data_x.x_k.tail(prob_data_x.state_) = Eigen::VectorXd::Zero(prob_data_x.state_);
+        if (use_prev_soln) {
+            prob_data_x.x_k.head(prob_data_x.num_vars_ - prob_data_x.state_) = \
+                prob_data_x.x_k.tail(prob_data_x.num_vars_ - prob_data_x.state_);
+            prob_data_x.x_k.tail(prob_data_x.state_) = Eigen::VectorXd::Zero(prob_data_x.state_);
 
-        prob_data_f.x_k.head(prob_data_f.num_vars_ - prob_data_f.state_) = \
-            prob_data_f.x_k.tail(prob_data_f.num_vars_ - prob_data_f.state_);
-        prob_data_f.x_k.tail(prob_data_f.state_) = Eigen::VectorXd::Zero(prob_data_f.state_);
+            prob_data_f.x_k.head(prob_data_f.num_vars_ - prob_data_f.state_) = \
+                prob_data_f.x_k.tail(prob_data_f.num_vars_ - prob_data_f.state_);
+            prob_data_f.x_k.tail(prob_data_f.state_) = Eigen::VectorXd::Zero(prob_data_f.state_);
 
-        P_k_.head(9*(int(horizon_/dt_))) = P_k_.tail(9*(int(horizon_/dt_)));
-        P_k_.tail(9) = Eigen::VectorXd::Zero(9);
+            P_k_.head(9*(int(horizon_/dt_))) = P_k_.tail(9*(int(horizon_/dt_)));
+            P_k_.tail(9) = Eigen::VectorXd::Zero(9);
+        }
+        else {
+            prob_data_x.x_k.setZero();
+            prob_data_f.x_k.setZero();
+            P_k_.setZero();
+        }
     }
 
 };

@@ -19,7 +19,7 @@ class BiConvexMP(BiConvexCosts):
             m : mass of the robot
             dt : discretization of the dynamics
             n_eff : number of end effectors
-            T : horizon of plan 
+            T : time horizon of plan  (in seconds)
             rho : penalty on dynamic constraint violation
             L0 : starting step length size during line search
             beta : increas factor of step length
@@ -102,8 +102,8 @@ class BiConvexMP(BiConvexCosts):
                 self.X_high[9*i:9*i+3] = [bx, by, bz]
             for n in range(self.n_eff):
                 if np.sum(self.cnt_arr[i]) > 0:
-                    self.X_low[9*i:9*i+3] += self.cnt_arr[i,n]*self.r_arr[i,n]/np.sum(self.cnt_arr[i]) 
-                    self.X_high[9*i:9*i+3] += self.cnt_arr[i,n]*self.r_arr[i,n]/np.sum(self.cnt_arr[i]) 
+                    self.X_low[9*i:9*i+3] += self.cnt_arr[i,n]*self.r_arr[i,n]/np.sum(self.cnt_arr[i])
+                    self.X_high[9*i:9*i+3] += self.cnt_arr[i,n]*self.r_arr[i,n]/np.sum(self.cnt_arr[i])
         self.X_low[-9:] = self.X_low[-18:-9]
         self.X_high[-9:] = self.X_high[-18:-9]
 

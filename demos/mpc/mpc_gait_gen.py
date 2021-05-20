@@ -32,6 +32,7 @@ class SoloMpcGaitGen:
         self.st = st
         self.dt = dt
         self.plan_freq = plan_freq
+        self.foot_size = 0.01/2
 
         self.col_st = int(np.round(self.st/self.dt,2))
         self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
@@ -44,7 +45,6 @@ class SoloMpcGaitGen:
         self.trot = np.array([[1,0,0,1], [0,1,1,0]])
         self.bound = np.array([[1,1,0,0], [0,0,1,1]])
         self.pace = np.array([[1,0,1,0], [0,1,0,1]])
-
 
         self.wt = [1e6, 1e4]
 
@@ -92,7 +92,6 @@ class SoloMpcGaitGen:
         self.com_traj = []
 
 
-    #q = robot state, v = robot velocity state, 
     def create_cnt_plan(self, q, v, t, n, next_loc, v_des):
 
         pin.forwardKinematics(self.rmodel, self.rdata, q, v)
@@ -104,11 +103,13 @@ class SoloMpcGaitGen:
         for i in range(len(self.eff_names)):
             self.cnt_plan[0][i][0] = self.cnt_gait[n%2][i]
             self.cnt_plan[0][i][1:4] = self.rdata.oMf[self.f_id[i]].translation
+            self.cnt_plan[0][i][3] += self.foot_size
             self.cnt_plan[0][i][5] = self.st - t    
 
         for i in range(len(self.eff_names)):
             self.cnt_plan[1][i][0] = self.cnt_gait[(n+1)%2][i]
             self.cnt_plan[1][i][1:4] = next_loc[i]
+            self.cnt_plan[1][i][3] += self.foot_size
             self.cnt_plan[1][i][4] = self.st - t    
             self.cnt_plan[1][i][5] = 2*self.st - t
 
@@ -116,6 +117,7 @@ class SoloMpcGaitGen:
             for i in range(len(self.eff_names)):
                 self.cnt_plan[2][i][0] = self.cnt_gait[(n+2)%2][i]
                 self.cnt_plan[2][i][1:4] = next_loc[i] + v_des*self.st
+                self.cnt_plan[1][i][3] += self.foot_size
                 self.cnt_plan[2][i][4] = 2*self.st - t    
                 self.cnt_plan[2][i][5] = 2*self.st
         else:

@@ -40,7 +40,7 @@ class ProblemData
 
         Eigen::VectorXd lb_;
         Eigen::VectorXd ub_;
-        Eigen::VectorXd P_k_;
+        Eigen::VectorXd P_k_; //Dynamic Violation
 
         Eigen::SparseMatrix<double> Q_;
         Eigen::VectorXd q_;
@@ -49,7 +49,6 @@ class ProblemData
         Eigen::VectorXd b_;
         Eigen::VectorXd bPk_;
         Eigen::VectorXd ATbPk_;
-
 
         //FISTA related optimization variables
         Eigen::VectorXd y_k;

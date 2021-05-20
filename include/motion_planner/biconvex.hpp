@@ -103,6 +103,10 @@ class BiConvexMP{
             return P_k_;
         }
 
+        std::vector<double> return_dyn_viol_hist(){
+            return dyn_violation_hist_;
+        }
+
     private:
         // mass of the robot 
         const double m_;
@@ -124,7 +128,6 @@ class BiConvexMP{
         double exit_tol = 1e-3;
 
         int horizon_ = 0.0;
-
         int dt_ = 0.0;
         
         // problem data for x optimization (Used in optimization for Forces)
@@ -143,8 +146,12 @@ class BiConvexMP{
         #endif
 
         Eigen::VectorXd dyn_violation;
-
         Eigen::VectorXd P_k_;
+
+        bool use_prev_soln = false;
+
+        bool log_statistics = false;
+        std::vector<double> dyn_violation_hist_;
 
     };
 }

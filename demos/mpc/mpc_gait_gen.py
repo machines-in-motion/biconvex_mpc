@@ -67,7 +67,7 @@ class SoloMpcGaitGen:
         self.mp = BiConvexMP(self.m, self.dt, 2*self.st, len(self.eff_names), rho = self.rho)
 
         # weights
-        self.W_X = np.array([1e-5, 1e-5, 1e+4, 1e-4, 1e-4, 1e+4, 3e3, 3e3, 3e3])
+        self.W_X = np.array([1e-5, 1e-5, 1e6, 1e-4, 1e-4, 1e+4, 1e3, 1e3, 1e3])
 
         self.W_X_ter = 10*np.array([1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5])
 
@@ -90,6 +90,10 @@ class SoloMpcGaitGen:
 
         # plotting
         self.com_traj = []
+        self.xs_traj = []
+
+        self.q_traj = []
+        self.v_traj = []
 
 
     def create_cnt_plan(self, q, v, t, n, next_loc, v_des):
@@ -202,18 +206,23 @@ class SoloMpcGaitGen:
 
         # initial and ter state
         self.X_init = np.zeros(9)
+        pin.computeCentroidalMomentum(self.rmodel, self.rdata)
         self.X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q, v)
-        
-        # self.X_nom[2::9] = self.X_init[2] - 0.1
+        self.X_init[3:] = np.array(self.rdata.hg)            
+        self.X_init[3:6] /= self.m
+
+        self.X_nom[0::9] = 0.0
+        self.X_nom[2::9] = 0.22
 
         # X_ter = self.X_init.copy()
         # X_ter[2] = self.X_init[2] - 0.03
         X_ter = np.zeros_like(self.X_init)
-        X_ter[0:3] = self.X_init[0:3].copy()
-        # X_ter[2] = 0.15
+        # X_ter[0:3] = self.X_init[0:3].copy()
+        X_ter[2] = 0.22
+        X_ter[0] = 0.2
 
-        X_ter[0:3] += v_des*self.st*2
-        X_ter[3:6] = v_des*self.m
+        # X_ter[0:3] += v_des*self.st*2
+        # X_ter[3:6] = v_des*self.m
 
 
         # Setup dynamic optimization
@@ -234,6 +243,8 @@ class SoloMpcGaitGen:
 
         #Creates costs for IK and Dynamics
         self.create_costs(q, v, v_des, sh, t, x_reg, u_reg)
+        self.q_traj.append(q)
+        self.v_traj.append(v)
 
         # --- Dynamics optimization ---
         com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 50)
@@ -242,20 +253,22 @@ class SoloMpcGaitGen:
         # --- IK Optimization ---
         
         # Add tracking costs from Dynamic optimization
-        self.ik.add_centroidal_momentum_tracking_task(0, self.st, mom_opt[0:int(self.st/self.dt)], 1e3, "mom_track", False)
-        self.ik.add_centroidal_momentum_tracking_task(0, self.st, mom_opt[int(self.st/self.dt)], 1e3, "mom_track", True)
+        self.ik.add_centroidal_momentum_tracking_task(0, self.st, mom_opt[0:int(self.st/self.dt)], 1e1, "mom_track", False)
+        self.ik.add_centroidal_momentum_tracking_task(0, self.st, mom_opt[int(self.st/self.dt)], 1e1, "mom_track", True)
 
         self.ik.add_com_position_tracking_task(0, self.st, com_opt[0:int(self.st/self.dt)], 1e2, "com_track_cost", False)
-        self.ik.add_com_position_tracking_task(0, self.st, com_opt[int(self.st/self.dt)], 1e2, "com_track_cost", True)
+        self.ik.add_com_position_tracking_task(0, self.st, com_opt[int(self.st/self.dt)], 1e4, "com_track_cost", True)
 
         self.ik.optimize(np.hstack((q,v))) 
         xs = self.ik.get_xs()
         us = self.ik.get_us()
+        self.xs_traj.append(xs)
+
 
         n_eff = 3*len(self.eff_names)
-        self.f_int = np.linspace(F_opt[n_eff:n_eff*(2)], F_opt[n_eff*(2):n_eff*(3)], int(self.plan_freq/0.001))
-        self.xs_int = np.linspace(xs[1], xs[2], int(self.plan_freq/0.001))
-        self.us_int = np.linspace(us[1], us[2], int(self.plan_freq/0.001))
+        self.f_int = np.linspace(F_opt[0*n_eff:n_eff*(1)], F_opt[n_eff*(1):n_eff*(2)], int(self.plan_freq/0.001))
+        self.xs_int = np.linspace(xs[0], xs[1], int(self.plan_freq/0.001))
+        self.us_int = np.linspace(us[0], us[1], int(self.plan_freq/0.001))
         return self.xs_int, self.us_int, self.f_int
 
     def reset(self):
@@ -263,22 +276,35 @@ class SoloMpcGaitGen:
         self.mp = BiConvexMP(self.m, self.dt, 2*self.st, len(self.eff_names), rho = self.rho)
     
 
-    def plot(self):
+    def plot(self, q_real):
         self.com_traj = np.array(self.com_traj)
-        x = self.dt*np.arange(0, len(self.com_traj[1]) + len(self.com_traj), 1)
+        self.q_traj = np.array(self.q_traj)
+        self.v_traj = np.array(self.v_traj)
+        x = self.dt*np.arange(0, len(self.com_traj[1]) + int((self.plan_freq/self.dt))*len(self.com_traj), 1)
+        q_real = np.array(q_real)[::int(self.dt/0.001)]
 
         # com plots
         fig, ax = plt.subplots(3,1)
-        
         for i in range(0, len(self.com_traj)):
             st_hor = i*int(self.plan_freq/self.dt)
 
             if i == 0:
+                com = pin.centerOfMass(self.rmodel, self.rdata, self.q_traj[i], self.v_traj[i])
+                ax[0].plot(x[st_hor], com[0], "o", label = "real com x")
+                ax[1].plot(x[st_hor], com[1], "o", label = "real com y")
+                ax[2].plot(x[st_hor], com[2], "o", label = "real com z")
+
+
                 ax[0].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,0], label = "com x")
                 ax[1].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,1], label = "com y")
                 ax[2].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,2], label = "com z")
 
             else:
+                com = pin.centerOfMass(self.rmodel, self.rdata, self.q_traj[i], self.v_traj[i])
+                ax[0].plot(x[st_hor], com[0], "o")
+                ax[1].plot(x[st_hor], com[1], "o")
+                ax[2].plot(x[st_hor], com[2], "o")
+        
                 ax[0].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,0])
                 ax[1].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,1])
                 ax[2].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,2])
@@ -294,23 +320,37 @@ class SoloMpcGaitGen:
 
         plt.show()
 
-    # def plot(self):
-    #     xs = self.ik.get_xs()
-    #     opt_mom = np.zeros((len(xs), 6))
-    #     opt_com = np.zeros((len(xs), 3))
-    #     for i in range(len(xs)):
-    #         q = xs[i][:self.rmodel.nq]
-    #         v = xs[i][self.rmodel.nq:]
-    #         pin.forwardKinematics(self.rmodel, self.rdata, q, v)
-    #         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
-    #         opt_com[i] = pin.centerOfMass(self.rmodel, self.rdata, q, v)
-    #         opt_mom[i] = np.array(self.rdata.hg)
-    #         opt_mom[i][0:3] /= self.m
+    def plot_joints(self):
+        self.xs_traj = np.array(self.xs_traj)
+        self.xs_traj = self.xs_traj[:,:,:self.rmodel.nq]
+        self.q_traj = np.array(self.q_traj)
+        x = self.dt*np.arange(0, len(self.xs_traj[1]) + len(self.xs_traj), 1)
+        # com plots
+        fig, ax = plt.subplots(3,1)
+        for i in range(len(self.xs_traj)):
+            st_hor = i*int(self.plan_freq/self.dt)
+            ax[0].plot(x[st_hor], self.q_traj[i][10], 'o')
+            ax[0].plot(x[st_hor:st_hor + len(self.xs_traj[i])], self.xs_traj[i][:,10])
 
-    #     self.mp.add_ik_com_cost(opt_com)
-    #     self.mp.add_ik_momentum_cost(opt_mom) 
+        plt.show()
+
+    def plot_plan(self):
+        xs = self.ik.get_xs()
+        opt_mom = np.zeros((len(xs), 6))
+        opt_com = np.zeros((len(xs), 3))
+        for i in range(len(xs)):
+            q = xs[i][:self.rmodel.nq]
+            v = xs[i][self.rmodel.nq:]
+            pin.forwardKinematics(self.rmodel, self.rdata, q, v)
+            pin.computeCentroidalMomentum(self.rmodel, self.rdata)
+            opt_com[i] = pin.centerOfMass(self.rmodel, self.rdata, q, v)
+            opt_mom[i] = np.array(self.rdata.hg)
+            opt_mom[i][0:3] /= self.m
+
+        self.mp.add_ik_com_cost(opt_com)
+        self.mp.add_ik_momentum_cost(opt_mom) 
     
-    #     self.mp.stats()
+        self.mp.stats()
 
 
 

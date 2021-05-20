@@ -62,7 +62,7 @@ namespace solvers
         // for (unsigned int j=0; j < 12; ++j) {
         //     std::cout << prob_data_.y_k_1[j] << std::endl;
         // }
-        for (unsigned int i=0; i < prob_data_.num_vars; i+=3) {
+        for (unsigned int i=0; i < prob_data_.num_vars_; i+=3) {
             //std::cout << prob_data_.y_k_1.segment(i,3) << std::endl;;
             soc_norm = prob_data_.y_k_1.segment(i,2).squaredNorm();
             auto z = prob_data_.y_k_1[i + 2];

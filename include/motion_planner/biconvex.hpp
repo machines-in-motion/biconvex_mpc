@@ -75,7 +75,7 @@ class BiConvexMP{
 
         void optimize(Eigen::VectorXd x_init, int no_iters);
 
-        //Shifting cost function for MPC
+        //Shifting cost function for MPC by one knot point
         //TODO: Rename to shift_cost() ?
         void update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter_nrml);
 
@@ -86,6 +86,9 @@ class BiConvexMP{
 
         //Update constraint Matrix A_x, and b_x
         void update_constraints_x();
+
+        //Shift cost functions, constraints, and solutions
+        void shift_horizon();
         
 
         Eigen::VectorXd return_opt_x(){
@@ -98,6 +101,10 @@ class BiConvexMP{
 
         Eigen::VectorXd return_opt_p(){
             return P_k_;
+        }
+
+        std::vector<double> return_dyn_viol_hist(){
+            return dyn_violation_hist_;
         }
 
     private:
@@ -119,11 +126,16 @@ class BiConvexMP{
         double tol = 1e-5;
         // tolerance for exiting biconvex
         double exit_tol = 1e-3;
-        // problem data for x optimization
+
+        int horizon_ = 0.0;
+        int dt_ = 0.0;
+        
+        // problem data for x optimization (Used in optimization for Forces)
         function::ProblemData prob_data_x;
         // solver for x optimization
         solvers::FISTA fista_x;
-        // problem data for f optimization
+
+        // problem data for f optimization (Used in optimization for CoM, Vel, Amom)
         function::ProblemData prob_data_f;
         // solver for f optimization
         solvers::FISTA fista_f;
@@ -134,8 +146,12 @@ class BiConvexMP{
         #endif
 
         Eigen::VectorXd dyn_violation;
-
         Eigen::VectorXd P_k_;
+
+        bool use_prev_soln = false;
+
+        bool log_statistics = false;
+        std::vector<double> dyn_violation_hist_;
 
     };
 }

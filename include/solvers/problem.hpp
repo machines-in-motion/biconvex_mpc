@@ -11,7 +11,7 @@ namespace function
 class ProblemData 
     {
     public:
-        ProblemData(int nx);
+        ProblemData(int num_vars, int horizon);
 
         // this sets the data for the optimization problem
         void set_data(Eigen::SparseMatrix<double> A, Eigen::VectorXd b, 
@@ -32,15 +32,15 @@ class ProblemData
         // warm starting x
         void set_warm_x(Eigen::VectorXd x_wm){x_k = x_wm;}
 
-        int num_vars; //Total number of variables to optimize over
-        const int state_ = 0; //Number of State Variables
-        const int horizon_ = 0; //Horizon Length (Number of knots)
+        int num_vars_; //Total number of variables to optimize over
+        int state_ = 0; //Number of State Variables
+        int horizon_ = 0; //Horizon Length (Number of knots)
         double rho_;
         double obj_ = 0.0;
 
         Eigen::VectorXd lb_;
         Eigen::VectorXd ub_;
-        Eigen::VectorXd P_k_;
+        Eigen::VectorXd P_k_; //Dynamic Violation
 
         Eigen::SparseMatrix<double> Q_;
         Eigen::VectorXd q_;
@@ -49,7 +49,6 @@ class ProblemData
         Eigen::VectorXd b_;
         Eigen::VectorXd bPk_;
         Eigen::VectorXd ATbPk_;
-
 
         //FISTA related optimization variables
         Eigen::VectorXd y_k;

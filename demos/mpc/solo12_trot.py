@@ -18,7 +18,7 @@ from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 
 import threading
 
-## robot configf and init
+## robot config and init
 
 pin_robot = Solo12Config.buildRobotWrapper()
 urdf_path = Solo12Config.urdf_path
@@ -53,7 +53,13 @@ robot = Solo12Env(1.5, 0.05)
 tmp = []
 tmp_des = []
 
+<<<<<<< HEAD
 for o in range(int(25*(st/sim_dt))):
+=======
+print(range(int(3*(st/sim_dt))))
+
+for o in range(int(3*(st/sim_dt))):
+>>>>>>> da8bb8c468d86d0a898836d49fd3e194395eec0b
 
     next_loc = np.array([[ 0.3946 + sl_arr[0],   0.14695 + sl_arr[1], 0],
                     [ 0.3946 + sl_arr[0],  -0.14695 + sl_arr[1], 0],

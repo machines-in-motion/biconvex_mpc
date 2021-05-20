@@ -31,7 +31,7 @@ namespace dynamics{
             //Update the binary contact array
             void update_contact_array();
 
-            // contact plan provided by the user (# x [1/0, x, y, z, start, end])
+            // contact plan provided by the user (order: [1/0, x, y, z, start, end])
             std::vector<Eigen::MatrixXd> cnt_plan_;
 
             Eigen::SparseMatrix<double> A_x;
@@ -55,6 +55,8 @@ namespace dynamics{
             const double dt_;
             const double T_;
             const double n_eff_;
+
+            Eigen::VectorXd dt_adaptive_;
 
             //TODO: 
             //Change to horizon_ or knots_ (or something else)

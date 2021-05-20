@@ -32,6 +32,7 @@ class SoloMpcGaitGen:
         self.st = st
         self.dt = dt
         self.plan_freq = plan_freq
+        self.foot_size = 0.016/2
 
         self.col_st = int(np.round(self.st/self.dt,2))
         self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
@@ -44,7 +45,6 @@ class SoloMpcGaitGen:
         self.trot = np.array([[1,0,0,1], [0,1,1,0]])
         self.bound = np.array([[1,1,0,0], [0,0,1,1]])
         self.pace = np.array([[1,0,1,0], [0,1,0,1]])
-
 
         self.wt = [1e6, 1e4]
 
@@ -69,7 +69,7 @@ class SoloMpcGaitGen:
         # weights
         self.W_X = np.array([1e-5, 1e-5, 1e6, 1e-4, 1e-4, 1e+4, 1e3, 1e3, 1e3])
 
-        self.W_X_ter = 10*np.array([1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5])
+        self.W_X_ter = 100*np.array([1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5])
 
         self.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 
@@ -107,11 +107,13 @@ class SoloMpcGaitGen:
         for i in range(len(self.eff_names)):
             self.cnt_plan[0][i][0] = self.cnt_gait[n%2][i]
             self.cnt_plan[0][i][1:4] = self.rdata.oMf[self.f_id[i]].translation
+            self.cnt_plan[0][i][3] += 0.0
             self.cnt_plan[0][i][5] = self.st - t    
 
         for i in range(len(self.eff_names)):
             self.cnt_plan[1][i][0] = self.cnt_gait[(n+1)%2][i]
             self.cnt_plan[1][i][1:4] = next_loc[i]
+            self.cnt_plan[1][i][3] += self.foot_size
             self.cnt_plan[1][i][4] = self.st - t    
             self.cnt_plan[1][i][5] = 2*self.st - t
 
@@ -119,6 +121,7 @@ class SoloMpcGaitGen:
             for i in range(len(self.eff_names)):
                 self.cnt_plan[2][i][0] = self.cnt_gait[(n+2)%2][i]
                 self.cnt_plan[2][i][1:4] = next_loc[i] + v_des*self.st
+                self.cnt_plan[1][i][3] += self.foot_size
                 self.cnt_plan[2][i][4] = 2*self.st - t    
                 self.cnt_plan[2][i][5] = 2*self.st
         else:
@@ -256,8 +259,8 @@ class SoloMpcGaitGen:
         self.ik.add_centroidal_momentum_tracking_task(0, self.st, mom_opt[0:int(self.st/self.dt)], 1e1, "mom_track", False)
         self.ik.add_centroidal_momentum_tracking_task(0, self.st, mom_opt[int(self.st/self.dt)], 1e1, "mom_track", True)
 
-        self.ik.add_com_position_tracking_task(0, self.st, com_opt[0:int(self.st/self.dt)], 1e2, "com_track_cost", False)
-        self.ik.add_com_position_tracking_task(0, self.st, com_opt[int(self.st/self.dt)], 1e4, "com_track_cost", True)
+        self.ik.add_com_position_tracking_task(0, self.st, com_opt[0:int(self.st/self.dt)], 1e4, "com_track_cost", False)
+        self.ik.add_com_position_tracking_task(0, self.st, com_opt[int(self.st/self.dt)], 1e9, "com_track_cost", True)
 
         self.ik.optimize(np.hstack((q,v))) 
         xs = self.ik.get_xs()

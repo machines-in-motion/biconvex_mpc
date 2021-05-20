@@ -8,21 +8,25 @@ using std::chrono::milliseconds;
 
 namespace function
 {
-    ProblemData::ProblemData(int nx) {
-        
-        y_k.resize(nx); y_k.setZero();
-        y_k_1.resize(nx); y_k_1.setZero();
-        x_k.resize(nx); x_k.setZero();
-        x_k_1.resize(nx); x_k_1.setZero();
-        
-        gradient.resize(nx); gradient.setZero();
-        y_diff.resize(nx); y_diff.setZero();
+    ProblemData::ProblemData(int state, int horizon) {
+        state_ = state;
+        horizon_ = horizon;
+        num_vars_ = state_*horizon;
 
-        lb_.resize(nx); lb_.setZero();
-        ub_.resize(nx); ub_.setZero();
+        y_k.resize(num_vars_); y_k.setZero();
+        y_k_1.resize(num_vars_); y_k_1.setZero();
+        x_k.resize(num_vars_); x_k.setZero();
+        x_k_1.resize(num_vars_); x_k_1.setZero();
+        
+        gradient.resize(num_vars_); gradient.setZero();
+        y_diff.resize(num_vars_); y_diff.setZero();
+
+        lb_.resize(num_vars_); lb_.setZero();
+        ub_.resize(num_vars_); ub_.setZero();
 
         // Should we create memory for the sparse matrices as well?
-        num_vars = nx; //Size of Q_, q_, and A
+        //num_vars_ = num_vars; //Size of Q_, q_, and A
+        //horizon_ = horizon;
     }
 
     void ProblemData::set_data(Eigen::SparseMatrix<double> A, Eigen::VectorXd b, 

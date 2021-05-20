@@ -39,7 +39,7 @@ t = 0.0
 sh = 0.15
 plan_freq = 0.05 # sec
 
-gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 1)
+gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 0)
 
 # while True:
 n = 1
@@ -53,13 +53,7 @@ robot = Solo12Env(1.5, 0.05)
 tmp = []
 tmp_des = []
 
-<<<<<<< HEAD
-for o in range(int(25*(st/sim_dt))):
-=======
-print(range(int(3*(st/sim_dt))))
-
-for o in range(int(3*(st/sim_dt))):
->>>>>>> da8bb8c468d86d0a898836d49fd3e194395eec0b
+for o in range(int(200*(st/sim_dt))):
 
     next_loc = np.array([[ 0.3946 + sl_arr[0],   0.14695 + sl_arr[1], 0],
                     [ 0.3946 + sl_arr[0],  -0.14695 + sl_arr[1], 0],
@@ -90,6 +84,8 @@ for o in range(int(3*(st/sim_dt))):
     # print(index)
     if np.round(step_t,3) == 0:
         n += 1
+    if n < 5:
+        robot.robot.rai_robot.setExternalForce(0, [0, 0, 0], [0, 2, 0]) 
 
 tmp = np.array(tmp)
 tmp_des = np.array(tmp_des)

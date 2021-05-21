@@ -2,6 +2,7 @@
 ## Author : Avadesh Meduri
 ## Date : 6/05/2021
 
+import time
 import numpy as np
 import pinocchio as pin
 from inverse_kinematics_cpp import InverseKinematics
@@ -30,6 +31,7 @@ class SoloMpcGaitGen:
         self.r_urdf = r_urdf
         self.ik = InverseKinematics(r_urdf, dt, st)
         self.st = st
+        self.sp = 0.05 # stance phase
         self.dt = dt
         self.plan_freq = plan_freq
         self.foot_size = 0.016/2
@@ -46,7 +48,7 @@ class SoloMpcGaitGen:
         self.bound = np.array([[1,1,0,0], [0,0,1,1]])
         self.pace = np.array([[1,0,1,0], [0,1,0,1]])
 
-        self.wt = [1e6, 1e4]
+        self.wt = [1e4, 1e4]
 
         if gait == 0:
             self.cnt_gait = self.stand
@@ -67,9 +69,9 @@ class SoloMpcGaitGen:
         self.mp = BiConvexMP(self.m, self.dt, 2*self.st, len(self.eff_names), rho = self.rho)
 
         # weights
-        self.W_X = np.array([1e-5, 1e-5, 1e6, 1e-4, 1e-4, 1e+4, 1e3, 1e3, 1e3])
+        self.W_X = np.array([1e-5, 1e-5, 1e+5, 1e+4, 1e+3, 1e+3, 3e3, 3e3, 3e3])
 
-        self.W_X_ter = 100*np.array([1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5])
+        self.W_X_ter = 100*np.array([1e-5, 1e-5, 1e+5, 1e+4, 1e+4, 1e+4, 1e+5, 1e+5, 1e+5])
 
         self.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 
@@ -101,31 +103,41 @@ class SoloMpcGaitGen:
         pin.forwardKinematics(self.rmodel, self.rdata, q, v)
         pin.updateFramePlacements(self.rmodel, self.rdata)
 
-        self.cnt_plan = np.zeros((3,len(self.eff_names), 6))
+        self.cnt_plan = np.zeros((4,len(self.eff_names), 6))
         assert t < self.st
         # first step
         for i in range(len(self.eff_names)):
             self.cnt_plan[0][i][0] = self.cnt_gait[n%2][i]
             self.cnt_plan[0][i][1:4] = self.rdata.oMf[self.f_id[i]].translation
             self.cnt_plan[0][i][3] += 0.0
-            self.cnt_plan[0][i][5] = self.st - t    
+            self.cnt_plan[0][i][5] = max(0, self.st - t - self.sp)    
 
         for i in range(len(self.eff_names)):
-            self.cnt_plan[1][i][0] = self.cnt_gait[(n+1)%2][i]
-            self.cnt_plan[1][i][1:4] = next_loc[i]
+            self.cnt_plan[1][i][0] = 1.0
+            if self.cnt_gait[n%2][i] == 1:
+                self.cnt_plan[1][i][1:4] = self.rdata.oMf[self.f_id[i]].translation
+            else:
+                self.cnt_plan[1][i][1:4] = next_loc[i]
             self.cnt_plan[1][i][3] += self.foot_size
-            self.cnt_plan[1][i][4] = self.st - t    
-            self.cnt_plan[1][i][5] = 2*self.st - t
+            self.cnt_plan[1][i][4] = max(0, self.st - t - self.sp)    
+            self.cnt_plan[1][i][5] = self.st - t    
+
+        for i in range(len(self.eff_names)):
+            self.cnt_plan[2][i][0] = self.cnt_gait[(n+1)%2][i]
+            self.cnt_plan[2][i][1:4] = next_loc[i]
+            self.cnt_plan[2][i][3] += self.foot_size
+            self.cnt_plan[2][i][4] = self.st - t    
+            self.cnt_plan[2][i][5] = 2*self.st - t
 
         if t > 0:
             for i in range(len(self.eff_names)):
-                self.cnt_plan[2][i][0] = self.cnt_gait[(n+2)%2][i]
-                self.cnt_plan[2][i][1:4] = next_loc[i] + v_des*self.st
-                self.cnt_plan[1][i][3] += self.foot_size
-                self.cnt_plan[2][i][4] = 2*self.st - t    
-                self.cnt_plan[2][i][5] = 2*self.st
+                self.cnt_plan[3][i][0] = self.cnt_gait[(n+2)%2][i]
+                self.cnt_plan[3][i][1:4] = next_loc[i] + v_des*self.st
+                self.cnt_plan[2][i][3] += self.foot_size
+                self.cnt_plan[3][i][4] = 2*self.st - t    
+                self.cnt_plan[3][i][5] = 2*self.st
         else:
-            self.cnt_plan = self.cnt_plan[0:2]
+            self.cnt_plan = self.cnt_plan[0:3]
 
         return self.cnt_plan
 
@@ -145,37 +157,49 @@ class SoloMpcGaitGen:
         # first block
         for i in range(len(self.eff_names)):
             st = self.cnt_plan[0][i][4] 
-            et = min(self.cnt_plan[1][i][5], self.st - self.dt)
-            if self.cnt_plan[0][i][0] == 1:
-                N = int(np.round(((et - st)/self.dt),2))
-                pos = np.tile(self.cnt_plan[0][i][1:4], (N,1))
-                self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0],\
-                                                 "cnt_" + str(0) + self.eff_names[i])
-                if et == self.st - self.dt:
-                    self.ik.add_terminal_position_tracking_task(self.f_id[i], pos[0], self.wt[0],\
-                                                "cnt_" + str(0) + self.eff_names[i])
-
-            else:
-                # pos = self.rdata.oMf[i].translation
-                self.ik.add_position_tracking_task(self.f_id[i], et, et, self.cnt_plan[1][i][1:4]\
-                                                    , self.wt[1],\
-                                                 "end_pos_" + str(0) + self.eff_names[i])
-                
-                if t < self.st/2.0:
-                    pos = self.cnt_plan[1][i][1:4] - v_des*self.st/2.0
-                    pos[2] = sh
-                    self.ik.add_position_tracking_task(self.f_id[i],et-self.st/2.0,et-self.st/2.0, pos
-                                                    , self.wt[1],\
-                                                 "via_" + str(0) + self.eff_names[i])
-
-        # #second block
-        if self.cnt_plan[0][0][5] < self.st: 
-            for i in range(len(self.eff_names)):
-                st = self.cnt_plan[1][i][4] 
-                et = min(self.cnt_plan[1][i][5], self.st)
-                if self.cnt_plan[1][i][0] == 1:
+            et = min(self.cnt_plan[0][i][5], self.st - self.dt)
+            if et - st > 0:
+                if self.cnt_plan[0][i][0] == 1:
                     N = int(np.round(((et - st)/self.dt),2))
-                    pos = np.tile(self.cnt_plan[1][i][1:4], (N,1))
+                    pos = np.tile(self.cnt_plan[0][i][1:4], (N,1))
+                    self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0],\
+                                                    "cnt_" + str(0) + self.eff_names[i])
+        
+                else:
+                    # pos = self.rdata.oMf[i].translation
+                    self.ik.add_position_tracking_task(self.f_id[i], et, et, self.cnt_plan[2][i][1:4]\
+                                                        , self.wt[1],\
+                                                    "end_pos_" + str(0) + self.eff_names[i])
+                    
+                    if t < (self.st - self.sp)/2.0:
+                        pos = self.cnt_plan[2][i][1:4] - v_des*(self.st - self.sp)/2.0
+                        pos[2] = sh
+                        time = et-(self.st - self.sp)/2.0
+                        self.ik.add_position_tracking_task(self.f_id[i],time ,time, pos
+                                                        , self.wt[1],\
+                                                    "via_" + str(0) + self.eff_names[i])
+
+            # second block
+            st = self.cnt_plan[1][i][4] 
+            et = min(self.cnt_plan[1][i][5], self.st - self.dt)
+            N = int(np.round(((et - st)/self.dt),2))
+            if et == self.st - self.dt:
+                    pos = self.cnt_plan[1][i][1:4]
+                    self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, self.wt[0],\
+                                                "cnt_" + str(0) + self.eff_names[i])
+            else:
+                pos = np.tile(self.cnt_plan[1][i][1:4], (N,1))
+                self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0],\
+                                                "cnt_" + str(0) + self.eff_names[i])
+                                                 
+        # third block
+        if self.cnt_plan[1][0][5] < self.st: 
+            for i in range(len(self.eff_names)):
+                st = self.cnt_plan[2][i][4] 
+                et = min(self.cnt_plan[2][i][5], self.st)
+                if self.cnt_plan[2][i][0] == 1:
+                    N = int(np.round(((et - st)/self.dt),2))
+                    pos = np.tile(self.cnt_plan[2][i][1:4], (N,1))
                     self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0],\
                                                     "cnt_" + str(1) + self.eff_names[i])
                     self.ik.add_terminal_position_tracking_task(self.f_id[i], pos[0], self.wt[0],\
@@ -183,20 +207,19 @@ class SoloMpcGaitGen:
 
                 else:
                     if et > st + self.st/2.0:
-                        pos = self.cnt_plan[2][i][1:4] - v_des*self.st/2.0
+                        pos = self.cnt_plan[3][i][1:4] - v_des*self.st/2.0
                         pos[2] = sh
                         self.ik.add_position_tracking_task(self.f_id[i], st + self.st/2.0, st + self.st/2.0, pos
                                                         , self.wt[1],\
                                                     "via_" + str(t) + self.eff_names[i])
-                        pos = self.cnt_plan[2][i][1:4]
+                        pos = self.cnt_plan[3][i][1:4]
                         self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, self.wt[0],\
                                                 "cnt_" + str(1) + self.eff_names[i])
                     else:
-                        pos = self.cnt_plan[2][i][1:4] - v_des*self.st/2.0
+                        pos = self.cnt_plan[3][i][1:4] - v_des*self.st/2.0
                         pos[2] = sh
                         self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, 10*self.wt[1],\
                                                 "via_" + str(1) + self.eff_names[i])
-
 
 
         self.ik.add_state_regularization_cost(0, self.st, wt_xreg, "xReg", self.state_wt, self.x_reg, False)
@@ -214,19 +237,24 @@ class SoloMpcGaitGen:
         self.X_init[3:] = np.array(self.rdata.hg)            
         self.X_init[3:6] /= self.m
 
-        self.X_nom[0::9] = 0.0
+        self.X_nom[0::9] = self.X_init[0]
         self.X_nom[2::9] = 0.22
+        self.X_nom[3::9] = v_des[0]
+        self.X_nom[4::9] = v_des[1]
+        self.X_nom[5::9] = v_des[2]
 
-        # X_ter = self.X_init.copy()
-        # X_ter[2] = self.X_init[2] - 0.03
+        amom = 1.0*self.compute_ori_correction(q, np.array([0,0,0,1]))
+        self.X_nom[6::9] = amom[0]
+        self.X_nom[7::9] = amom[1]
+        self.X_nom[8::9] = amom[2]
+
         X_ter = np.zeros_like(self.X_init)
-        # X_ter[0:3] = self.X_init[0:3].copy()
+        X_ter[0:3] = self.X_init[0:3].copy()
         X_ter[2] = 0.22
-        X_ter[0] = 0.2
 
-        # X_ter[0:3] += v_des*self.st*2
-        # X_ter[3:6] = v_des*self.m
-
+        X_ter[0:2] = self.X_init[0:2] + (2*v_des*self.st)[0:2]
+        X_ter[3:6] = v_des
+        X_ter[6:] = amom
 
         # Setup dynamic optimization
         self.mp.create_contact_array(np.array(self.cnt_plan))
@@ -238,31 +266,51 @@ class SoloMpcGaitGen:
         # TODO: Make update_dynamics take in the time
         # self.mp.update_dynamics()
 
+    def compute_ori_correction(self, q, des_quat):
+        """
+        This function computes the AMOM required to correct for orientation
+        q : current joint configuration
+        des_quat : desired orientation
+        """
+        pin_quat = pin.Quaternion(np.array(q[3:7]))
+        pin_des_quat = pin.Quaternion(np.array(des_quat))
+
+        omega = pin.log3((pin_des_quat*(pin_quat.inverse())).toRotationMatrix())
+
+        return omega
 
     def optimize(self, q, v, t, n, next_loc, v_des, sh, x_reg, u_reg):
       
         #TODO: Move to C++
+        t1 = time.time()
         self.create_cnt_plan(q, v, t, n, next_loc, v_des)
 
         #Creates costs for IK and Dynamics
         self.create_costs(q, v, v_des, sh, t, x_reg, u_reg)
         self.q_traj.append(q)
         self.v_traj.append(v)
-
+        t2 = time.time()
         # --- Dynamics optimization ---
         com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 50)
+        t3 = time.time()
         self.com_traj.append(com_opt)
 
         # --- IK Optimization ---
         
         # Add tracking costs from Dynamic optimization
-        self.ik.add_centroidal_momentum_tracking_task(0, self.st, mom_opt[0:int(self.st/self.dt)], 1e1, "mom_track", False)
+        self.ik.add_centroidal_momentum_tracking_task(0, self.st, mom_opt[0:int(self.st/self.dt)], 1e2, "mom_track", False)
         self.ik.add_centroidal_momentum_tracking_task(0, self.st, mom_opt[int(self.st/self.dt)], 1e1, "mom_track", True)
 
         self.ik.add_com_position_tracking_task(0, self.st, com_opt[0:int(self.st/self.dt)], 1e4, "com_track_cost", False)
-        self.ik.add_com_position_tracking_task(0, self.st, com_opt[int(self.st/self.dt)], 1e9, "com_track_cost", True)
-
+        self.ik.add_com_position_tracking_task(0, self.st, com_opt[int(self.st/self.dt)], 1e5, "com_track_cost", True)
+        t4 = time.time()
         self.ik.optimize(np.hstack((q,v))) 
+        t5 = time.time()
+        print("cost", t2 - t1)
+        print("dyn", t3 - t2)
+        print("ik", t5 - t4)
+        print("total", t5 - t1)
+        print("------------------------")
         xs = self.ik.get_xs()
         us = self.ik.get_us()
         self.xs_traj.append(xs)

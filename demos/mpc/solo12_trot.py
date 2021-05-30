@@ -22,7 +22,7 @@ time.sleep(2)
 
 pin_robot = Solo12Config.buildRobotWrapper()
 urdf_path = Solo12Config.urdf_path
-st = 0.2
+st = 0.20
 dt = 5e-2
 state_wt = np.array([0.] * 3 + [10] * 3 + [5.0] * (pin_robot.model.nv - 6) \
                         + [0.00] * 3 + [0.01] * 3 + [10.0] *(pin_robot.model.nv - 6))
@@ -33,10 +33,10 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.5, 0.0, 0])
+v_des = np.array([0.3, 0.0, 0])
 sl_arr = v_des*st
 t = 0.0
-sh = 0.15
+step_height = 0.15
 
 
 plan_freq = 0.05 # sec
@@ -48,9 +48,9 @@ n = 1
 
 sim_t = 0.0
 step_t = 0
-sim_dt = 1e-3
+sim_dt = .001
 index = 0
-robot = Solo12Env(1.95, 0.01)
+robot = Solo12Env(2.15, 0.03)
 
 tmp = []
 tmp_des = []
@@ -68,7 +68,7 @@ for o in range(int(500*(st/sim_dt))):
         q, v = robot.get_state()
         contact_configuration = robot.get_current_contacts()
         # pr_st = time.time()
-        xs, us, f = gg.optimize(q, v, np.round(step_t,3), n, next_loc, v_des, sh, 5e-3, 7e-4, contact_configuration)
+        xs, us, f = gg.optimize(q, v, np.round(step_t,3), n, next_loc, v_des, step_height, 5e-3, 7e-4, contact_configuration)
         # gg.plot_plan()
         gg.reset()
         # pr_et = time.time()
@@ -87,6 +87,8 @@ for o in range(int(500*(st/sim_dt))):
     dq_des = xs[index][pin_robot.model.nq:].copy()
     robot.send_joint_command(q_des, dq_des, us[index], f[index])
     sim_t += sim_dt
+
+    print(sim_t)
 
     #What is this???
     step_t = (step_t + sim_dt)%st

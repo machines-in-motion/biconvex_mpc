@@ -48,6 +48,8 @@ class SoloMpcGaitGen:
         self.bound = np.array([[1,1,0,0], [0,0,1,1]])
         self.pace = np.array([[1,0,1,0], [0,1,0,1]])
 
+        self.current_contact = np.zeros(4)
+
         self.wt = [1e4, 1e4]
 
         if gait == 0:
@@ -58,6 +60,8 @@ class SoloMpcGaitGen:
             self.cnt_gait = self.bound
         elif gait == 3:
             self.cnt_gait = self.pace
+
+        self.current_contact = self.cnt_gait[0]
 
         self.state_wt = state_wt
 
@@ -105,12 +109,29 @@ class SoloMpcGaitGen:
 
         self.cnt_plan = np.zeros((4,len(self.eff_names), 6))
         assert t < self.st
+
         # first step
-        for i in range(len(self.eff_names)):
-            self.cnt_plan[0][i][0] = self.cnt_gait[n%2][i]
-            self.cnt_plan[0][i][1:4] = self.rdata.oMf[self.f_id[i]].translation
-            self.cnt_plan[0][i][3] += 0.0
-            self.cnt_plan[0][i][5] = max(0, self.st - t - self.sp)    
+        if t <= 0.2:
+            for i in range(len(self.eff_names)):
+                self.cnt_plan[0][i][0] = self.cnt_gait[n%2][i]
+                #self.cnt_plan[0][i][0] = self.current_contact[i]
+                self.cnt_plan[0][i][1:4] = self.rdata.oMf[self.f_id[i]].translation
+                self.cnt_plan[0][i][3] += 0.0
+                self.cnt_plan[0][i][5] = max(0, self.st - t - self.sp)
+        else:
+            for i in range(len(self.eff_names)):
+                #self.cnt_plan[0][i][0] = self.cnt_gait[n%2][i]
+                self.cnt_plan[0][i][0] = self.current_contact[i]
+                self.cnt_plan[0][i][1:4] = self.rdata.oMf[self.f_id[i]].translation
+                self.cnt_plan[0][i][3] += 0.0
+                self.cnt_plan[0][i][5] = max(0, self.st - t - self.sp)
+
+        # for i in range(len(self.eff_names)):
+        #     self.cnt_plan[0][i][0] = self.cnt_gait[n%2][i]
+        #     #self.cnt_plan[0][i][0] = self.current_contact[i]
+        #     self.cnt_plan[0][i][1:4] = self.rdata.oMf[self.f_id[i]].translation
+        #     self.cnt_plan[0][i][3] += 0.0
+        #     self.cnt_plan[0][i][5] = max(0, self.st - t - self.sp)
 
         for i in range(len(self.eff_names)):
             self.cnt_plan[1][i][0] = 1.0
@@ -191,7 +212,7 @@ class SoloMpcGaitGen:
                 pos = np.tile(self.cnt_plan[1][i][1:4], (N,1))
                 self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0],\
                                                 "cnt_" + str(0) + self.eff_names[i])
-                                                 
+
         # third block
         if self.cnt_plan[1][0][5] < self.st: 
             for i in range(len(self.eff_names)):
@@ -204,10 +225,9 @@ class SoloMpcGaitGen:
                                                     "cnt_" + str(1) + self.eff_names[i])
                     self.ik.add_terminal_position_tracking_task(self.f_id[i], pos[0], self.wt[0],\
                                                 "cnt_" + str(1) + self.eff_names[i])
-
                 else:
                     if et > st + self.st/2.0:
-                        pos = self.cnt_plan[3][i][1:4] - v_des*self.st/2.0
+                        pos = self.cnt_plan[3][i][1:4] - v_des*self.st
                         pos[2] = sh
                         self.ik.add_position_tracking_task(self.f_id[i], st + self.st/2.0, st + self.st/2.0, pos
                                                         , self.wt[1],\
@@ -243,7 +263,7 @@ class SoloMpcGaitGen:
         self.X_nom[4::9] = v_des[1]
         self.X_nom[5::9] = v_des[2]
 
-        amom = 1.0*self.compute_ori_correction(q, np.array([0,0,0,1]))
+        amom = 0.5*self.compute_ori_correction(q, np.array([0,0,0,1]))
         self.X_nom[6::9] = amom[0]
         self.X_nom[7::9] = amom[1]
         self.X_nom[8::9] = amom[2]
@@ -257,6 +277,7 @@ class SoloMpcGaitGen:
         X_ter[6:] = amom
 
         # Setup dynamic optimization
+
         self.mp.create_contact_array(np.array(self.cnt_plan))
         self.mp.create_bound_constraints(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(self.W_X, self.W_X_ter, X_ter, self.X_nom)
@@ -279,20 +300,24 @@ class SoloMpcGaitGen:
 
         return omega
 
-    def optimize(self, q, v, t, n, next_loc, v_des, sh, x_reg, u_reg):
+    def optimize(self, q, v, t, n, next_loc, v_des, sh, x_reg, u_reg, current_contact):
       
         #TODO: Move to C++
         t1 = time.time()
+        self.current_contact = current_contact
         self.create_cnt_plan(q, v, t, n, next_loc, v_des)
 
         #Creates costs for IK and Dynamics
         self.create_costs(q, v, v_des, sh, t, x_reg, u_reg)
         self.q_traj.append(q)
         self.v_traj.append(v)
-        t2 = time.time()
+
         # --- Dynamics optimization ---
-        com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 50)
+
+        t2 = time.time()
+        com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 65)
         t3 = time.time()
+
         self.com_traj.append(com_opt)
 
         # --- IK Optimization ---
@@ -306,11 +331,11 @@ class SoloMpcGaitGen:
         t4 = time.time()
         self.ik.optimize(np.hstack((q,v))) 
         t5 = time.time()
-        print("cost", t2 - t1)
-        print("dyn", t3 - t2)
-        print("ik", t5 - t4)
-        print("total", t5 - t1)
-        print("------------------------")
+        # print("cost", t2 - t1)
+        # print("dyn", t3 - t2)
+        # print("ik", t5 - t4)
+        # print("total", t5 - t1)
+        # print("------------------------")
         xs = self.ik.get_xs()
         us = self.ik.get_us()
         self.xs_traj.append(xs)

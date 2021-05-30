@@ -12,11 +12,11 @@ from py_biconvex_mpc.motion_planner.cpp_biconvex import BiConvexMP
 from py_biconvex_mpc.ik_utils.gait_generator import GaitGenerator
 from robot_properties_solo.config import Solo12Config
 from mpc_gait_gen import SoloMpcGaitGen
-
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 
-
-import threading
+import subprocess
+subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
+time.sleep(2)
 
 ## robot config and init
 
@@ -33,13 +33,15 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.2, 0.0, 0])
+v_des = np.array([0.5, 0.0, 0])
 sl_arr = v_des*st
 t = 0.0
 sh = 0.15
+
+
 plan_freq = 0.05 # sec
 
-gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 2)
+gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 1)
 
 # while True:
 n = 1
@@ -48,7 +50,7 @@ sim_t = 0.0
 step_t = 0
 sim_dt = 1e-3
 index = 0
-robot = Solo12Env(2.0, 0.01)
+robot = Solo12Env(1.95, 0.01)
 
 tmp = []
 tmp_des = []
@@ -64,8 +66,9 @@ for o in range(int(500*(st/sim_dt))):
     if index == 0:
         # print(index, step_t)
         q, v = robot.get_state()
+        contact_configuration = robot.get_current_contacts()
         # pr_st = time.time()
-        xs, us, f = gg.optimize(q, v, np.round(step_t,3), n, next_loc, v_des, sh, 5e-3, 7e-4)
+        xs, us, f = gg.optimize(q, v, np.round(step_t,3), n, next_loc, v_des, sh, 5e-3, 7e-4, contact_configuration)
         # gg.plot_plan()
         gg.reset()
         # pr_et = time.time()
@@ -73,15 +76,22 @@ for o in range(int(500*(st/sim_dt))):
 
     # control loop
     q, v = robot.get_state()
-    tmp.append(q)
+    contact_configuration = robot.get_current_contacts()
+
+    if np.all((contact_configuration==0)):
+        print("flight phase")
+
+    #tmp.append(q)
     q_des = xs[index][:pin_robot.model.nq].copy()
-    tmp_des.append(q_des)
+    #tmp_des.append(q_des)
     dq_des = xs[index][pin_robot.model.nq:].copy()
     robot.send_joint_command(q_des, dq_des, us[index], f[index])
     sim_t += sim_dt
+
+    #What is this???
     step_t = (step_t + sim_dt)%st
     index = int((index + 1)%(plan_freq/sim_dt))
-    # print(index)
+    #print(index)
     if np.round(step_t,3) == 0:
         n += 1
     # if n < 3:

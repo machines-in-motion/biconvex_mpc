@@ -48,3 +48,10 @@ class Solo12Env:
         tau = self.robot_id_ctrl.id_joint_torques(q, v, q_des, v_des, a_des, F_des)
         self.robot.send_joint_command(tau)
         self.env.step() # You can sleep here if you want to slow down the replay
+
+    def get_current_contacts(self):
+        """
+        :return: an array of boolean 1/0 of end-effector current status of contact (0 = no contact, 1 = contact)
+        """
+        contact_configuration = self.robot.get_current_contacts()
+        return contact_configuration

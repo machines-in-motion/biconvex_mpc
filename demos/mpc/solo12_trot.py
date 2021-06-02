@@ -15,7 +15,9 @@ from mpc_gait_gen import SoloMpcGaitGen
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 
 import subprocess
-subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
+# subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
+subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
+
 time.sleep(2)
 
 ## robot config and init
@@ -33,7 +35,7 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.3, 0.0, 0])
+v_des = np.array([0.0, 0.0, 0])
 sl_arr = v_des*st
 t = 0.0
 step_height = 0.15
@@ -41,7 +43,7 @@ step_height = 0.15
 
 plan_freq = 0.05 # sec
 
-gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 1)
+gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 0)
 
 # while True:
 n = 1
@@ -51,6 +53,8 @@ step_t = 0
 sim_dt = .001
 index = 0
 robot = Solo12Env(2.15, 0.03)
+# robot = Solo12Env(0, 0)
+
 
 tmp = []
 tmp_des = []
@@ -81,14 +85,12 @@ for o in range(int(500*(st/sim_dt))):
     if np.all((contact_configuration==0)):
         print("flight phase")
 
-    #tmp.append(q)
+    tmp.append(q)
     q_des = xs[index][:pin_robot.model.nq].copy()
-    #tmp_des.append(q_des)
+    tmp_des.append(q_des)
     dq_des = xs[index][pin_robot.model.nq:].copy()
     robot.send_joint_command(q_des, dq_des, us[index], f[index])
     sim_t += sim_dt
-
-    print(sim_t)
 
     #What is this???
     step_t = (step_t + sim_dt)%st
@@ -102,13 +104,13 @@ for o in range(int(500*(st/sim_dt))):
     # if n > 5 and n < 10:
     #     robot.robot.rai_robot.setExternalForce(0, [0, 0, 0], [5, 0, 0]) 
 
-# tmp = np.array(tmp)
-# tmp_des = np.array(tmp_des)
+tmp = np.array(tmp)
+tmp_des = np.array(tmp_des)
 
-# plt.plot(tmp[:,2])
-# plt.plot(tmp_des[:,2])
+plt.plot(tmp[:,2])
+plt.plot(tmp_des[:,2])
 
-# plt.show()
+plt.show()
 
 # gg.plot(tmp)
 # gg.plot_joints()

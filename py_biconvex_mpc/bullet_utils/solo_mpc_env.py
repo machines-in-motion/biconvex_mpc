@@ -18,9 +18,8 @@ class Solo12Env:
 
         self.env = RaiEnv()
         #Change the urdf_path to load from raisim_utils
-        urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-        # urdf_path =  "/Users/paarth/Software/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-        #urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
+        # urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
+        urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
         self.robot = self.env.add_robot(Solo12Config, urdf_path)
         self.env.launch_server()
 
@@ -45,8 +44,10 @@ class Solo12Env:
             F_des : desired feed forward forces at current time step
         """
         q, v = self.robot.get_state()
+        self.robot.forward_robot(q,v)
         tau = self.robot_id_ctrl.id_joint_torques(q, v, q_des, v_des, a_des, F_des)
         self.robot.send_joint_command(tau)
+        self.robot.set_state_ghost(q_des, v_des)
         self.env.step() # You can sleep here if you want to slow down the replay
 
     def get_current_contacts(self):

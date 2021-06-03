@@ -15,8 +15,8 @@ from mpc_gait_gen import SoloMpcGaitGen
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 
 import subprocess
-# subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
-subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
+#subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
+#subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
 
 time.sleep(2)
 
@@ -38,7 +38,7 @@ x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 v_des = np.array([0.0, 0.0, 0])
 sl_arr = v_des*st
 t = 0.0
-step_height = 0.15
+step_height = 0.125
 
 
 plan_freq = 0.05 # sec
@@ -52,7 +52,7 @@ sim_t = 0.0
 step_t = 0
 sim_dt = .001
 index = 0
-robot = Solo12Env(2.15, 0.03)
+robot = Solo12Env(2.15, 0.03, q0, v0)
 # robot = Solo12Env(0, 0)
 
 
@@ -71,6 +71,7 @@ for o in range(int(500*(st/sim_dt))):
         # print(index, step_t)
         q, v = robot.get_state()
         contact_configuration = robot.get_current_contacts()
+        contact_configuration = np.ones(4)
         # pr_st = time.time()
         xs, us, f = gg.optimize(q, v, np.round(step_t,3), n, next_loc, v_des, step_height, 5e-3, 7e-4, contact_configuration)
         # gg.plot_plan()

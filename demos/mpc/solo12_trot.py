@@ -37,7 +37,7 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.2, 0.0, 0])
+v_des = np.array([0.0, 0.0, 0])
 sl_arr = v_des*st
 t = 0.0
 step_height = 0.15
@@ -54,7 +54,7 @@ sim_t = 0.0
 step_t = 0
 sim_dt = .001
 index = 0
-robot = Solo12Env(2.15, 0.03, q0, v0, False)
+robot = Solo12Env(0.5, 0.03, q0, v0, False)
 
 print(pin.centerOfMass(pin_robot.model, pin_robot.data, q0, v0))
 
@@ -75,7 +75,6 @@ for o in range(int(500*(st/sim_dt))):
         # print(index, step_t)
         q, v = robot.get_state()
         contact_configuration = robot.get_current_contacts()
-        contact_configuration = np.ones(4)
         pr_st = time.time()
         xs, us, f = gg.optimize(q, v, np.round(step_t,3), n, next_loc, v_des, step_height, 5e-3, 7e-4, contact_configuration)
         # gg.plot_plan()
@@ -85,8 +84,9 @@ for o in range(int(500*(st/sim_dt))):
 
     # control loop
     q, v = robot.get_state()
-    contact_configuration = robot.get_current_contacts()
-    contact_configuration = np.ones(4)
+
+    # contact_configuration = robot.get_current_contacts()
+    contact_configuration = gg.cnt_gait[n%2]
 
     if np.all((contact_configuration==0)):
         print("flight phase")
@@ -95,8 +95,8 @@ for o in range(int(500*(st/sim_dt))):
     q_des = xs[index][:pin_robot.model.nq].copy()
     # tmp_des.append(q_des)
     dq_des = xs[index][pin_robot.model.nq:].copy()
-    # robot.send_joint_command(q_des, dq_des, us[index], f[index])
-    robot.send_joint_command_tsid(sim_t, q_des, dq_des, us[index], f[index], contact_configuration)
+    robot.send_joint_command(q_des, dq_des, us[index], f[index], contact_configuration)
+    # robot.send_joint_command_tsid(sim_t, q_des, dq_des, us[index], f[index], contact_configuration)
     sim_t += sim_dt
 
     # print(pin.centerOfMass(pin_robot.model, pin_robot.data, q_des, dq_des), 
@@ -104,7 +104,6 @@ for o in range(int(500*(st/sim_dt))):
 
     step_t = (step_t + sim_dt)%st
     index = int((index + 1)%(plan_freq/sim_dt))
-    #print(index)
     if np.round(step_t,3) == 0:
         n += 1
     # if n < 3:

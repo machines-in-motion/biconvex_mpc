@@ -34,7 +34,7 @@ class Solo12Env:
         self.robot_tsid_ctrl = TSID_controller(self.robot, urdf_path, model_path, self.f_arr, q0, v0)
 
         self.robot_id_ctrl = InverseDynamicsController(self.robot, self.f_arr)
-        self.robot_id_ctrl.set_gains(kp, kd)
+        self.robot_id_ctrl.set_gains(kp, kd, [0.0, 0.0, 100.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
 
     def get_state(self):
         """
@@ -43,7 +43,7 @@ class Solo12Env:
         q, v = self.robot.get_state()
         return q, v
 
-    def send_joint_command(self, q_des, v_des, a_des, F_des):
+    def send_joint_command(self, q_des, v_des, a_des, F_des, contact_configuration):
         """
         computes the torques using the ID controller and plugs the torques
         Input:
@@ -53,7 +53,7 @@ class Solo12Env:
         """
         q, v = self.robot.get_state()
         self.robot.forward_robot(q,v)
-        tau = self.robot_id_ctrl.id_joint_torques(q, v, q_des, v_des, a_des, F_des)
+        tau = self.robot_id_ctrl.id_joint_torques(q, v, q_des, v_des, a_des, F_des, contact_configuration)
         self.robot.send_joint_command(tau)
         if self.vis_ghost:
             self.robot.set_state_ghost(q_des, v_des)

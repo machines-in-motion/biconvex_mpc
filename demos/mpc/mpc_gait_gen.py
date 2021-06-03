@@ -111,27 +111,12 @@ class SoloMpcGaitGen:
         assert t < self.st
 
         # first step
-        if t <= 0.2:
-            for i in range(len(self.eff_names)):
-                self.cnt_plan[0][i][0] = self.cnt_gait[n%2][i]
-                #self.cnt_plan[0][i][0] = self.current_contact[i]
-                self.cnt_plan[0][i][1:4] = self.rdata.oMf[self.f_id[i]].translation
-                self.cnt_plan[0][i][3] += 0.0
-                self.cnt_plan[0][i][5] = max(0, self.st - t - self.sp)
-        else:
-            for i in range(len(self.eff_names)):
-                #self.cnt_plan[0][i][0] = self.cnt_gait[n%2][i]
-                self.cnt_plan[0][i][0] = self.current_contact[i]
-                self.cnt_plan[0][i][1:4] = self.rdata.oMf[self.f_id[i]].translation
-                self.cnt_plan[0][i][3] += 0.0
-                self.cnt_plan[0][i][5] = max(0, self.st - t - self.sp)
-
-        # for i in range(len(self.eff_names)):
-        #     self.cnt_plan[0][i][0] = self.cnt_gait[n%2][i]
-        #     #self.cnt_plan[0][i][0] = self.current_contact[i]
-        #     self.cnt_plan[0][i][1:4] = self.rdata.oMf[self.f_id[i]].translation
-        #     self.cnt_plan[0][i][3] += 0.0
-        #     self.cnt_plan[0][i][5] = max(0, self.st - t - self.sp)
+        for i in range(len(self.eff_names)):
+            self.cnt_plan[0][i][0] = self.cnt_gait[n%2][i]
+            #self.cnt_plan[0][i][0] = self.current_contact[i]
+            self.cnt_plan[0][i][1:4] = self.rdata.oMf[self.f_id[i]].translation
+            self.cnt_plan[0][i][3] += 0.0
+            self.cnt_plan[0][i][5] = max(0, self.st - t - self.sp)
 
         for i in range(len(self.eff_names)):
             self.cnt_plan[1][i][0] = 1.0
@@ -258,7 +243,7 @@ class SoloMpcGaitGen:
         self.X_init[3:6] /= self.m
 
         self.X_nom[0::9] = self.X_init[0]
-        self.X_nom[2::9] = 0.22
+        self.X_nom[2::9] = 0.2
         self.X_nom[3::9] = v_des[0]
         self.X_nom[4::9] = v_des[1]
         self.X_nom[5::9] = v_des[2]
@@ -270,7 +255,7 @@ class SoloMpcGaitGen:
 
         X_ter = np.zeros_like(self.X_init)
         X_ter[0:3] = self.X_init[0:3].copy()
-        X_ter[2] = 0.22
+        X_ter[2] = 0.2
 
         X_ter[0:2] = self.X_init[0:2] + (2*v_des*self.st)[0:2]
         X_ter[3:6] = v_des

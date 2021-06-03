@@ -12,17 +12,21 @@ from robot_properties_solo.solo12wrapper import Solo12Robot, Solo12Config
 
 class Solo12Env:
 
-    def __init__(self, kp, kd, q0, v0):
+    def __init__(self, kp, kd, q0, v0, vis_ghost = False):
 
         self.kp = kp
         self.kd = kd
 
         self.env = RaiEnv()
         #Change the urdf_path to load from raisim_utils
-        urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-        #urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-        model_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf"
-        self.robot = self.env.add_robot(Solo12Config, urdf_path)
+        # urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
+        # model_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf"
+
+        urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
+        model_path = "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf"
+
+        self.vis_ghost = vis_ghost
+        self.robot = self.env.add_robot(Solo12Config, urdf_path, vis_ghost = self.vis_ghost)
         self.env.launch_server()
 
         self.f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
@@ -51,7 +55,8 @@ class Solo12Env:
         self.robot.forward_robot(q,v)
         tau = self.robot_id_ctrl.id_joint_torques(q, v, q_des, v_des, a_des, F_des)
         self.robot.send_joint_command(tau)
-        self.robot.set_state_ghost(q_des, v_des)
+        if self.vis_ghost:
+            self.robot.set_state_ghost(q_des, v_des)
         self.env.step() # You can sleep here if you want to slow down the replay
 
     def send_joint_command_tsid(self, t, q_des, v_des, a_des, F_des, des_contact_arr):
@@ -66,7 +71,8 @@ class Solo12Env:
         self.robot.forward_robot(q,v)
         tau = self.robot_tsid_ctrl.compute_id_torques(t, q, v, q_des, v_des, a_des, F_des, des_contact_arr)
         self.robot.send_joint_command(tau)
-        self.robot.set_state_ghost(q_des, v_des)
+        if self.vis_ghost:
+            self.robot.set_state_ghost(q_des, v_des)
         self.env.step() # You can sleep here if you want to slow down the replay
 
     def get_current_contacts(self):

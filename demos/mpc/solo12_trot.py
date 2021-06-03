@@ -15,8 +15,10 @@ from mpc_gait_gen import SoloMpcGaitGen
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 
 import subprocess
-#subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
-#subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
+
+# subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
+# subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
+subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisimUnity.x86_64"])
 
 time.sleep(2)
 
@@ -35,7 +37,7 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.0, 0.0, 0])
+v_des = np.array([0.2, 0.0, 0])
 sl_arr = v_des*st
 t = 0.0
 step_height = 0.125
@@ -43,7 +45,7 @@ step_height = 0.125
 
 plan_freq = 0.05 # sec
 
-gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 0)
+gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 1)
 
 # while True:
 n = 1

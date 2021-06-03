@@ -6,9 +6,9 @@ project(biconvex_mpc VERSION 0.0.1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/python3.6/dist-packages/")
-set (python_install_dir "/usr/local/lib/python3.6/dist-packages/")
-# set(PYTHON_EXECUTABLE /home/pshah/anaconda3/envs/mpc_environment/bin/python)
+#list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/python3.6/dist-packages/")
+#set (python_install_dir "/usr/local/lib/python3.6/dist-packages/")
+set(PYTHON_EXECUTABLE /home/pshah/anaconda3/envs/mpc_environment/bin/python)
 # set(PYTHON_LIBRARIES "/home/pshah/anaconda3/)
 
 ##Configure packages
@@ -18,7 +18,7 @@ find_package(Eigen3 REQUIRED)
 # robot packages
 find_package(pinocchio REQUIRED)
 find_package(crocoddyl REQUIRED)
-# find_package(Python REQUIRED)
+find_package(Python REQUIRED)
 
 # for benchmarking
 if ( OSQP )

@@ -54,7 +54,7 @@ class Solo12Env:
         self.robot.set_state_ghost(q_des, v_des)
         self.env.step() # You can sleep here if you want to slow down the replay
 
-    def send_joint_command_tsid(self, q_des, v_des, a_des, F_des):
+    def send_joint_command_tsid(self, t, q_des, v_des, a_des, F_des, des_contact_arr):
         """
         computes the torques using the ID controller and plugs the torques
         Input:
@@ -64,7 +64,7 @@ class Solo12Env:
         """
         q, v = self.robot.get_state()
         self.robot.forward_robot(q,v)
-        tau = self.robot_tsid_ctrl.compute_id_torques(q, v, q_des, v_des, a_des, F_des)
+        tau = self.robot_tsid_ctrl.compute_id_torques(t, q, v, q_des, v_des, a_des, F_des, des_contact_arr)
         self.robot.send_joint_command(tau)
         self.robot.set_state_ghost(q_des, v_des)
         self.env.step() # You can sleep here if you want to slow down the replay

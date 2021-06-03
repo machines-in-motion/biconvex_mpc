@@ -16,9 +16,9 @@ from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 
 import subprocess
 
-# subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
+subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
 # subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
-subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisimUnity.x86_64"])
+# subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisimUnity.x86_64"])
 
 time.sleep(2)
 
@@ -37,7 +37,7 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.2, 0.0, 0])
+v_des = np.array([0.0, 0.0, 0])
 sl_arr = v_des*st
 t = 0.0
 step_height = 0.125
@@ -45,7 +45,7 @@ step_height = 0.125
 
 plan_freq = 0.05 # sec
 
-gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 1)
+gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 0)
 
 # while True:
 n = 1
@@ -84,6 +84,7 @@ for o in range(int(500*(st/sim_dt))):
     # control loop
     q, v = robot.get_state()
     contact_configuration = robot.get_current_contacts()
+    contact_configuration = np.ones(4)
 
     if np.all((contact_configuration==0)):
         print("flight phase")
@@ -92,7 +93,8 @@ for o in range(int(500*(st/sim_dt))):
     q_des = xs[index][:pin_robot.model.nq].copy()
     tmp_des.append(q_des)
     dq_des = xs[index][pin_robot.model.nq:].copy()
-    robot.send_joint_command(q_des, dq_des, us[index], f[index])
+    #robot.send_joint_command(q_des, dq_des, us[index], f[index])
+    robot.send_joint_command_tsid(sim_t, q_des, dq_des, us[index], f[index], contact_configuration)
     sim_t += sim_dt
 
     #What is this???

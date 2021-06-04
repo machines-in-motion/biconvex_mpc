@@ -31,7 +31,7 @@ class SoloMpcGaitGen:
         self.r_urdf = r_urdf
         self.ik = InverseKinematics(r_urdf, dt, st)
         self.st = st
-        self.sp = 0.1 # stance phase
+        self.sp = 0.05 # stance phase
         self.dt = dt
         self.plan_freq = plan_freq
         self.foot_size = 0.016/2
@@ -73,7 +73,7 @@ class SoloMpcGaitGen:
         self.mp = BiConvexMP(self.m, self.dt, 2*self.st, len(self.eff_names), rho = self.rho)
 
         # weights
-        self.W_X = np.array([1e-5, 1e-5, 1e+5, 1e+4, 1e+3, 1e+5, 6e4, 6e4, 3e3])
+        self.W_X = np.array([1e-5, 1e-5, 1e+5, 1e+4, 1e+3, 1e+3, 3e3, 3e3, 3e3])
 
         self.W_X_ter = 100*np.array([1e-5, 1e-5, 1e+5, 1e+4, 1e+4, 1e+4, 1e+5, 1e+5, 1e+5])
 
@@ -330,10 +330,6 @@ class SoloMpcGaitGen:
         self.f_int = np.linspace(F_opt[0*n_eff:n_eff*(1)], F_opt[n_eff*(1):n_eff*(2)], int(self.plan_freq/0.001))
         self.xs_int = np.linspace(xs[0], xs[1], int(self.plan_freq/0.001))
         self.us_int = np.linspace(us[0], us[1], int(self.plan_freq/0.001))
-
-        self.com_int = np.linspace(com_opt[0], com_opt[1], int(self.plan_freq/0.001))
-        self.mom_int = np.linspace(mom_opt[0], mom_opt[1], int(self.plan_freq/0.001))
-
         return self.xs_int, self.us_int, self.f_int
 
     def reset(self):

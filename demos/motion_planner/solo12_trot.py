@@ -14,7 +14,7 @@ from py_biconvex_mpc.ik.inverse_kinematics import InverseKinematics
 from py_biconvex_mpc.ik_utils.gait_generator import GaitGenerator
 
 from cnt_plan_utils import SoloCntGen
-#from py_biconvex_mpc.bullet_utils.solo_env import Solo12Env
+from py_biconvex_mpc.bullet_utils.solo_env import Solo12Env
 
 
 robot = Solo12Config.buildRobotWrapper()
@@ -30,7 +30,7 @@ X_ter = X_init.copy()
 st = 0.2 # step time 
 sh = 0.15 # step height
 sl = np.array([0.1,0.0,0]) # step length
-n_steps = 12 # number of steps
+n_steps = 6 # number of steps
 T = st*(n_steps + 2)
 dt = 5e-2
 
@@ -43,7 +43,7 @@ cnt_plan = cnt_planner.create_trot_plan(st, sl, n_steps)
 
 # weights
 # W_X = np.array([1e-5, 1e-5, 1e-5, 1e-4, 1e-4, 1e-2, 1e5, 1e5, 1e5])
-W_X = np.array([1e-5, 1e-5, 1e-5, 1e-4, 1e-4, 1e-4, 3e3, 3e3, 3e3])
+W_X = np.array([1e-5, 1e-5, 1e+5, 1e-4, 1e-4, 1e+4, 3e3, 3e3, 3e3])
 
 W_X_ter = 10*np.array([1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5, 1e+5])
 
@@ -59,7 +59,7 @@ fx_max = 15
 fy_max = 15
 fz_max = 15
 
-optimize = True
+optimize = False
 
 if optimize:
     # optimization
@@ -86,7 +86,7 @@ if optimize:
 
     mp.add_ik_com_cost(com_opt_ik)
     mp.add_ik_momentum_cost(mom_opt_ik)    
-    # mp.stats()
+    mp.stats()
     print(xs.shape)
     np.savez("./dat_file/mom", com_opt = com_opt, mom_opt = mom_opt, F_opt = F_opt)
     np.savez("./dat_file/ik", xs = xs, us = us)
@@ -98,20 +98,28 @@ else:
     mom_opt, com_opt, F_opt = f["mom_opt"], f["com_opt"], f["F_opt"]
     f = np.load("dat_file/ik.npz")
     xs = f["xs"]
-    us = f['us']
+    us = f["us"]
 
     mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
     mp.create_contact_array(cnt_plan)
 
-    kp = 4*[100.0, 100.0, 100.0]
-    kd = 4*[.5, 0.5, 0.5]
+    # kp = 4*[100.0, 100.0, 100.0]
+    # kd = 4*[.5, 0.5, 0.5]
+    # kc = [100, 100, 100]
+    # dc = [10,10,10]
+    # kb = [200, 200, 200]
+    # db = [50,50,50]
+
+    kp = 4*[5.0, 100.0, 100.0]
+    kd = 4*[.05, 0.5, 0.5]
     kc = [100, 100, 100]
     dc = [10,10,10]
     kb = [200, 200, 200]
     db = [50,50,50]
+
     env = Solo12Env(X_init, T, dt, kp, kd, kc, dc, kb, db)
     env.generate_motion_plan(com_opt, mom_opt, F_opt, mp.cnt_arr.copy(), mp.r_arr.copy())
     env.generate_end_eff_plan(xs, us)
     # env.plot()
     env.sim(fr = 0.00, vname = None)
-    env.plot_real()
+    # env.plot_real()

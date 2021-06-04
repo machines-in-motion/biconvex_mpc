@@ -33,7 +33,7 @@ class Solo12Env:
         self.T = T
         self.n_col = np.int(np.round(T/0.001,2))
         self.ratio = int(np.round(self.dt/0.001,2)) # ratio between discretization
-        self.bullet = False
+        self.bullet = True
         if self.bullet:
             self.env = BulletEnvWithGround()
             self.robot = self.env.add_robot(Solo12Robot)
@@ -43,7 +43,7 @@ class Solo12Env:
 
         else:
             self.env = RaiEnv()
-            urdf_path =  "/home/ameduri/fun_stuff/solo/solo12.urdf"
+            urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
             self.robot = self.env.add_robot(Solo12Config, urdf_path)
             self.env.launch_server()
 
@@ -62,7 +62,7 @@ class Solo12Env:
         self.robot_leg_ctrl = RobotImpedanceController(self.robot, config_file)
 
         self.robot_id_ctrl = InverseDynamicsController(self.robot, self.f_arr)
-        self.robot_id_ctrl.set_gains(kp[0], kd[0])
+        self.robot_id_ctrl.set_gains(kp[0], kd[0], kc, dc, kb, db)
 
         # state estimator
         self.sse = SoloStateEstimator(self.robot.pin_robot)
@@ -113,7 +113,7 @@ class Solo12Env:
             self.r_arr_array[n*self.ratio:(n+1)*self.ratio] = r_arr[n]
 
             if n < int(np.round(self.T/self.dt,2))-1:
-                self.fff[n*self.ratio:(n+1)*self.ratio] = np.linspace(F_opt[12*n:12*(n+1)], F_opt[12*(n+1):12*(n+2)], self.ratio)[:,:,0]
+                self.fff[n*self.ratio:(n+1)*self.ratio] = np.linspace(F_opt[12*n:12*(n+1)], F_opt[12*(n+1):12*(n+2)], self.ratio)
         self.fff[n*self.ratio:] = self.fff[(n)*self.ratio-1]
 
     def generate_end_eff_plan(self, xs, us):
@@ -176,13 +176,13 @@ class Solo12Env:
         if vname:
             self.robot.start_recording(vname)
 
-        for i in range(2000):
+        # for i in range(2000):
 
-            q, dq = self.robot.get_state()
-            tau = -10*np.subtract(q[7:], self.q_des[0][7:])
-            tau -=  0.5*(dq[6:])
-            self.robot.send_joint_command(tau)
-            self.env.step() # You can sleep here if you want to slow down the replay
+        #     q, dq = self.robot.get_state()
+        #     tau = -10*np.subtract(q[7:], self.q_des[0][7:])
+        #     tau -=  0.5*(dq[6:])
+        #     self.robot.send_joint_command(tau)
+        #     self.env.step() # You can sleep here if you want to slow down the replay
 
 
         for i in range(self.n_col):
@@ -194,7 +194,7 @@ class Solo12Env:
             self.x_com_real[i] = pin.centerOfMass(self.robot.pin_robot.model, self.robot.pin_robot.data, q, dq)
             self.xd_com_real[i] = dq[0:3]
 
-            self.f_real[i] = self.robot.get_contact_forces()
+            # self.f_real[i] = self.robot.get_contact_forces()
 
             hip_loc = self.sse.return_hip_locations(q, dq)
             hip_vel = self.sse.return_hip_velocities(q, dq)
@@ -208,17 +208,18 @@ class Solo12Env:
             w_com[1] += np.sum(self.fff[i][1::3]) 
             w_com[2] += np.sum(self.fff[i][2::3]) 
 
-            F = self.robot_cent_ctrl.compute_force_qp(q, dq, self.cnt_array[i], w_com)
-            self.ctrl_f[i] = F
-            x_des = self.x_foot[i] - np.reshape(hip_loc, (12,))
-            xd_des = self.xd_foot[i] - np.reshape(hip_vel, (12,))
-            tau = self.robot_leg_ctrl.return_joint_torques(q,dq,self.kp,self.kd, x_des, xd_des,F)
+            # F = self.robot_cent_ctrl.compute_force_qp(q, dq, self.cnt_array[i], w_com)
+            # self.ctrl_f[i] = F
+            # x_des = self.x_foot[i] - np.reshape(hip_loc, (12,))
+            # xd_des = self.xd_foot[i] - np.reshape(hip_vel, (12,))
+            # tau = self.robot_leg_ctrl.return_joint_torques(q,dq,self.kp,self.kd, x_des, xd_des,F)
             
-            # F = self.fff[i]
-            # q_des = self.q_des[i]
-            # dq_des = self.dq_des[i]
-            # a_des = self.a_des[i]
-            # tau = self.robot_id_ctrl.id_joint_torques(q, dq, q_des, dq_des, a_des, F)
+            F = self.fff[i]
+            q_des = self.q_des[i]
+            dq_des = self.dq_des[i]
+            a_des = self.a_des[i]
+            tau = self.robot_id_ctrl.id_joint_torques(q, dq, q_des, dq_des, a_des, F, self.cnt_array[i])
+            
             self.robot.send_joint_command(tau)
            
         if vname:

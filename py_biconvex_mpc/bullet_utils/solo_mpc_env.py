@@ -34,7 +34,7 @@ class Solo12Env:
         self.robot_tsid_ctrl = TSID_controller(self.robot, urdf_path, model_path, self.f_arr, q0, v0)
 
         self.robot_id_ctrl = InverseDynamicsController(self.robot, self.f_arr)
-        self.robot_id_ctrl.set_gains(kp, kd, [0.0, 0.0, 100.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
+        self.robot_id_ctrl.set_gains(kp, kd, [10.0, 10.0, 10.0], [1.0, 1.0, 1.0], [200.0, 200.0, 200.0], [50.0, 50.0, 50.0])
 
     def get_state(self):
         """

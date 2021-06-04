@@ -37,10 +37,10 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.0, 0.0, 0])
+v_des = np.array([0.2, 0.2, 0])
 sl_arr = v_des*st
 t = 0.0
-step_height = 0.15
+step_height = 0.1
 
 
 plan_freq = 0.05 # sec
@@ -54,7 +54,7 @@ sim_t = 0.0
 step_t = 0
 sim_dt = .001
 index = 0
-robot = Solo12Env(0.5, 0.03, q0, v0, False)
+robot = Solo12Env(2.0, 0.1, q0, v0, False)
 
 print(pin.centerOfMass(pin_robot.model, pin_robot.data, q0, v0))
 
@@ -80,7 +80,7 @@ for o in range(int(500*(st/sim_dt))):
         # gg.plot_plan()
         gg.reset()
         pr_et = time.time()
-        # print("time", pr_et - pr_st)
+        print("time", pr_et - pr_st)
 
     # control loop
     q, v = robot.get_state()

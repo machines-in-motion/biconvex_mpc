@@ -112,7 +112,7 @@ class GaitGenerator:
         self.ik.optimize(x0) 
 
         self.xs = np.array (self.ik.get_xs())
-        self.us = None
+        self.us = np.array (self.ik.get_us())
 
         return self.xs, self.us
     

@@ -5,7 +5,7 @@
 
 namespace gait_planner
 {
-    typedef Eigen::Matrix<double, 3, 4> Matrix34d;  // We store each foot in a separate column
+    //typedef Eigen::Matrix<double, 3, 4> Matrix34d;  // We store each foot in a separate column
 
     class QuadrupedGait
     {
@@ -16,6 +16,7 @@ namespace gait_planner
         // Get how far into the full gait cycle you should be in given the offset + time
         Eigen::Vector4d get_phi(double time_in);
 
+        // Get how far into the full gait cycle you should given the offset + time for a specific foot
         double get_phi(double time, int foot_ID);
 
         // Get which phase you are currently in
@@ -32,7 +33,9 @@ namespace gait_planner
         //Get how far into the gait phase (swing or stance) the robot is in for a specific end-effector
         double get_percent_in_phase(double time, int foot_ID);
 
-        void get_contact_phase_sequence(Eigen::MatrixXi contact_phase_plan, double time_in, double dt);
+        //Pass in a pre-made matrix with the horizon / length you want, and compute
+        // the entire contact sequence for a fixed dt
+        Eigen::MatrixXi get_contact_phase_plan(Eigen::MatrixXi contact_phase_plan, double time_in, double dt);
 
         void set_step_height(double step_height) { step_height_ = step_height; };
         void set_stance_percent(double lf_stance_percent, double lh_stance_percent, double rf_stance_percent,

@@ -38,6 +38,17 @@ namespace gait_planner
         return std::fmod(time_in + phase_offset_[foot_ID] * gait_period_, gait_period_);
     }
 
+    int QuadrupedGait::get_phase(double time_in, int foot_ID) {
+        if (get_phi(time_in, foot_ID) <= stance_time_[foot_ID])
+        {
+            phase_[foot_ID] = 1;  //Stance
+        }
+        else
+        {
+            phase_[foot_ID] = 0;  //Swing
+        }
+    }
+
     Eigen::Vector4i QuadrupedGait::get_phase(double time_in)
     {
         //there's probably a more elegant way to do this (binary modulo operator on the Eigen vectors...)
@@ -74,11 +85,12 @@ namespace gait_planner
         return phase_percent_;
     }
 
-    void QuadrupedGait::get_contact_phase_sequence(Eigen::MatrixXi contact_phase_plan, double time_in, double dt)
+    Eigen::MatrixXi QuadrupedGait::get_contact_phase_plan(Eigen::MatrixXi contact_phase_plan, double time_in, double dt)
     {
         for (unsigned int i = 0; i < contact_phase_plan.rows(); ++i) {
             contact_phase_plan.row(i) = get_phase(time_in + i*dt);
         }
+        return contact_phase_plan;
     }
 
     double QuadrupedGait::get_percent_in_phase(double time, int foot_ID)

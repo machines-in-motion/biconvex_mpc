@@ -9,6 +9,8 @@ from blmc_controllers.robot_id_controller import InverseDynamicsController
 from blmc_controllers.tsid_controller import TSID_controller
 from raisim_utils.rai_env import RaiEnv
 from robot_properties_solo.solo12wrapper import Solo12Robot, Solo12Config
+from py_biconvex_mpc.bullet_utils.solo_state_estimator import SoloStateEstimator
+
 
 class Solo12Env:
 
@@ -36,12 +38,29 @@ class Solo12Env:
         self.robot_id_ctrl = InverseDynamicsController(self.robot, self.f_arr)
         self.robot_id_ctrl.set_gains(kp, kd, [10.0, 10.0, 10.0], [1.0, 1.0, 1.0], [200.0, 200.0, 200.0], [50.0, 50.0, 50.0])
 
+        # state estimator
+        self.sse = SoloStateEstimator(self.robot.pin_robot)
+
     def get_state(self):
         """
         returns the current state of the robot
         """
         q, v = self.robot.get_state()
         return q, v
+
+    def get_hip_locations(self):
+        """
+        returns hip locations
+        """
+        q, v = self.robot.get_state()
+        hip_loc = self.sse.return_hip_locations(q, v)
+
+        hip_loc[0][1] += 0.05        
+        hip_loc[1][1] -= 0.05
+        hip_loc[2][1] += 0.05
+        hip_loc[3][1] -= 0.05
+
+        return hip_loc
 
     def send_joint_command(self, q_des, v_des, a_des, F_des, contact_configuration):
         """

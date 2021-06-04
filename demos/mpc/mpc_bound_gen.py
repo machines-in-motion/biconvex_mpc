@@ -10,9 +10,9 @@ from py_biconvex_mpc.motion_planner.cpp_biconvex import BiConvexMP
 
 from matplotlib import pyplot as plt
 
-class SoloMpcGaitGen:
+class SoloMpcNoundGen:
 
-    def __init__(self, robot, r_urdf, st, dt, state_wt, x_reg, plan_freq, gait = 1):
+    def __init__(self, robot, r_urdf, st, dt, state_wt, x_reg, plan_freq):
         """
         Input:
             robot : robot model
@@ -32,6 +32,7 @@ class SoloMpcGaitGen:
         self.ik = InverseKinematics(r_urdf, dt, st)
         self.st = st
         self.sp = 0.1 # stance phase
+        self.at = 0.1 # air phase
         self.dt = dt
         self.plan_freq = plan_freq
         self.foot_size = 0.016/2
@@ -43,23 +44,12 @@ class SoloMpcGaitGen:
             self.f_id.append(self.rmodel.getFrameId(self.eff_names[i]))
 
         # different gait options
-        self.stand = np.array([[1,1,1,1], [1,1,1,1]])
-        self.trot = np.array([[1,0,0,1], [0,1,1,0]])
-        self.bound = np.array([[1,1,0,0], [0,0,1,1]])
-        self.pace = np.array([[1,0,1,0], [0,1,0,1]])
-
+        
+        self.cnt_gait = np.array([[1,1,0,0], [0,0,1,1]])
+        
         self.current_contact = np.zeros(4)
 
         self.wt = [1e4, 1e4]
-
-        if gait == 0:
-            self.cnt_gait = self.stand
-        elif gait == 1:
-            self.cnt_gait = self.trot
-        elif gait == 2:
-            self.cnt_gait = self.bound
-        elif gait == 3:
-            self.cnt_gait = self.pace
 
         self.current_contact = self.cnt_gait[0]
 
@@ -73,9 +63,9 @@ class SoloMpcGaitGen:
         self.mp = BiConvexMP(self.m, self.dt, 2*self.st, len(self.eff_names), rho = self.rho)
 
         # weights
-        self.W_X = np.array([1e-5, 1e-5, 1e+5, 1e+2, 1e+2, 1e+2, 1e4, 1e4, 3e3])
+        self.W_X = np.array([1e-5, 1e-5, 1e+5, 1e+4, 1e+3, 1e+5, 6e4, 6e4, 3e3])
 
-        self.W_X_ter = 10*np.array([1e-5, 1e-5, 1e+5, 1e+3, 1e+3, 1e+3, 1e+5, 1e+5, 1e+5])
+        self.W_X_ter = 100*np.array([1e-5, 1e-5, 1e+5, 1e+4, 1e+4, 1e+4, 1e+5, 1e+5, 1e+5])
 
         self.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 
@@ -107,7 +97,7 @@ class SoloMpcGaitGen:
         pin.forwardKinematics(self.rmodel, self.rdata, q, v)
         pin.updateFramePlacements(self.rmodel, self.rdata)
 
-        self.cnt_plan = np.zeros((4,len(self.eff_names), 6))
+        self.cnt_plan = np.zeros((5,len(self.eff_names), 6))
         assert t < self.st
 
         # first step
@@ -248,7 +238,7 @@ class SoloMpcGaitGen:
         self.X_nom[4::9] = v_des[1]
         self.X_nom[5::9] = v_des[2]
 
-        amom = 0.8*self.compute_ori_correction(q, np.array([0,0,0,1]))
+        amom = 0.5*self.compute_ori_correction(q, np.array([0,0,0,1]))
         self.X_nom[6::9] = amom[0]
         self.X_nom[7::9] = amom[1]
         self.X_nom[8::9] = amom[2]
@@ -327,22 +317,12 @@ class SoloMpcGaitGen:
 
 
         n_eff = 3*len(self.eff_names)
-        ind = int(self.plan_freq/self.dt) + 1 # 1 is to accound for time lag
-        for i in range(ind):
-            if i == 0:
-                self.f_int = np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i+1):n_eff*(i+2)], int(self.dt/0.001))
-                self.xs_int = np.linspace(xs[i], xs[i+1], int(self.dt/0.001))
-                self.us_int = np.linspace(us[i], us[i+1], int(self.dt/0.001))
+        self.f_int = np.linspace(F_opt[0*n_eff:n_eff*(1)], F_opt[n_eff*(1):n_eff*(2)], int(self.plan_freq/0.001))
+        self.xs_int = np.linspace(xs[0], xs[1], int(self.plan_freq/0.001))
+        self.us_int = np.linspace(us[0], us[1], int(self.plan_freq/0.001))
 
-                self.com_int = np.linspace(com_opt[i], com_opt[i+1], int(self.dt/0.001))
-                self.mom_int = np.linspace(mom_opt[i], mom_opt[i+1], int(self.dt/0.001))
-            else:
-                self.f_int =  np.vstack((self.f_int, np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i+1):n_eff*(i+2)], int(self.dt/0.001))))
-                self.xs_int = np.vstack((self.xs_int, np.linspace(xs[i], xs[i+1], int(self.dt/0.001))))
-                self.us_int = np.vstack((self.us_int, np.linspace(us[i], us[i+1], int(self.dt/0.001))))
-
-                self.com_int = np.vstack((self.com_int, np.linspace(com_opt[i], com_opt[i+1], int(self.dt/0.001))))
-                self.mom_int = np.vstack((self.mom_int, np.linspace(mom_opt[i], mom_opt[i+1], int(self.dt/0.001))))
+        self.com_int = np.linspace(com_opt[0], com_opt[1], int(self.plan_freq/0.001))
+        self.mom_int = np.linspace(mom_opt[0], mom_opt[1], int(self.plan_freq/0.001))
 
         return self.xs_int, self.us_int, self.f_int
 

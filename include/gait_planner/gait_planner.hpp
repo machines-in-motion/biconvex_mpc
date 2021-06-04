@@ -1,19 +1,22 @@
+#ifndef BICONVEX_MPC_GAIT_PLANNER_HPP
+#define BICONVEX_MPC_GAIT_PLANNER_HPP
+
 #include <Eigen/Dense>
-#include <gait_planner/robot_model.hpp>
 
 namespace gait_planner
 {
-    typedef Eigen::Matrix<double, 3, 4> Matrix34d;  // We store each foot in a separate column
+    //typedef Eigen::Matrix<double, 3, 4> Matrix34d;  // We store each foot in a separate column
 
     class QuadrupedGait
     {
     public:
-        QuadrupedGait(std::shared_ptr<RobotModel> robot_model, double gait_period,
-                      const Eigen::Vector4d& stance_percent, const Eigen::Vector4d& phase_offset, double step_height);
+        QuadrupedGait(double gait_period, Eigen::Vector4d stance_percent,
+                      Eigen::Vector4d phase_offset, double step_height);
 
         // Get how far into the full gait cycle you should be in given the offset + time
-        const Eigen::Vector4d& get_phi(double time_in);
+        Eigen::Vector4d get_phi(double time_in);
 
+        // Get how far into the full gait cycle you should given the offset + time for a specific foot
         double get_phi(double time, int foot_ID);
 
         // Get which phase you are currently in
@@ -25,22 +28,25 @@ namespace gait_planner
         int get_phase(double time, int foot_ID);
 
         //Get how far into the gait phase (swing or stance) the robot is in for all 4 end-effectors
-        const Eigen::Vector4d& get_percent_in_phase(double time_in);
+        Eigen::Vector4d get_percent_in_phase(double time_in);
 
         //Get how far into the gait phase (swing or stance) the robot is in for a specific end-effector
         double get_percent_in_phase(double time, int foot_ID);
 
-        void get_contact_phase_sequence(Eigen::MatrixXd& contact_phase_plan, double time_in, double dt);
+        //Pass in a pre-made matrix with the horizon / length you want, and compute
+        // the entire contact sequence for a fixed dt
+        Eigen::MatrixXi get_contact_phase_plan(Eigen::MatrixXi contact_phase_plan, double time_in, double dt);
 
         void set_step_height(double step_height) { step_height_ = step_height; };
         void set_stance_percent(double lf_stance_percent, double lh_stance_percent, double rf_stance_percent,
                                 double rh_stance_percent);
-        void set_contact_post_swing_bool(bool cont_post_swing) { contact_post_swing_ = cont_post_swing; };
-        void get_footsteps(std::vector<Eigen::MatrixXd>& foot_locs, double curr_time, double horizon, double dt, double input_Vx, double input_Vy, double input_W, double current_omega);
 
-        void get_footsteps_classical(std::vector<Eigen::MatrixXd>& foot_locs, double curr_time, double horizon, double dt, double input_Vx, double input_Vy, double input_W, double current_omega);
-
-        void get_footsteps_classical_post_swing(ContactSequence& foot_locs, double curr_time, double horizon, double dt, double input_Vx, double input_Vy, double input_W);
+//        void set_contact_post_swing_bool(bool cont_post_swing) { contact_post_swing_ = cont_post_swing; };
+//        void get_footsteps(std::vector<Eigen::MatrixXd>& foot_locs, double curr_time, double horizon, double dt, double input_Vx, double input_Vy, double input_W, double current_omega);
+//
+//        void get_footsteps_classical(std::vector<Eigen::MatrixXd>& foot_locs, double curr_time, double horizon, double dt, double input_Vx, double input_Vy, double input_W, double current_omega);
+//
+//        void get_footsteps_classical_post_swing(ContactSequence& foot_locs, double curr_time, double horizon, double dt, double input_Vx, double input_Vy, double input_W);
 
     private:
         Eigen::Vector4d stance_percent_;

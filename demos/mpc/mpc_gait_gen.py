@@ -34,7 +34,7 @@ class SoloMpcGaitGen:
         self.sp = 0.1 # stance phase
         self.dt = dt
         self.plan_freq = plan_freq
-        self.foot_size = 0.016/2
+        self.foot_size = 0.018
 
         self.col_st = int(np.round(self.st/self.dt,2))
         self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
@@ -160,6 +160,7 @@ class SoloMpcGaitGen:
 
         self.x0 = np.hstack((q,v))
 
+        # --- Set Up IK --- #
         # first block
         for i in range(len(self.eff_names)):
             st = self.cnt_plan[0][i][4] 
@@ -235,6 +236,8 @@ class SoloMpcGaitGen:
 
         self.ik.setup_costs()
 
+        # --- Setup Dynamics --- #
+
         # initial and ter state
         self.X_init = np.zeros(9)
         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
@@ -262,7 +265,6 @@ class SoloMpcGaitGen:
         X_ter[6:] = amom
 
         # Setup dynamic optimization
-
         self.mp.create_contact_array(np.array(self.cnt_plan))
         self.mp.create_bound_constraints(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(self.W_X, self.W_X_ter, X_ter, self.X_nom)

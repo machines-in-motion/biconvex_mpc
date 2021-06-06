@@ -16,7 +16,6 @@ from rclpy.node import Node
 from std_msgs.msg import String
 from std_msgs.msg import Float64MultiArray
 
-#print(range(int(3*(st/sim_dt))))
 
 class MPC_loop(Node):
 
@@ -29,7 +28,7 @@ class MPC_loop(Node):
         self.ee_desired_force_publisher = self.create_publisher(Float64MultiArray, "desired_ee_forces",10)
 
         timer_period = 0.001 #seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.timer = self.create_timer(timer_period, self.do_mpc)
 
         self.joint_pos_subscriber = self.create_subscription(
             Float64MultiArray,
@@ -55,21 +54,18 @@ class MPC_loop(Node):
         state_wt = np.array([0.] * 3 + [1000.] * 3 + [5.0] * (self.pin_robot.model.nv - 6) \
                             + [0.01] * 6 + [5.0] *(self.pin_robot.model.nv - 6))
 
-        n_eff = 4
-        m = pin.computeTotalMass(self.pin_robot.model)
         q0 = np.array(Solo12Config.initial_configuration)
-        v0 = pin.utils.zero(self.pin_robot.model.nv)
         x0 = np.concatenate([q0, pin.utils.zero(self.pin_robot.model.nv)])
 
         self.v_des = np.array([0.0, 0, 0])
-        sl_arr = v_des*st
+        sl_arr = self.v_des*st
         self.t = 0.0
         self.sh = 0.15
         plan_freq = 0.05 # sec
 
         self.gg = SoloMpcGaitGen(self.pin_robot, self.urdf_path, st, self.dt, state_wt, x0, plan_freq, gait = 0)
 
-        self.robot = Solo12Env(2.5, 0.05)
+        #self.robot = Solo12Env(2.5, 0.05)
 
     def do_mpc(self):
         next_loc = np.array([[ 0.3946 + sl_arr[0],   0.14695 + sl_arr[1], 0],
@@ -81,7 +77,7 @@ class MPC_loop(Node):
 
         q = np.array(self.joint_states.copy())
         v = np.array(self.joint_vel.copy())
-        xs, us, f = gg.optimize(q, v, np.round(step_t,3), n, next_loc, self.v_des, self.sh, 7e-3, 5e-4)
+        xs, us, f = self.gg.optimize(q, v, np.round(step_t,3), n, next_loc, self.v_des, self.sh, 7e-3, 5e-4)
 
         q_des = xs[index][:self.pin_robot.model.nq].copy()
         dq_des = xs[index][self.pin_robot.model.nq:].copy()
@@ -96,11 +92,31 @@ class MPC_loop(Node):
         joint_des_accel_msg.data = us[index].tolist()
         ee_des_force_msg.msg = f[index].tolist()
 
+        self.joint_desired_pos_publisher_.publish(joint_des_pos_msg)
+        self.joint_desired_vel_publisher_.publish(joint_des_vel_msg)
+        self.joint_desired_accel_publisher_.publish(joint_des_accel_msg)
+        self.ee_desired_force_publisher_.publish(ee_des_force_msg)
+
     def listener_callback_position(self, msg):
         self.joint_states = msg.data
 
     def listener_callback_velocity(self,msg):
         self.joint_vel = msg.data
 
-gg.plot()
 
+def main(args=None):
+    rclpy.init(args=args)
+
+    minimal_subscriber = MPC_loop()
+
+    rclpy.spin(minimal_subscriber)
+
+    # Destroy the node explicitly
+    # (optional - otherwise it will be done automatically
+    # when the garbage collector destroys the node object)
+    minimal_subscriber.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()

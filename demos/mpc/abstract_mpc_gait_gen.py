@@ -63,7 +63,7 @@ class SoloMpcGaitGen:
         # --- Set up Dynamics ---
         self.m = pin.computeTotalMass(self.rmodel)
         self.rho = 5e+4 # penalty on dynamic constraint violation
-        self.mp = BiConvexMP(self.m, self.dt,  len(self.eff_names), rho = self.rho)
+        self.mp = BiConvexMP(self.m, self.dt, len(self.eff_names), rho = self.rho)
 
         #Different horizon parameterizations; only self.gait_horizon works for now
         self.gait_horizon = 2
@@ -133,11 +133,13 @@ class SoloMpcGaitGen:
                             self.cnt_plan[i][j][1:4] = self.prev_cnt[j][1:4]
                         else:
                             #If I was previously in a swing state
-                            self.cnt_plan[i][j][1:4] = self.prev_cnt[j][1:4] + v_des*self.stance_percent[j]*self.gat_period
+                            self.cnt_plan[i][j][1:4] = self.prev_cnt[j][1:4] + v_des*self.stance_percent[j]*self.gat_period/2
                             self.cnt_plan[i][j][3] = self.foot_size
                     else:
                         self.cnt_plan[i][j][0] = 0
                         self.prev_cnt[j][0] = 0
+
+        return self.cnt_plan
 
         # # first step
         # for i in range(len(self.eff_names)):
@@ -190,71 +192,84 @@ class SoloMpcGaitGen:
         self.x0 = np.hstack((q,v))
 
         # --- Set Up IK --- #
-        # first block
-        for i in range(len(self.eff_names)):
-            st = self.cnt_plan[0][i][4]
-            et = min(self.cnt_plan[0][i][5], self.st - self.dt)
-            if et - st > 0:
-                if self.cnt_plan[0][i][0] == 1:
-                    N = int(np.round(((et - st)/self.dt),2))
-                    pos = np.tile(self.cnt_plan[0][i][1:4], (N,1))
-                    self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0], \
-                                                       "cnt_" + str(0) + self.eff_names[i])
-
+        for i in range(self.horizon/4):
+            for j in range(len(self.eff_names)):
+                if self.cnt_plan[i][j][0] == 1:
+                    self.ik_add_position_tracking_task_single(self.f_id[j], self.wt[0], self.cnt_plan[i][j][1:4],
+                                                              "cnt_" + str(0) + self.eff_names[j], i)
                 else:
-                    # pos = self.rdata.oMf[i].translation
-                    self.ik.add_position_tracking_task(self.f_id[i], et, et, self.cnt_plan[2][i][1:4] \
-                                                       , self.wt[1], \
-                                                       "end_pos_" + str(0) + self.eff_names[i])
-
-                    if t < (self.st - self.sp)/2.0:
-                        pos = self.cnt_plan[2][i][1:4] - v_des*(self.st - self.sp)/2.0
-                        pos[2] = sh
-                        time = et-(self.st - self.sp)/2.0
-                        self.ik.add_position_tracking_task(self.f_id[i],time ,time, pos
-                                                           , self.wt[1], \
-                                                           "via_" + str(0) + self.eff_names[i])
-
-            # second block
-            st = self.cnt_plan[1][i][4]
-            et = min(self.cnt_plan[1][i][5], self.st - self.dt)
-            N = int(np.round(((et - st)/self.dt),2))
-            if et == self.st - self.dt:
-                pos = self.cnt_plan[1][i][1:4]
-                self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, self.wt[0], \
-                                                            "cnt_" + str(0) + self.eff_names[i])
-            else:
-                pos = np.tile(self.cnt_plan[1][i][1:4], (N,1))
-                self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0], \
-                                                   "cnt_" + str(0) + self.eff_names[i])
-
-        # third block
-        if self.cnt_plan[1][0][5] < self.st:
-            for i in range(len(self.eff_names)):
-                st = self.cnt_plan[2][i][4]
-                et = min(self.cnt_plan[2][i][5], self.st)
-                if self.cnt_plan[2][i][0] == 1:
-                    N = int(np.round(((et - st)/self.dt),2))
-                    pos = np.tile(self.cnt_plan[2][i][1:4], (N,1))
-                    self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0], \
-                                                       "cnt_" + str(1) + self.eff_names[i])
-                    self.ik.add_terminal_position_tracking_task(self.f_id[i], pos[0], self.wt[0], \
-                                                                "cnt_" + str(1) + self.eff_names[i])
-                else:
-                    if et > st + self.st/2.0:
-                        pos = self.cnt_plan[3][i][1:4] - v_des*self.st
-                        pos[2] = sh
-                        self.ik.add_position_tracking_task(self.f_id[i], st + self.st/2.0, st + self.st/2.0, pos
-                                                           , self.wt[1], \
-                                                           "via_" + str(t) + self.eff_names[i])
-                        pos = self.cnt_plan[3][i][1:4]
-                        self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, self.wt[0], \
-                                                                    "cnt_" + str(1) + self.eff_names[i])
-                    else:
-                        pos = self.cnt_plan[3][i][1:4] - v_des*self.st/2.0
-                        pos[2] = sh
-                        self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, 10*self.wt[1], \
-                                                                    "via_" + str(1) + self.eff_names[i])
+                    self.ik_add_position_tracking_task_single(self.f_id[j], self.wt[1], self.cnt_plan[i][j][1:4],
+                                                              "end_pos_" + str(0) + self.eff_names[j], i)
+                    if self.gait_planner.get_percent_in_phase(t+i * self.gait_dt) < 0.5:
+                        pos = self.cnt_plan[i][j][1:4] - v_des*()
+                        pos[2] = self.step_height
+                        self.ik_add_position_tracking_task_single(self.f_id[j], self.wt[1], pos,
+                                                                  "via_" + str(0) + self.eff_names[j], i)
+        # # first block
+        # for i in range(len(self.eff_names)):
+        #     st = self.cnt_plan[0][i][4]
+        #     et = min(self.cnt_plan[0][i][5], self.st - self.dt)
+        #     if et - st > 0:
+        #         if self.cnt_plan[0][i][0] == 1:
+        #             N = int(np.round(((et - st)/self.dt),2))
+        #             pos = np.tile(self.cnt_plan[0][i][1:4], (N,1))
+        #             self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0], \
+        #                                                "cnt_" + str(0) + self.eff_names[i])
+        #
+        #         else:
+        #             # pos = self.rdata.oMf[i].translation
+        #             self.ik.add_position_tracking_task(self.f_id[i], et, et, self.cnt_plan[2][i][1:4] \
+        #                                                , self.wt[1], \
+        #                                                "end_pos_" + str(0) + self.eff_names[i])
+        #
+        #             if t < (self.st - self.sp)/2.0:
+        #                 pos = self.cnt_plan[2][i][1:4] - v_des*(self.st - self.sp)/2.0
+        #                 pos[2] = sh
+        #                 time = et-(self.st - self.sp)/2.0
+        #                 self.ik.add_position_tracking_task(self.f_id[i],time ,time, pos
+        #                                                    , self.wt[1], \
+        #                                                    "via_" + str(0) + self.eff_names[i])
+        #
+        #     # second block
+        #     st = self.cnt_plan[1][i][4]
+        #     et = min(self.cnt_plan[1][i][5], self.st - self.dt)
+        #     N = int(np.round(((et - st)/self.dt),2))
+        #     if et == self.st - self.dt:
+        #         pos = self.cnt_plan[1][i][1:4]
+        #         self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, self.wt[0], \
+        #                                                     "cnt_" + str(0) + self.eff_names[i])
+        #     else:
+        #         pos = np.tile(self.cnt_plan[1][i][1:4], (N,1))
+        #         self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0], \
+        #                                            "cnt_" + str(0) + self.eff_names[i])
+        #
+        # # third block
+        # if self.cnt_plan[1][0][5] < self.st:
+        #     for i in range(len(self.eff_names)):
+        #         st = self.cnt_plan[2][i][4]
+        #         et = min(self.cnt_plan[2][i][5], self.st)
+        #         if self.cnt_plan[2][i][0] == 1:
+        #             N = int(np.round(((et - st)/self.dt),2))
+        #             pos = np.tile(self.cnt_plan[2][i][1:4], (N,1))
+        #             self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0], \
+        #                                                "cnt_" + str(1) + self.eff_names[i])
+        #             self.ik.add_terminal_position_tracking_task(self.f_id[i], pos[0], self.wt[0], \
+        #                                                         "cnt_" + str(1) + self.eff_names[i])
+        #         else:
+        #             if et > st + self.st/2.0:
+        #                 pos = self.cnt_plan[3][i][1:4] - v_des*self.st
+        #                 pos[2] = sh
+        #                 self.ik.add_position_tracking_task(self.f_id[i], st + self.st/2.0, st + self.st/2.0, pos
+        #                                                    , self.wt[1], \
+        #                                                    "via_" + str(t) + self.eff_names[i])
+        #                 pos = self.cnt_plan[3][i][1:4]
+        #                 self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, self.wt[0], \
+        #                                                             "cnt_" + str(1) + self.eff_names[i])
+        #             else:
+        #                 pos = self.cnt_plan[3][i][1:4] - v_des*self.st/2.0
+        #                 pos[2] = sh
+        #                 self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, 10*self.wt[1], \
+        #                                                             "via_" + str(1) + self.eff_names[i])
 
 
         self.ik.add_state_regularization_cost(0, self.st, wt_xreg, "xReg", self.state_wt, self.x_reg, False)
@@ -289,7 +304,7 @@ class SoloMpcGaitGen:
         X_ter[0:3] = self.X_init[0:3].copy()
         X_ter[2] = 0.2
 
-        X_ter[0:2] = self.X_init[0:2] + (2*v_des*self.st)[0:2]
+        X_ter[0:2] = self.X_init[0:2] + (self.horizon*v_des*self.gait_dt)[0:2] #Changed this
         X_ter[3:6] = v_des
         X_ter[6:] = amom
 

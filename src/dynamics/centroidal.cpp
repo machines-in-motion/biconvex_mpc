@@ -63,9 +63,9 @@ namespace dynamics{
         for (unsigned i = 0; i < cnt_plan_2_.size(); ++i){
             for (unsigned j = 0; j < n_eff_; ++j){
                 cnt_arr_(i,j) = cnt_plan_2_[i](j,0);
-                r_[i](j,0) = cnt_plan_2_[i][j,1];
-                r_[i](j,1) = cnt_plan_2_[i][j,2];
-                r_[i](j,2) = cnt_plan_2_[i][j,2];
+                r_[i](j,0) = cnt_plan_2_[i](j,1);
+                r_[i](j,1) = cnt_plan_2_[i](j,2);
+                r_[i](j,2) = cnt_plan_2_[i](j,2);
             }
         }
     };

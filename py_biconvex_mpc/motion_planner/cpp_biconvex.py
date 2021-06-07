@@ -38,6 +38,8 @@ class BiConvexMP(BiConvexCosts):
         self.tol = tol
         self.cnt_arr = []
         self.r_arr = []
+
+        self.cnt_plan = []
         # Note : no of collocation points should be computed only once
         # and passed to centroidal dynamics
         BiConvexCosts.__init__(self, self.n_col, self.dt, T)
@@ -87,27 +89,13 @@ class BiConvexMP(BiConvexCosts):
         assert np.shape(cnt_plan)[1] == self.n_eff
         assert np.shape(cnt_plan)[2] == 4
 
-        cnt_arr = np.zeros((self.n_col, self.n_eff))
-        r_arr = np.zeros((self.n_col, self.n_eff, 3))
-
-        # This should be removed ASAP
-
-        t_arr = np.zeros(self.n_eff)
-        for i in range(len(cnt_plan)):
-            for n in range(self.n_eff):
-                time_steps = int(np.round((cnt_plan[i][n][5] - cnt_plan[i][n][4])/self.dt, 2))
-                cnt_arr[:,n][int(t_arr[n]):int(t_arr[n]+time_steps)] = cnt_plan[i][n][0]
-                r_arr[int(t_arr[n]):int(t_arr[n]+time_steps), n] = np.tile(cnt_plan[i][n][1:4], (time_steps,1))
-                t_arr[n] += time_steps
-
-        self.cnt_arr = cnt_arr
-        self.r_arr = r_arr
+        self.cnt_plan = cnt_plan
 
         # C++ input
         for i in range(cnt_plan.shape[0]):
-            self.dyn_planer.set_contact_plan(cnt_plan[i])
+            self.dyn_planer.set_contact_plan_2(cnt_plan[i])
 
-        self.dyn_planer.create_contact_array()
+        self.dyn_planer.create_contact_array_2()
 
     def create_bound_constraints(self, bx, by, bz, fx_max, fy_max, fz_max):
         '''

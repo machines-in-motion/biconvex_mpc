@@ -100,7 +100,6 @@ class SoloMpcGaitGen:
         self.v_traj = []
 
     def create_cnt_plan(self, q, v, t, next_loc, v_des):
-
         pin.forwardKinematics(self.rmodel, self.rdata, q, v)
         pin.updateFramePlacements(self.rmodel, self.rdata)
 
@@ -119,23 +118,26 @@ class SoloMpcGaitGen:
                         self.cnt_plan[i][j][0] = 1
                         self.cnt_plan[i][j][1:4] = self.rdata.oMf[self.f_id[i]].translation
                         self.prev_cnt[j][0] = 1
+                        self.prev_cnt[j][1:4] = self.cnt_plan[i][j][1:4]
                     else:
                         #If foot is not in contact
                         self.cnt_plan[i][j][0] = 0
                         self.prev_cnt[j][0] = 0
                 else:
-                    #Every other time step
+                    #All other time steps
                     if self.gait_planner.get_phase(t + i*self.gait_dt, j) == 1:
                         #If foot will be in contact
                         self.cnt_plan[i][j][0] = 1
                         if self.prev_cnt[j][0] == 1:
-                            #If I was in stance previously as well
+                            #If I was in stance previously, use the same foot location
                             self.cnt_plan[i][j][1:4] = self.prev_cnt[j][1:4]
                         else:
-                            #If I was previously in a swing state
+                            # If I was in swing previously, use the raibert heuristic
+                            # Raibert heuristic is based off the previous contact location
                             self.cnt_plan[i][j][1:4] = self.prev_cnt[j][1:4] + v_des*self.stance_percent[j]*self.gat_period/2
                             self.cnt_plan[i][j][3] = self.foot_size
                     else:
+                        #If foot will not be in contact
                         self.cnt_plan[i][j][0] = 0
                         self.prev_cnt[j][0] = 0
 
@@ -195,12 +197,16 @@ class SoloMpcGaitGen:
         for i in range(self.horizon/4):
             for j in range(len(self.eff_names)):
                 if self.cnt_plan[i][j][0] == 1:
+                    #If stance phase add tracking to current position
                     self.ik_add_position_tracking_task_single(self.f_id[j], self.wt[0], self.cnt_plan[i][j][1:4],
                                                               "cnt_" + str(0) + self.eff_names[j], i)
                 else:
+                    #If Not in stance phase
+
+                    #Add tracking for next
                     self.ik_add_position_tracking_task_single(self.f_id[j], self.wt[1], self.cnt_plan[i][j][1:4],
                                                               "end_pos_" + str(0) + self.eff_names[j], i)
-                    if self.gait_planner.get_percent_in_phase(t+i * self.gait_dt) < 0.5:
+                    if self.gait_planner.get_percent_in_phase(t+i * self.gait_dt, j) < 0.5:
                         pos = self.cnt_plan[i][j][1:4] - v_des*()
                         pos[2] = self.step_height
                         self.ik_add_position_tracking_task_single(self.f_id[j], self.wt[1], pos,
@@ -309,8 +315,8 @@ class SoloMpcGaitGen:
         X_ter[6:] = amom
 
         # Setup dynamic optimization
-        self.mp.create_contact_array(np.array(self.cnt_plan))
-        self.mp.create_bound_constraints(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
+        self.mp.create_contact_array_2(np.array(self.cnt_plan))
+        self.mp.create_bound_constraints_2(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(self.W_X, self.W_X_ter, X_ter, self.X_nom)
         self.mp.create_cost_F(self.W_F)
 
@@ -345,6 +351,7 @@ class SoloMpcGaitGen:
 
         # --- Dynamics optimization ---
 
+        # Optimize Dynamics
         t2 = time.time()
         com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 65)
         t3 = time.time()
@@ -359,6 +366,7 @@ class SoloMpcGaitGen:
 
         self.ik.add_com_position_tracking_task(0, self.st, com_opt[0:int(self.st/self.dt)], 1e4, "com_track_cost", False)
         self.ik.add_com_position_tracking_task(0, self.st, com_opt[int(self.st/self.dt)], 1e5, "com_track_cost", True)
+
         t4 = time.time()
         self.ik.optimize(np.hstack((q,v)))
         t5 = time.time()
@@ -370,7 +378,6 @@ class SoloMpcGaitGen:
         xs = self.ik.get_xs()
         us = self.ik.get_us()
         self.xs_traj.append(xs)
-
 
         n_eff = 3*len(self.eff_names)
         ind = int(self.plan_freq/self.dt) + 1 # 1 is to account for time lag
@@ -395,7 +402,6 @@ class SoloMpcGaitGen:
     def reset(self):
         self.ik = InverseKinematics(self.r_urdf, self.dt, self.st)
         self.mp = BiConvexMP(self.m, self.dt, 2*self.st, len(self.eff_names), rho = self.rho)
-
 
     def plot(self, q_real):
         self.com_traj = np.array(self.com_traj)

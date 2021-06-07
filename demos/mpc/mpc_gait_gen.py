@@ -200,6 +200,8 @@ class SoloMpcGaitGen:
                                                 "cnt_" + str(0) + self.eff_names[i])
 
         # third block
+
+        #If the final stance
         if self.cnt_plan[1][0][5] < self.st: 
             for i in range(len(self.eff_names)):
                 st = self.cnt_plan[2][i][4] 

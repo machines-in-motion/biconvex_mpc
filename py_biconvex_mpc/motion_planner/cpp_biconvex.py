@@ -158,7 +158,7 @@ class BiConvexMP(BiConvexCosts):
                 if np.sum(self.cnt_arr[i]) > 0:
                     self.X_low[9*i] = max(self.cnt_plan[i][:][1]) - bx
                     self.X_low[9*i + 1] = max(self.cnt_plan[i][:][2]) - by
-                    self.X_low[9*i + 2] = ax(self.cnt_plan[i][:][3]) - 0
+                    self.X_low[9*i + 2] = max(self.cnt_plan[i][:][3]) - 0
                     self.X_high[9*i] = min(self.cnt_pln[i][:][1]) + bx
                     self.X_high[9*i + 1] = min(self.cnt_pln[i][:][2]) + by
                     self.X_high[9*i + 2] = min(self.cnt_pln[i][:][3]) + bz

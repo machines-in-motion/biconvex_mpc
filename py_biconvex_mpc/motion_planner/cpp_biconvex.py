@@ -45,7 +45,6 @@ class BiConvexMP(BiConvexCosts):
         # C++ version Biconvex MP
         self.dyn_planer = BiconvexMP(self.m, self.dt, self.T, self.n_eff)
 
-        
     def create_contact_array(self, cnt_plan):
         '''
         This function creates the contact array [[1/0, 1/0], [..], ...]

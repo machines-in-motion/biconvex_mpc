@@ -80,12 +80,12 @@ class BiConvexMP(BiConvexCosts):
         self.dyn_planer.create_contact_array()
 
     def create_contact_array_2(self, cnt_plan):
-            '''
-            This function creates the contact array [[1/0, 1/0], [..], ...]
-            and the contact location array
-            Input:
-                cnt_plan : contact plan [1/0, x, y, z, start, end]
-            '''
+        '''
+        This function creates the contact array [[1/0, 1/0], [..], ...]
+        and the contact location array
+        Input:
+            cnt_plan : contact plan horizon x [1/0, x, y, z]
+        '''
         assert np.shape(cnt_plan)[1] == self.n_eff
         assert np.shape(cnt_plan)[2] == 4
 
@@ -93,7 +93,7 @@ class BiConvexMP(BiConvexCosts):
 
         # C++ input
         for i in range(cnt_plan.shape[0]):
-            self.dyn_planer.set_contact_plan_2(cnt_plan[i])
+            self.dyn_planer.set_contact_plan_2(self.cnt_plan[i])
 
         self.dyn_planer.create_contact_array_2()
 
@@ -154,17 +154,20 @@ class BiConvexMP(BiConvexCosts):
         self.X_low = -999999*np.ones(9*self.n_col + 9)
         self.X_high = 999999*np.ones(9*self.n_col + 9)
 
-        for i in range(len(self.r_arr)):
-                if np.sum(self.cnt_arr[i]) > 0:
-                    self.X_low[9*i] = max(self.cnt_plan[i][:][1]) - bx
-                    self.X_low[9*i + 1] = max(self.cnt_plan[i][:][2]) - by
-                    self.X_low[9*i + 2] = max(self.cnt_plan[i][:][3]) - 0
-                    self.X_high[9*i] = min(self.cnt_pln[i][:][1]) + bx
-                    self.X_high[9*i + 1] = min(self.cnt_pln[i][:][2]) + by
-                    self.X_high[9*i + 2] = min(self.cnt_pln[i][:][3]) + bz
+        for i in range(self.cnt_plan.shape[0]):
+                if np.sum(self.cnt_plan[i][:,0]) > 0:
+                    self.X_low[9*i] = max(self.cnt_plan[i][:,1]) - bx
+                    self.X_low[9*i + 1] = max(self.cnt_plan[i][:,2]) - by
+                    self.X_low[9*i + 2] = max(self.cnt_plan[i][:,3]) - 0
+                    self.X_high[9*i] = min(self.cnt_plan[i][:,1]) + bx
+                    self.X_high[9*i + 1] = min(self.cnt_plan[i][:,2]) + by
+                    self.X_high[9*i + 2] = min(self.cnt_plan[i][:,3]) + bz
 
         self.X_low[-9:] = self.X_low[-18:-9]
         self.X_high[-9:] = self.X_high[-18:-9]
+
+        print(self.X_low)
+        print(self.X_high)
 
         self.F_low = np.reshape(self.F_low, (len(self.F_low), 1))
         self.F_high = np.reshape(self.F_high, (len(self.F_high), 1))

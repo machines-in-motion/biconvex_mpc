@@ -4,7 +4,7 @@
 namespace ik{
 
     InverseKinematics::InverseKinematics(std::string rmodel_path, double dt, double T):
-        T_(T), dt_(dt), n_col_(int (T/dt))
+        T_(T), dt_(dt), n_col_(int(ceil((T/dt))))
     {
 
         pinocchio::urdf::buildModel(rmodel_path,pinocchio::JointModelFreeFlyer(), rmodel_) ;

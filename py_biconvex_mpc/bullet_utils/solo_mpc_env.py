@@ -21,11 +21,11 @@ class Solo12Env:
 
         self.env = RaiEnv()
         #Change the urdf_path to load from raisim_utils
-        # urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-        # model_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf"
+        urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
+        model_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf"
 
-        urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-        model_path = "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf"
+        #urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
+        #model_path = "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf"
 
         self.vis_ghost = vis_ghost
         self.robot = self.env.add_robot(Solo12Config, urdf_path, vis_ghost = self.vis_ghost)

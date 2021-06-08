@@ -30,8 +30,7 @@ namespace ik{
     };
 
     void InverseKinematics::add_position_tracking_task_single(
-            pinocchio::FrameIndex fid, Eigen::MatrixXd traj, double wt, std::string cost_name,int time_step){
-
+            pinocchio::FrameIndex fid, Eigen::MatrixXd traj, double wt, std::string cost_name, int time_step){
             crocoddyl::FrameTranslation Mref(fid, traj);
             boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost =
                     boost::make_shared<crocoddyl::CostModelFrameTranslation>(state_, Mref);

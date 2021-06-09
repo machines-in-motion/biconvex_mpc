@@ -56,7 +56,7 @@ class SoloMpcGaitGen:
         # self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
         #                                 np.array(self.phase_offset), self.step_height)
 
-        self.gait_period = 0.25
+        self.gait_period = 0.20
         self.stance_percent = [1.0, 1.0, 1.0, 1.0]
         self.gait_dt = 0.05
         self.phase_offset = [0.0, 0.5, 0.5, 0.0]
@@ -149,7 +149,6 @@ class SoloMpcGaitGen:
                         self.cnt_plan[i][j][0] = 0
                         self.prev_cnt[j][0] = 0
 
-        print(self.cnt_plan)
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, t, wt_xreg, wt_ureg):

@@ -18,7 +18,7 @@ import subprocess
 
 # subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
 # subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
-subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisimUnity.x86_64"])
+# subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisimUnity.x86_64"])
 
 time.sleep(2)
 
@@ -56,7 +56,7 @@ step_t = 0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-robot = Solo12Env(2.5, 0.1, q0, v0, False)
+robot = Solo12Env(2.5, 0.1, q0, v0, False, True)
 
 lag = int(update_time/sim_dt)
 

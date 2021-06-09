@@ -355,7 +355,7 @@ class SoloMpcGaitGen:
         self.mp = BiConvexMP(self.m, self.dt, 2*self.st, len(self.eff_names), rho = self.rho)
     
 
-    def plot(self, q_real):
+    def plot(self, q_real=None):
         self.com_traj = np.array(self.com_traj)
         self.q_traj = np.array(self.q_traj)
         self.v_traj = np.array(self.v_traj)

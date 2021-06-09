@@ -166,9 +166,6 @@ class BiConvexMP(BiConvexCosts):
         self.X_low[-9:] = self.X_low[-18:-9]
         self.X_high[-9:] = self.X_high[-18:-9]
 
-        print(self.X_low)
-        print(self.X_high)
-
         self.F_low = np.reshape(self.F_low, (len(self.F_low), 1))
         self.F_high = np.reshape(self.F_high, (len(self.F_high), 1))
 

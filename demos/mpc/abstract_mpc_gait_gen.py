@@ -49,19 +49,19 @@ class SoloMpcGaitGen:
         self.x_reg = x_reg
 
         # --- Set up gait parameters ---
-        # self.gait_period = 0.35
-        # self.stance_percent = [0.55, 0.55, 0.55, 0.55]
-        # self.gait_dt = 0.05
-        # self.phase_offset = [0.0, 0.5, 0.5, 0.0]
-        # self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
-        #                                 np.array(self.phase_offset), self.step_height)
-
-        self.gait_period = 0.20
-        self.stance_percent = [1.0, 1.0, 1.0, 1.0]
+        self.gait_period = 0.35
+        self.stance_percent = [0.60, 0.60, 0.60, 0.60]
         self.gait_dt = 0.05
         self.phase_offset = [0.0, 0.5, 0.5, 0.0]
         self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
                                         np.array(self.phase_offset), self.step_height)
+
+        # self.gait_period = 0.25
+        # self.stance_percent = [1.0, 1.0, 1.0, 1.0]
+        # self.gait_dt = 0.05
+        # self.phase_offset = [0.0, 0.5, 0.5, 0.0]
+        # self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
+        #                                 np.array(self.phase_offset), self.step_height)
 
         # --- Set up Inverse Kinematics ---
         self.ik = InverseKinematics(r_urdf, dt, self.gait_period)
@@ -75,15 +75,13 @@ class SoloMpcGaitGen:
         self.gait_horizon = 2
         #self.fixed_horizon = fixed_horizon
         self.time_horizon = int(2.0/self.gait_dt)
-
         self.horizon = int(round(self.gait_horizon*self.gait_period/self.gait_dt))
 
-        self.X_nom = np.zeros((9*self.horizon))
-
-        # Set up Weights for Dynamics
+        # Set up Weights & Matrices for Dynamics
         self.W_X = np.array([1e-5, 1e-5, 1e+5, 1e+2, 1e+2, 1e+2, 1e4, 1e4, 3e3])
         self.W_X_ter = 10*np.array([1e-5, 1e-5, 1e+5, 1e+3, 1e+3, 1e+3, 1e+5, 1e+5, 1e+5])
         self.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
+        self.X_nom = np.zeros((9*self.horizon))
 
         # Set up constraints for Dynamics
         self.bx = 0.25
@@ -112,7 +110,6 @@ class SoloMpcGaitGen:
         self.cnt_plan = np.zeros((self.horizon, len(self.eff_names), 4))
         self.prev_cnt = np.zeros((len(self.eff_names), 4))
 
-
         # Contact Plan Matrix: horizon x num_eef x 4: The '4' gives the contact plan and location:
         # i.e. the last vector should be [1/0, x, y, z] where 1/0 gives a boolean for contact (1 = contact, 0 = no cnt)
 
@@ -129,6 +126,7 @@ class SoloMpcGaitGen:
                     else:
                         #If foot is not in contact
                         self.cnt_plan[i][j][0] = 0
+                        self.cnt_plan[i][j][1:4] = next_loc[j]
                         self.prev_cnt[j][0] = 0
                         self.prev_cnt[j][1:4] = next_loc[j]
                 else:
@@ -142,11 +140,14 @@ class SoloMpcGaitGen:
                         else:
                             # If I was in swing previously, use the raibert heuristic
                             # Raibert heuristic is based off the previous contact location
+                            # I might need to change this...
                             self.cnt_plan[i][j][1:4] = self.prev_cnt[j][1:4] + v_des*self.stance_percent[j]*self.gait_period/2
-                            self.cnt_plan[i][j][3] = self.foot_size
+                            self.cnt_plan[i][j][3] += self.foot_size
                     else:
                         #If foot will not be in contact
                         self.cnt_plan[i][j][0] = 0
+                        self.cnt_plan[i][j][1:4] = (self.prev_cnt[j][1:4] + \
+                            (self.prev_cnt[j][1:4] + v_des*self.stance_percent[j]*self.gait_period/2) ) / 2.0
                         self.prev_cnt[j][0] = 0
 
         return self.cnt_plan
@@ -165,6 +166,7 @@ class SoloMpcGaitGen:
         self.x0 = np.hstack((q,v))
 
         # --- Set Up IK --- #
+        #Right now this is only setup to go for the *next* gait period only
         for i in range(int(round(self.gait_period/self.gait_dt))):
             for j in range(len(self.eff_names)):
                 if self.cnt_plan[i][j][0] == 1:
@@ -173,28 +175,24 @@ class SoloMpcGaitGen:
                                                               "cnt_" + str(0) + self.eff_names[j], i)
                 else:
                     #If Not in stance phase
-
-                    #Add tracking for next
+                    #Add tracking for next position
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], self.wt[1],
                                                               "end_pos_" + str(0) + self.eff_names[j], i)
                     if self.gait_planner.get_percent_in_phase(t+i * self.gait_dt, j) < 0.5:
-                        pos = self.cnt_plan[i][j][1:4] - v_des*()
+                        pos = self.cnt_plan[i][j][1:4]
                         pos[2] = self.step_height
-                        self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, self.wt[1],
+                        self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, 5*self.wt[1],
                                                                   "via_" + str(0) + self.eff_names[j], i)
 
         self.ik.add_state_regularization_cost(0, self.gait_period, wt_xreg, "xReg", self.state_wt, self.x_reg, False)
         self.ik.add_ctrl_regularization_cost(0, self.gait_period, wt_ureg, "uReg", False)
-
         self.ik.add_state_regularization_cost(0, self.gait_period, wt_xreg, "xReg", self.state_wt, self.x_reg, True)
         self.ik.add_ctrl_regularization_cost(0, self.gait_period, wt_ureg, "uReg", True)
-
 
         self.ik.setup_costs()
 
         # --- Setup Dynamics --- #
-
-        # initial and ter state
+        # initial and terminal state
         self.X_init = np.zeros(9)
         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
         self.X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q, v)
@@ -247,6 +245,7 @@ class SoloMpcGaitGen:
 
         #TODO: Move to C++
         t1 = time.time()
+        self.step_height = step_height
         self.current_contact = current_contact
         self.create_cnt_plan(q, v, t, next_loc, v_des)
 

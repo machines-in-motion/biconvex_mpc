@@ -34,7 +34,7 @@ class SoloMpcGaitGen:
         self.sp = 0.1 # stance phase
         self.dt = dt
         self.plan_freq = plan_freq
-        self.foot_size = 0.018
+        self.foot_size = 0.016/2
 
         self.col_st = int(np.round(self.st/self.dt,2))
         self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
@@ -139,7 +139,7 @@ class SoloMpcGaitGen:
             for i in range(len(self.eff_names)):
                 self.cnt_plan[3][i][0] = self.cnt_gait[(n+2)%2][i]
                 self.cnt_plan[3][i][1:4] = next_loc[i] + v_des*self.st
-                self.cnt_plan[3][i][3] += self.foot_size
+                self.cnt_plan[2][i][3] += self.foot_size
                 self.cnt_plan[3][i][4] = 2*self.st - t    
                 self.cnt_plan[3][i][5] = 2*self.st
         else:
@@ -160,7 +160,6 @@ class SoloMpcGaitGen:
 
         self.x0 = np.hstack((q,v))
 
-        # --- Set Up IK --- #
         # first block
         for i in range(len(self.eff_names)):
             st = self.cnt_plan[0][i][4] 
@@ -200,8 +199,6 @@ class SoloMpcGaitGen:
                                                 "cnt_" + str(0) + self.eff_names[i])
 
         # third block
-
-        #If the final stance
         if self.cnt_plan[1][0][5] < self.st: 
             for i in range(len(self.eff_names)):
                 st = self.cnt_plan[2][i][4] 
@@ -238,8 +235,6 @@ class SoloMpcGaitGen:
 
         self.ik.setup_costs()
 
-        # --- Setup Dynamics --- #
-
         # initial and ter state
         self.X_init = np.zeros(9)
         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
@@ -267,6 +262,7 @@ class SoloMpcGaitGen:
         X_ter[6:] = amom
 
         # Setup dynamic optimization
+
         self.mp.create_contact_array(np.array(self.cnt_plan))
         self.mp.create_bound_constraints(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(self.W_X, self.W_X_ter, X_ter, self.X_nom)

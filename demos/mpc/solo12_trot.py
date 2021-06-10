@@ -56,7 +56,7 @@ step_t = 0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-robot = Solo12Env(2.5, 0.1, q0, v0, False)
+robot = Solo12Env(2.5, 0.1, q0, v0, False, True)
 
 lag = int(update_time/sim_dt)
 

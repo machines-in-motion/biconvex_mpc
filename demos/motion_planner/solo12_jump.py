@@ -69,7 +69,7 @@ fy_max = 21
 fz_max = 21
 
 # optimization
-optimize = True
+optimize = False
 
 if optimize :
     mom_opt_ik = None

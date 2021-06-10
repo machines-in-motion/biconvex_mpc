@@ -36,7 +36,7 @@ class Solo12Env:
         self.bullet = True
         if self.bullet:
             self.env = BulletEnvWithGround()
-            self.robot = self.env.add_robot(Solo12Robot)
+            self.robot = self.env.add_robot(Solo12Robot())
             self.q0 = np.matrix(Solo12Config.initial_configuration).T
             self.dq0 = np.matrix(Solo12Config.initial_velocity).T
             self.robot.reset_state(self.q0, self.dq0)

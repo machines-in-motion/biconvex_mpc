@@ -60,9 +60,8 @@ while True:
                              [ hip_loc[3][0],  hip_loc[3][1], 0]])
 
         contact_configuration = robot.get_current_contacts()
-        xs_plan, us_plan, f_plan = gg.optimize(q, v, sim_t, next_loc, v_des, step_height, 5e-3, 7e-4, contact_configuration)
+        xs_plan, us_plan, f_plan = gg.optimize(q, v, sim_t, next_loc, v_des, step_height, 5e-2, 7e-5, contact_configuration)
         contact_configuration = gg.gait_planner.get_phase(sim_t)
-        print(contact_configuration)
         #gg.plot_plan()
         gg.reset()
 

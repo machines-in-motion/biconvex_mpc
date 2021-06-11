@@ -31,10 +31,10 @@ cnt_plan = [[[ 1.,      0.3946,   0.14695,  0., 0.,  0.5    ],
              [ 1.,      0.0054,   0.14695,  0., 0.,  0.5    ],
              [ 1.,      0.0054,  -0.14695,  0., 0.,  0.5    ]],
         
-            [[ 0.,      0.3946,   0.14695,  0., 0.5, 0.5 + rt   ],
-             [ 0.,      0.3946,  -0.14695,  0., 0.5, 0.5 + rt   ],
-             [ 0.,      0.0054,   0.14695,  0., 0.5, 0.5 + rt   ],
-             [ 0.,      0.0054,  -0.14695,  0., 0.5, 0.5 + rt   ]],
+            [[ 1.,      0.3946,   0.14695,  0., 0.5, 0.5 + rt   ],
+             [ 1.,      0.3946,  -0.14695,  0., 0.5, 0.5 + rt   ],
+             [ 1.,      0.0054,   0.14695,  0., 0.5, 0.5 + rt   ],
+             [ 1.,      0.0054,  -0.14695,  0., 0.5, 0.5 + rt   ]],
         
             [[ 1.,      0.3946,   0.14695,  0., 0.5 + rt, T    ],
              [ 1.,      0.3946,  -0.14695,  0., 0.5 + rt, T    ],
@@ -46,6 +46,7 @@ cnt_plan = np.array(cnt_plan)
 # initial and ter state
 X_init = np.zeros(9)
 X_init[0:3] = pin.centerOfMass(robot.model, robot.data, q0,  pin.utils.zero(robot.model.nv))
+X_init[4] = 0.5
 X_ter = X_init.copy()
 
 X_nom = np.zeros((9*int(np.round(T/dt,2))))
@@ -69,7 +70,7 @@ fy_max = 21
 fz_max = 21
 
 # optimization
-optimize = True
+optimize = False
 
 if optimize :
     mom_opt_ik = None
@@ -89,11 +90,12 @@ if optimize :
 
         cnt_planner = SoloCntGen(T, dt, gait = 1)
         cnt_planner.create_contact_costs(cnt_plan, 5e5)
-        cnt_planner.create_com_tasks(mom_opt, com_opt, [5e+6, 1e+3], [5e+6, 1e+3])
+        # cnt_planner.create_com_tasks(mom_opt, com_opt, [5e+6, 1e+3], [5e+6, 1e+3])
+        cnt_planner.create_com_tasks(mom_opt, com_opt, [1e+2, 1e+1], [1e+2, 1e+1])
         ik_solver = cnt_planner.return_gait_generator()
 
         state_wt = np.array([0.] * 3 + [100.] * 3 + [8.0] * (robot.model.nv - 6) \
-                            + [0.01] * 6 + [3.0] *(robot.model.nv - 6))
+                            + [0.01] * 6 + [4.0] *(robot.model.nv - 6))
         t3 = time.time()
 
         xs, us = ik_solver.optimize(x0, x_reg  = x0, wt_xreg=7e-3, wt_ureg = 3e-3, state_wt=state_wt)
@@ -108,7 +110,7 @@ if optimize :
         # adding center of mass and momentum tracking cost
         mp.add_ik_com_cost(com_opt_ik)
         mp.add_ik_momentum_cost(mom_opt_ik)
-        # mp.stats()
+        mp.stats()
 
     np.savez("./dat_file/mom", com_opt = com_opt, mom_opt = mom_opt, F_opt = F_opt)
     np.savez("./dat_file/ik", xs = xs, us = us)
@@ -126,8 +128,8 @@ else:
     mp.create_contact_array(cnt_plan)
     
     # simulation
-    kp = 4*[5.0, 50.0, 50.0]
-    kd = 4*[.5, .0, .0]
+    kp = 4*[2.5, 50.0, 50.0]
+    kd = 4*[.02, .0, .0]
     kc = [400, 400, 400]
     dc = [50,50,50]
     kb = [100, 100, 100]
@@ -137,4 +139,4 @@ else:
     env.generate_end_eff_plan(xs, us)
     # env.plot()
     env.sim(fr = 0.00, vname = None)
-    env.plot_real()
+    # env.plot_real()

@@ -37,7 +37,7 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.2, 0.0, 0])
+v_des = np.array([0.0, 0.0, 0])
 sl_arr = v_des*st
 t = 0.0
 step_height = 0.1
@@ -46,7 +46,7 @@ step_height = 0.1
 plan_freq = 0.05 # sec
 update_time = 0.02 # sec (time of lag)
 
-gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 1)
+gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 0)
 
 # while True:
 n = 1
@@ -75,7 +75,8 @@ for o in range(int(500*(st/sim_dt))):
         contact_configuration = robot.get_current_contacts()
         pr_st = time.time()
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(step_t,3), n, next_loc, v_des, step_height, 5e-3, 7e-4, contact_configuration)
-        # gg.plot_plan()
+        gg.plot_plan()
+        assert False
         gg.reset()
         pr_et = time.time()
         # print("time", pr_et - pr_st)

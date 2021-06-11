@@ -4,9 +4,10 @@
 namespace dynamics{
 
     CentroidalDynamics::CentroidalDynamics(double m, double dt, double T, int n_eff):
-                m_(m), dt_(dt), T_(T), n_eff_(n_eff), n_col_(int (T_/dt_))
+                m_(m), dt_(dt), T_(T), n_eff_(n_eff), n_col_(int (ceil(T_/dt_)))
         {
             // setting up A_f, and b_f (For optimizing for CoM, Vel, AMOM)
+            std::cout << n_col_ << std::endl;
             A_f.resize(9*(n_col_+1), 9*(n_col_+1));
             b_f.resize(9*(n_col_+1));
             b_f.setZero();
@@ -58,6 +59,19 @@ namespace dynamics{
             }
         }
     };
+
+    void CentroidalDynamics::create_contact_array_2(){
+        for (unsigned i = 0; i < cnt_plan_2_.size(); ++i) {
+            r_.push_back(r_t);
+            for (unsigned j = 0; j < n_eff_; ++j) {
+                cnt_arr_(i, j) = cnt_plan_2_[i](j, 0);
+                r_[i](j, 0) = cnt_plan_2_[i](j, 1);
+                r_[i](j, 1) = cnt_plan_2_[i](j, 2);
+                r_[i](j, 2) = cnt_plan_2_[i](j, 3);
+            }
+        }
+    };
+
 
     void CentroidalDynamics::update_contact_array(){
         for (unsigned int i = 0; i < n_col_; ++i) {

@@ -29,7 +29,7 @@ namespace ik{
         void InverseKinematics::add_centroidal_momentum_tracking_task(double st, double et, Eigen::MatrixXd traj, 
                                                 double wt, std::string cost_name, bool isTerminal)
         {
-            sn = std::ceil(st/dt_*100)/100; 
+            sn = std::ceil(st/dt_*100)/100;
             en = std::ceil(et/dt_*100)/100;
 
             if (!isTerminal){

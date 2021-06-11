@@ -25,8 +25,16 @@ class BiConvexMP{
             centroidal_dynamics.cnt_plan_.push_back(cnt_plan);
         };
 
+        void set_contact_plan_2(Eigen::MatrixXd cnt_plan_2){
+            centroidal_dynamics.cnt_plan_2_.push_back(cnt_plan_2);
+        };
+
         void create_cnt_array(){
             centroidal_dynamics.create_contact_array();  
+        }
+
+        void create_cnt_array_2(){
+            centroidal_dynamics.create_contact_array_2();
         }
 
         Eigen::MatrixXd return_A_x(Eigen::VectorXd X){

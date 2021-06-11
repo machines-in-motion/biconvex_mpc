@@ -20,7 +20,7 @@ namespace gait_planner
         double get_phi(double time, int foot_ID);
 
         // Get which phase you are currently in
-        // 0 indicates swing, 1 indicates stance
+        // 0 indicates swing/no contact, 1 indicates stance/contact
         Eigen::Vector4i get_phase(double time_in);
 
         // Get which phase you are currently in for a specific foot_ID

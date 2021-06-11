@@ -38,6 +38,8 @@ class BiConvexMP(BiConvexCosts):
         self.tol = tol
         self.cnt_arr = []
         self.r_arr = []
+
+        self.cnt_plan = []
         # Note : no of collocation points should be computed only once
         # and passed to centroidal dynamics
         BiConvexCosts.__init__(self, self.n_col, self.dt, T)
@@ -45,7 +47,6 @@ class BiConvexMP(BiConvexCosts):
         # C++ version Biconvex MP
         self.dyn_planer = BiconvexMP(self.m, self.dt, self.T, self.n_eff)
 
-        
     def create_contact_array(self, cnt_plan):
         '''
         This function creates the contact array [[1/0, 1/0], [..], ...]
@@ -77,6 +78,24 @@ class BiConvexMP(BiConvexCosts):
             self.dyn_planer.set_contact_plan(cnt_plan[i])
         
         self.dyn_planer.create_contact_array()
+
+    def create_contact_array_2(self, cnt_plan):
+        '''
+        This function creates the contact array [[1/0, 1/0], [..], ...]
+        and the contact location array
+        Input:
+            cnt_plan : contact plan horizon x [1/0, x, y, z]
+        '''
+        assert np.shape(cnt_plan)[1] == self.n_eff
+        assert np.shape(cnt_plan)[2] == 4
+
+        self.cnt_plan = cnt_plan
+
+        # C++ input
+        for i in range(cnt_plan.shape[0]):
+            self.dyn_planer.set_contact_plan_2(self.cnt_plan[i])
+
+        self.dyn_planer.create_contact_array_2()
 
     def create_bound_constraints(self, bx, by, bz, fx_max, fy_max, fz_max):
         '''
@@ -114,6 +133,46 @@ class BiConvexMP(BiConvexCosts):
         self.X_high = np.reshape(self.X_high, (len(self.X_high), 1))
 
         ## C++ 
+        self.dyn_planer.set_bounds_x(self.X_low, self.X_high)
+        self.dyn_planer.set_bounds_f(self.F_low, self.F_high)
+
+    def create_bound_constraints_2(self, bx, by, bz, fx_max, fy_max, fz_max):
+        '''
+        Creates arrays that are needed for ensuring kinematic constraints
+        Input:
+            bx : maximum dispacement of x from the center of the kinematic box
+            by : maximum dispacement of y from the center of the kinematic box
+            bz : maximum dispacement of z from ground
+            fx_max : max force in x
+            fy_max : max force in y
+            fz_max : max_force in z
+        '''
+        # shape the arrays properly at once
+        self.F_low = np.tile([-fx_max, -fy_max, 0.0], self.n_eff*self.n_col)
+        self.F_high = np.tile([fx_max, fy_max, fz_max], self.n_eff*self.n_col)
+
+        self.X_low = -999999*np.ones(9*self.n_col + 9)
+        self.X_high = 999999*np.ones(9*self.n_col + 9)
+
+        for i in range(self.cnt_plan.shape[0]):
+                if np.sum(self.cnt_plan[i][:,0]) > 0:
+                    self.X_low[9*i] = max(self.cnt_plan[i][:,1]) - bx
+                    self.X_low[9*i + 1] = max(self.cnt_plan[i][:,2]) - by
+                    self.X_low[9*i + 2] = max(self.cnt_plan[i][:,3]) - 0
+                    self.X_high[9*i] = min(self.cnt_plan[i][:,1]) + bx
+                    self.X_high[9*i + 1] = min(self.cnt_plan[i][:,2]) + by
+                    self.X_high[9*i + 2] = min(self.cnt_plan[i][:,3]) + bz
+
+        self.X_low[-9:] = self.X_low[-18:-9]
+        self.X_high[-9:] = self.X_high[-18:-9]
+
+        self.F_low = np.reshape(self.F_low, (len(self.F_low), 1))
+        self.F_high = np.reshape(self.F_high, (len(self.F_high), 1))
+
+        self.X_low = np.reshape(self.X_low, (len(self.X_low), 1))
+        self.X_high = np.reshape(self.X_high, (len(self.X_high), 1))
+
+        ## C++
         self.dyn_planer.set_bounds_x(self.X_low, self.X_high)
         self.dyn_planer.set_bounds_f(self.F_low, self.F_high)
 

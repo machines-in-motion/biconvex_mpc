@@ -37,8 +37,6 @@ namespace ik{
     class InverseKinematics{
 
         public:
-
-
             InverseKinematics(std::string rmodel_path, double dt, double T);
 
             void setup_costs();
@@ -52,6 +50,9 @@ namespace ik{
             // cost related functions
             void add_position_tracking_task(pinocchio::FrameIndex fid, double st, double et, 
                                                 Eigen::MatrixXd traj, double wt, std::string cost_name);
+
+            void add_position_tracking_task_single(pinocchio::FrameIndex fid, Eigen::MatrixXd traj,
+                                                    double wt, std::string cost_name, int time_step);
             
             void add_terminal_position_tracking_task(pinocchio::FrameIndex fid, Eigen::MatrixXd traj, double wt, 
                                                     std::string cost_name);

@@ -18,7 +18,7 @@ import subprocess
 
 # subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
 # subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
-subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisimUnity.x86_64"])
+# subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisimUnity.x86_64"])
 
 time.sleep(2)
 
@@ -56,7 +56,7 @@ step_t = 0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-robot = Solo12Env(2.5, 0.1, q0, v0, False)
+robot = Solo12Env(2.5, 0.1, q0, v0, False, True)
 
 lag = int(update_time/sim_dt)
 
@@ -75,8 +75,8 @@ for o in range(int(500*(st/sim_dt))):
         contact_configuration = robot.get_current_contacts()
         pr_st = time.time()
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(step_t,3), n, next_loc, v_des, step_height, 5e-3, 7e-4, contact_configuration)
-        gg.plot_plan()
-        assert False
+        # gg.plot()
+        #gg.plot_plan()
         gg.reset()
         pr_et = time.time()
         # print("time", pr_et - pr_st)

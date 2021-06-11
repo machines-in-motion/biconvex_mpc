@@ -26,6 +26,7 @@ PYBIND11_MODULE(inverse_kinematics_cpp, m)
 
     // cost
     ik.def("add_position_tracking_task", &ik::InverseKinematics::add_position_tracking_task);
+    ik.def("add_position_tracking_task_single", &ik::InverseKinematics::add_position_tracking_task_single);
     ik.def("add_terminal_position_tracking_task", &ik::InverseKinematics::add_terminal_position_tracking_task);
     ik.def("add_velocity_tracking_task", &ik::InverseKinematics::add_velocity_tracking_task);
     ik.def("add_com_position_tracking_task", &ik::InverseKinematics::add_com_position_tracking_task);

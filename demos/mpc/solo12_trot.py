@@ -46,7 +46,7 @@ step_height = 0.1
 plan_freq = 0.05 # sec
 update_time = 0.02 # sec (time of lag)
 
-gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 1)
+gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 0)
 
 # while True:
 n = 1

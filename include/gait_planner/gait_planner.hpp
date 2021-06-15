@@ -3,6 +3,9 @@
 
 #include <Eigen/Dense>
 
+#include <iostream>
+#include <iomanip>
+
 namespace gait_planner
 {
     //typedef Eigen::Matrix<double, 3, 4> Matrix34d;  // We store each foot in a separate column

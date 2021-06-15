@@ -39,14 +39,28 @@ namespace gait_planner
     }
 
     int QuadrupedGait::get_phase(double time_in, int foot_ID) {
-        if (get_phi(time_in, foot_ID) <= stance_time_[foot_ID])
+//        std::cout << "Time: " << time_in << " " << "Foot ID: " << foot_ID << std::endl;
+//        auto phi = get_phi(time_in, foot_ID);
+//        auto stance_time = stance_time_[foot_ID];
+//        std::cout << "Phi: " << phi << std::endl;
+//        std::cout << "Stance Time: " << stance_time << std::endl;
+//        if (abs(phi - stance_time) < 1e-4) {
+//            std::cout << "test" << std::endl;
+//        }
+
+        if (get_phi(time_in, foot_ID) <= stance_time_[foot_ID] ||
+            abs(get_phi(time_in, foot_ID) - stance_time_[foot_ID]) < 1e-4)
+//        if (abs(get_phi(time_in, foot_ID) - stance_time_[foot_ID]) < 1e-4)
         {
+            //std::cout << "stance" << std::endl;
             phase_[foot_ID] = 1;  //Stance
         }
         else
         {
+            //std::cout << "swing" << std::endl;
             phase_[foot_ID] = 0;  //Swing
         }
+        return phase_[foot_ID];
     }
 
     Eigen::Vector4i QuadrupedGait::get_phase(double time_in)
@@ -97,12 +111,15 @@ namespace gait_planner
     {
         auto current_phi = get_phi(time, foot_ID);
         double phase_percent;
+        //std::cout << current_phi << " " << foot_ID << std::endl;
         if (current_phi <= stance_time_[foot_ID])
         {
+            //Stance
             phase_percent = current_phi / stance_time_[foot_ID];
         }
         else
         {
+            //Swing
             phase_percent = (current_phi - stance_time_[foot_ID]) / (gait_period_ - stance_time_[foot_ID]);
         }
         return phase_percent;

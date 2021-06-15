@@ -7,7 +7,7 @@ namespace dynamics{
                 m_(m), dt_(dt), T_(T), n_eff_(n_eff), n_col_(int (ceil(T_/dt_)))
         {
             // setting up A_f, and b_f (For optimizing for CoM, Vel, AMOM)
-            std::cout << n_col_ << std::endl;
+            //std::cout << n_col_ << std::endl;
             A_f.resize(9*(n_col_+1), 9*(n_col_+1));
             b_f.resize(9*(n_col_+1));
             b_f.setZero();

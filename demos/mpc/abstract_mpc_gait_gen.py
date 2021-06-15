@@ -50,20 +50,28 @@ class SoloMpcGaitGen:
 
         # --- Set up gait parameters ---
         #Bounding
-        self.gait_period = 0.30
-        self.stance_percent = [0.35, 0.35, 0.35, 0.35]
-        self.gait_dt = 0.05
-        self.phase_offset = [0.45, 0.45, 0.0, 0.0]
-        self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
-                                        np.array(self.phase_offset), self.step_height)
-
-        # Trot
-        # self.gait_period = 0.25
-        # self.stance_percent = [0.60, 0.60, 0.60, 0.60]
+        # self.gait_period = 0.30
+        # self.stance_percent = [0.35, 0.35, 0.35, 0.35]
         # self.gait_dt = 0.05
-        # self.phase_offset = [0.0, 0.5, 0.5, 0.0]
+        # self.phase_offset = [0.45, 0.45, 0.0, 0.0]
         # self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
         #                                 np.array(self.phase_offset), self.step_height)
+
+        #Ambling gait
+        # self.gait_period = 0.30
+        # self.stance_percent = [0.35, 0.35, 0.35, 0.35]
+        # self.gait_dt = 0.05
+        # self.phase_offset = [0.45, 0.0, 0.45, 0.0]
+        # self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
+        #                                 np.array(self.phase_offset), self.step_height)
+
+        # Trot
+        self.gait_period = 0.25
+        self.stance_percent = [0.79, 0.79, 0.79, 0.79]
+        self.gait_dt = 0.05
+        self.phase_offset = [0.0, 0.79, 0.79, 0.0]
+        self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
+                                        np.array(self.phase_offset), self.step_height)
 
         #Standing still
         # self.gait_period = 0.25
@@ -74,7 +82,7 @@ class SoloMpcGaitGen:
         #                                 np.array(self.phase_offset), self.step_height)
 
         # --- Set up Inverse Kinematics ---
-        self.ik = InverseKinematics(r_urdf, dt, self.gait_period)
+        self.ik = InverseKinematics(r_urdf, self.gait_dt, self.gait_period)
 
         # --- Set up Dynamics ---
         self.m = pin.computeTotalMass(self.rmodel)
@@ -88,7 +96,7 @@ class SoloMpcGaitGen:
         self.horizon = int(round(self.gait_horizon*self.gait_period/self.gait_dt))
 
         # Set up Weights & Matrices for Dynamics
-        self.W_X = np.array([1e-5, 1e-5, 1e+5, 1e+2, 1e+2, 1e+2, 1e4, 1e4, 3e3])
+        self.W_X = np.array([1e-5, 1e-5, 1e+5, 1e+2, 1e+2, 1e+2, 1e4, 1e4, 6e3])
         self.W_X_ter = 10*np.array([1e-5, 1e-5, 1e+5, 1e+3, 1e+3, 1e+3, 1e+5, 1e+5, 1e+5])
         self.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
         self.X_nom = np.zeros((9*self.horizon))
@@ -139,9 +147,11 @@ class SoloMpcGaitGen:
                         self.cnt_plan[i][j][1:4] = next_loc[j]
                         self.prev_cnt[j][0] = 0
                         self.prev_cnt[j][1:4] = next_loc[j]
+                        self.prev_cnt[j][3] += self.foot_size
                 else:
                     #All other time steps
-                    if self.gait_planner.get_phase(t + i*self.gait_dt, j) == 1:
+                    #print(np.round(t + i*self.gait_dt,3))
+                    if self.gait_planner.get_phase(np.round(t + i*self.gait_dt,3), j) == 1:
                         #If foot will be in contact
                         self.cnt_plan[i][j][0] = 1
                         if self.prev_cnt[j][0] == 1:
@@ -150,17 +160,18 @@ class SoloMpcGaitGen:
                         else:
                             # If I was in swing previously, use the raibert heuristic
                             # Raibert heuristic is based off the previous contact location
-                            # I might need to change this...
-                            self.cnt_plan[i][j][1:4] = self.prev_cnt[j][1:4] + v_des*self.stance_percent[j]*self.gait_period/2
-                            self.cnt_plan[i][j][3] += self.foot_size
+                            self.cnt_plan[i][j][1:4] = self.prev_cnt[j][1:4] + v_des*self.stance_percent[j]*self.gait_period
+                            #self.cnt_plan[i][j][3] += self.foot_size
                     else:
                         #If foot will not be in contact
                         self.cnt_plan[i][j][0] = 0
-                        self.cnt_plan[i][j][1:4] = (self.prev_cnt[j][1:4] + \
-                            (self.prev_cnt[j][1:4] + v_des*self.stance_percent[j]*self.gait_period/2) ) / 2.0
+                        # self.cnt_plan[i][j][1:4] = (self.prev_cnt[j][1:4] + \
+                        #     (self.prev_cnt[j][1:4] + v_des*self.stance_percent[j]*self.gait_period) ) / 2.0
+                        self.cnt_plan[i][j][1:4] = (self.prev_cnt[j][1:4] + v_des*self.stance_percent[j]*self.gait_period)
                         self.prev_cnt[j][0] = 0
 
-        print(self.cnt_plan)
+        #print(self.cnt_plan)
+
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, t, wt_xreg, wt_ureg):
@@ -187,13 +198,19 @@ class SoloMpcGaitGen:
                 else:
                     #If Not in stance phase
                     #Add tracking for next position
+                    # self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], self.wt[1],
+                    #                                           "end_pos_" + str(0) + self.eff_names[j], i)
+                    #print(i, j, np.round(self.gait_planner.get_percent_in_phase(t+i * self.gait_dt, j),3))
+                    #if np.round(self.gait_planner.get_percent_in_phase(t+i * self.gait_dt, j),3) <= 0.55:
+                    #print(i,j)
+                    pos = self.cnt_plan[i][j][1:4]
+                    pos[2] = self.step_height
+                    self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, 1.0*self.wt[1],
+                                                              "via_" + str(0) + self.eff_names[j], i)
+                    #else:
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], self.wt[1],
-                                                              "end_pos_" + str(0) + self.eff_names[j], i)
-                    if self.gait_planner.get_percent_in_phase(t+i * self.gait_dt, j) < 0.5:
-                        pos = self.cnt_plan[i][j][1:4]
-                        pos[2] = self.step_height
-                        self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, 4*self.wt[1],
-                                                                  "via_" + str(0) + self.eff_names[j], i)
+                                                                  "end_pos_" + str(0) + self.eff_names[j], i)
+
 
         self.ik.add_state_regularization_cost(0, self.gait_period, wt_xreg, "xReg", self.state_wt, self.x_reg, False)
         self.ik.add_ctrl_regularization_cost(0, self.gait_period, wt_ureg, "uReg", False)
@@ -217,8 +234,8 @@ class SoloMpcGaitGen:
         self.X_nom[5::9] = v_des[2]
 
         amom = 0.8*self.compute_ori_correction(q, np.array([0,0,0,1])) #Changed to 0 for bounding
-        self.X_nom[6::9] = amom[0]
-        self.X_nom[7::9] = amom[1]
+        self.X_nom[6::9] = amom[0]*0.2
+        self.X_nom[7::9] = amom[1]*1.4
         self.X_nom[8::9] = amom[2]
 
         X_ter = np.zeros_like(self.X_init)
@@ -269,7 +286,7 @@ class SoloMpcGaitGen:
 
         # Optimize Dynamics
         t2 = time.time()
-        com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 100)
+        com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 50)
         t3 = time.time()
 
         self.com_traj.append(com_opt)
@@ -277,11 +294,11 @@ class SoloMpcGaitGen:
         # --- IK Optimization ---
 
         # Add tracking costs from Dynamic optimization
-        self.ik.add_centroidal_momentum_tracking_task(0, self.gait_period, mom_opt[0:int(round(self.gait_period/self.gait_dt))], 1e2, "mom_track", False)
-        self.ik.add_centroidal_momentum_tracking_task(0, self.gait_period, mom_opt[int(round(self.gait_period/self.gait_dt))], 1e1, "mom_track", True)
+        self.ik.add_centroidal_momentum_tracking_task(0, self.gait_period, mom_opt[0:int(round(self.gait_period/self.gait_dt))], 1e4, "mom_track", False)
+        self.ik.add_centroidal_momentum_tracking_task(0, self.gait_period, mom_opt[int(round(self.gait_period/self.gait_dt))], 1e2, "mom_track", True) #Final state
 
-        self.ik.add_com_position_tracking_task(0, self.gait_period, com_opt[0:int(round(self.gait_period/self.gait_dt))], 1e4, "com_track_cost", False)
-        self.ik.add_com_position_tracking_task(0, self.gait_period, com_opt[int(round(self.gait_period/self.gait_dt))], 1e5, "com_track_cost", True)
+        self.ik.add_com_position_tracking_task(0, self.gait_period, com_opt[0:int(round(self.gait_period/self.gait_dt))], 1e3, "com_track_cost", False)
+        self.ik.add_com_position_tracking_task(0, self.gait_period, com_opt[int(round(self.gait_period/self.gait_dt))], 1e4, "com_track_cost", True) #Final State
 
         t4 = time.time()
         self.ik.optimize(np.hstack((q,v)))

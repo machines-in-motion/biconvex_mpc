@@ -96,6 +96,7 @@ class SoloMpcGaitGen:
 
         # plotting
         self.com_traj = []
+        self.ik_com_traj = []
         self.xs_traj = []
 
         self.q_traj = []
@@ -248,7 +249,7 @@ class SoloMpcGaitGen:
         self.X_nom[4::9] = v_des[1]
         self.X_nom[5::9] = v_des[2]
 
-        amom = 0.8*self.compute_ori_correction(q, np.array([0,0,0,1]))
+        amom = 0.2*self.compute_ori_correction(q, np.array([0,0,0,1]))
         self.X_nom[6::9] = amom[0]
         self.X_nom[7::9] = amom[1]
         self.X_nom[8::9] = amom[2]
@@ -316,11 +317,11 @@ class SoloMpcGaitGen:
         t4 = time.time()
         self.ik.optimize(np.hstack((q,v))) 
         t5 = time.time()
-        # print("cost", t2 - t1)
-        # print("dyn", t3 - t2)
-        # print("ik", t5 - t4)
-        # print("total", t5 - t1)
-        # print("------------------------")
+        print("cost", t2 - t1)
+        print("dyn", t3 - t2)
+        print("ik", t5 - t4)
+        print("total", t5 - t1)
+        print("------------------------")
         xs = self.ik.get_xs()
         us = self.ik.get_us()
         self.xs_traj.append(xs)
@@ -351,13 +352,14 @@ class SoloMpcGaitGen:
         self.mp = BiConvexMP(self.m, self.dt, 2*self.st, len(self.eff_names), rho = self.rho)
     
 
-    def plot(self, q_real=None):
+    def plot(self, com_real=None):
+        """
+        This function plots the iterative mpc plans for the COM and Forces
+        """
         self.com_traj = np.array(self.com_traj)
         self.q_traj = np.array(self.q_traj)
         self.v_traj = np.array(self.v_traj)
         x = self.dt*np.arange(0, len(self.com_traj[1]) + int((self.plan_freq/self.dt))*len(self.com_traj), 1)
-        q_real = np.array(q_real)[::int(self.dt/0.001)]
-
         # com plots
         fig, ax = plt.subplots(3,1)
         for i in range(0, len(self.com_traj)):
@@ -383,6 +385,12 @@ class SoloMpcGaitGen:
                 ax[0].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,0])
                 ax[1].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,1])
                 ax[2].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,2])
+
+        if isinstance(com_real, np.ndarray):  
+            com_real = np.array(com_real)[::int(self.dt/0.001)]
+            ax[0].plot(x[:len(com_real)], com_real[:,0], "--",  label = "com real_x")
+            ax[1].plot(x[:len(com_real)], com_real[:,1], "--",  label = "com real_y")
+            ax[2].plot(x[:len(com_real)], com_real[:,2], "--",  label = "com real_z")
 
         ax[0].grid()
         ax[0].legend()

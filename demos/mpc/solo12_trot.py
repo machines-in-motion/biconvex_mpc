@@ -11,7 +11,9 @@ from matplotlib import pyplot as plt
 from py_biconvex_mpc.motion_planner.cpp_biconvex import BiConvexMP
 from py_biconvex_mpc.ik_utils.gait_generator import GaitGenerator
 from robot_properties_solo.config import Solo12Config
-from mpc_gait_gen import SoloMpcGaitGen
+# from mpc_gait_gen import SoloMpcGaitGen
+from abstract_mpc_gait_gen import SoloMpcGaitGen
+
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 
 import subprocess
@@ -46,7 +48,8 @@ step_height = 0.1
 plan_freq = 0.05 # sec
 update_time = 0.02 # sec (time of lag)
 
-gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 0)
+# gg = SoloMpcGaitGen(pin_robot, urdf_path, st, dt, state_wt, x0, plan_freq, gait = 0)
+gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, state_wt, x0, plan_freq)
 
 # while True:
 n = 1
@@ -56,27 +59,34 @@ step_t = 0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-robot = Solo12Env(2.5, 0.1, q0, v0, False, True)
+robot = Solo12Env(2.5, 0.01, q0, v0, False, True)
 
 lag = int(update_time/sim_dt)
 
-for o in range(int(500*(st/sim_dt))):
+q, v = robot.get_state()
+hip_loc = robot.get_hip_locations()
 
+next_loc = np.array([[ hip_loc[0][0] + sl_arr[0],  hip_loc[0][1] + sl_arr[1], 0],
+                    [ hip_loc[1][0] + sl_arr[0],  hip_loc[1][1] + sl_arr[1], 0],
+                    [ hip_loc[2][0] + sl_arr[0],  hip_loc[2][1] + sl_arr[1], 0],
+                    [ hip_loc[3][0] + sl_arr[0],  hip_loc[3][1] + sl_arr[1], 0]])
+
+
+# plotting
+com_arr = []
+
+for o in range(int(10*(st/sim_dt))):
+    com_arr.append(robot.get_com_location())
+        
     # this bit has to be put in shared memory
     if pln_ctr == 0:
         q, v = robot.get_state()
-        hip_loc = robot.get_hip_locations()
-
-        next_loc = np.array([[ hip_loc[0][0] + sl_arr[0],  hip_loc[0][1] + sl_arr[1], 0],
-                            [ hip_loc[1][0] + sl_arr[0],  hip_loc[1][1] + sl_arr[1], 0],
-                            [ hip_loc[2][0] + sl_arr[0],  hip_loc[2][1] + sl_arr[1], 0],
-                            [ hip_loc[3][0] + sl_arr[0],  hip_loc[3][1] + sl_arr[1], 0]])
-
         contact_configuration = robot.get_current_contacts()
         pr_st = time.time()
-        xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(step_t,3), n, next_loc, v_des, step_height, 5e-3, 7e-4, contact_configuration)
-        # gg.plot()
-        #gg.plot_plan()
+        # xs_plan, us_plan, f_plan = gg.optimize(q, v, round(sim_t*1000)/1000, next_loc, v_des, step_height, 5e-4, 9e-6, contact_configuration)
+        xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(step_t,3), next_loc, v_des, step_height, 5e-3, 7e-4, contact_configuration)
+
+        # gg.plot_plan()
         gg.reset()
         pr_et = time.time()
         # print("time", pr_et - pr_st)
@@ -97,7 +107,7 @@ for o in range(int(500*(st/sim_dt))):
 
     # control loop
 
-    contact_configuration = gg.cnt_gait[n%2]
+    # contact_configuration = gg.cnt_gait[n%2]
     # contact_configuration = robot.get_current_contacts()
 
     if np.all((contact_configuration==0)):
@@ -112,29 +122,8 @@ for o in range(int(500*(st/sim_dt))):
     index += 1
     if np.round(step_t,3) == 0:
         n += 1
-    if n > 25 and n < 35:
-        rec = np.array([0.0, 0.5, 0])
-        sl_arr = rec*st
-        
-        robot.robot.rai_robot.setExternalForce(0, [0, 0, 0], [0, 3, 0]) 
-    else:
-        rec = v_des
-        sl_arr = rec*st
 
+print("done")
 
-# tmp = np.array(tmp)
-# tmp_des = np.array(tmp_des)
-
-# plt.plot(tmp[:,2])
-# plt.plot(tmp_des[:,2])
-
-# plt.show()
-
-# gg.plot(tmp)
-# gg.plot_joints()
-# np.savez("../motion_planner/dat_file/ik", xs = xs)
-
-# gg.plot()
-
-
+gg.plot(np.array(com_arr))
 

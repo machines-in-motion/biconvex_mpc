@@ -66,20 +66,20 @@ class SoloMpcGaitGen:
         #                                 np.array(self.phase_offset), self.step_height)
 
         # Trot
-        self.gait_period = 0.25
-        self.stance_percent = [0.79, 0.79, 0.79, 0.79]
-        self.gait_dt = 0.05
-        self.phase_offset = [0.0, 0.79, 0.79, 0.0]
-        self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
-                                        np.array(self.phase_offset), self.step_height)
-
-        #Standing still
         # self.gait_period = 0.25
-        # self.stance_percent = [1.0, 1.0, 1.0, 1.0]
+        # self.stance_percent = [0.79, 0.79, 0.79, 0.79]
         # self.gait_dt = 0.05
-        # self.phase_offset = [0.0, 0.5, 0.5, 0.0]
+        # self.phase_offset = [0.0, 0.79, 0.79, 0.0]
         # self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
         #                                 np.array(self.phase_offset), self.step_height)
+
+        #Standing still
+        self.gait_period = 0.25
+        self.stance_percent = [1.0, 1.0, 1.0, 1.0]
+        self.gait_dt = 0.05
+        self.phase_offset = [0.0, 0.5, 0.5, 0.0]
+        self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
+                                        np.array(self.phase_offset), self.step_height)
 
         # --- Set up Inverse Kinematics ---
         self.ik = InverseKinematics(r_urdf, self.gait_dt, self.gait_period)
@@ -303,11 +303,11 @@ class SoloMpcGaitGen:
         t4 = time.time()
         self.ik.optimize(np.hstack((q,v)))
         t5 = time.time()
-        # print("cost", t2 - t1)
-        # print("dyn", t3 - t2)
-        # print("ik", t5 - t4)
-        # print("total", t5 - t1)
-        # print("------------------------")
+        print("cost", t2 - t1)
+        print("dyn", t3 - t2)
+        print("ik", t5 - t4)
+        print("total", t5 - t1)
+        print("------------------------")
         xs = self.ik.get_xs()
         us = self.ik.get_us()
         self.xs_traj.append(xs)

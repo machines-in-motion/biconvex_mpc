@@ -34,7 +34,9 @@ class SoloStateEstimator:
         """
             returns com location
         """
-        return np.reshape(np.array(q[0:3]), (3,))
+        com = pin.centerOfMass( self.robot.model,  self.robot.data, q, dq)
+
+        return com
     
     def return_com_velocity(self, q, dq):
         """

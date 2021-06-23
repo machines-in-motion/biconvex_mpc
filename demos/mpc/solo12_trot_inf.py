@@ -32,14 +32,14 @@ x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 plan_freq = dt
 gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, state_wt, x0, plan_freq)
 
-v_des = np.array([0.2, 0.0, 0])
+v_des = np.array([0.0, 0.0, 0])
 step_height = 0.125
 
 # while True:
 sim_t = 0.0
 sim_dt = .001
 pln_ctr = 0
-robot = Solo12Env(2.5, 0.1, q0, v0, False)
+robot = Solo12Env(2.5, 0.1, q0, v0, False, True)
 
 #lag = int(update_time/sim_dt)
 

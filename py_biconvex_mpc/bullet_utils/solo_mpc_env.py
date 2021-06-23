@@ -57,6 +57,13 @@ class Solo12Env:
         q, v = self.robot.get_state()
         return q, v
 
+    def get_com_location(self):
+        """
+        returns com locations
+        """
+        q, v = self.robot.get_state()
+        return self.sse.return_com_location(q, v)
+
     def get_hip_locations(self):
         """
         returns hip locations

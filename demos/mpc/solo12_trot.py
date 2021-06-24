@@ -39,7 +39,7 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.0, 0.0, 0])
+v_des = np.array([0.2, 0.0, 0])
 sl_arr = v_des*gait_time*0.5
 t = 0.0
 step_height = 0.07

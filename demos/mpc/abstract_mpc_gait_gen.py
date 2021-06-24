@@ -73,20 +73,20 @@ class SoloMpcGaitGen:
         #                                 np.array(self.phase_offset), self.step_height)
 
         # Trot
-        self.gait_period = 0.5
-        self.stance_percent = [0.75, 0.75, 0.75, 0.75]
-        self.gait_dt = 0.05
-        self.phase_offset = [0.0, 0.5, 0.5, 0.0]
-        self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
-                                        np.array(self.phase_offset), self.step_height)
-
-        #Standing still
-        # self.gait_period = 0.25
-        # self.stance_percent = [1.0, 1.0, 1.0, 1.0]
+        # self.gait_period = 0.5
+        # self.stance_percent = [0.75, 0.75, 0.75, 0.75]
         # self.gait_dt = 0.05
         # self.phase_offset = [0.0, 0.5, 0.5, 0.0]
         # self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
         #                                 np.array(self.phase_offset), self.step_height)
+
+        #Standing still
+        self.gait_period = 0.5
+        self.stance_percent = [0.5, 0.5, 0.5, 0.5]
+        self.gait_dt = 0.05
+        self.phase_offset = [0.4, 0.4, 0.4, 0.4]
+        self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
+                                        np.array(self.phase_offset), self.step_height)
 
         #Different horizon parameterizations; only self.gait_horizon works for now
         self.gait_horizon = 1
@@ -107,7 +107,7 @@ class SoloMpcGaitGen:
         self.W_X_ter = 10*np.array([1e-5, 1e-5, 1e+6, 1e+4, 1e+2, 1e+2, 1e+5, 1e+5, 1e+5])
         self.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
         self.X_nom = np.zeros((9*self.horizon))
-        self.nom_ht = 0.22
+        self.nom_ht = 0.25
 
         # Set up constraints for Dynamics
         self.bx = 0.25
@@ -226,8 +226,6 @@ class SoloMpcGaitGen:
         self.X_init[3:] = np.array(self.rdata.hg)
         self.X_init[3:6] /= self.m
 
-        print("vel", self.X_init[3:5], v_des)
-
         self.X_nom[0::9] = self.X_init[0]
         self.X_nom[2::9] = self.nom_ht
         self.X_nom[3::9] = v_des[0]
@@ -304,10 +302,10 @@ class SoloMpcGaitGen:
         t4 = time.time()
         self.ik.optimize(np.hstack((q,v)))
         t5 = time.time()
-        # print("cost", t2 - t1)
-        # print("dyn", t3 - t2)
-        # print("ik", t5 - t4)
-        # print("total", t5 - t1)
+        print("cost", t2 - t1)
+        print("dyn", t3 - t2)
+        print("ik", t5 - t4)
+        print("total", t5 - t1)
         print("------------------------")
         xs = self.ik.get_xs()
         us = self.ik.get_us()

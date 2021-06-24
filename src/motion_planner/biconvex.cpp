@@ -67,7 +67,7 @@ namespace motion_planner{
                 break;
             };       
         }
-        std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
+        // std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }
 
     void BiConvexMP::update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter_nrml) {

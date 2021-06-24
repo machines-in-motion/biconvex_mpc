@@ -31,7 +31,7 @@ class Solo12Env:
         if self.bullet:
             print("loading bullet")
             self.env = BulletEnvWithGround()
-            self.robot = self.env.add_robot(Solo12Robot())
+            self.robot = self.env.add_robot(Solo12Robot)
             self.robot.reset_state(q0, v0)
 
         else:

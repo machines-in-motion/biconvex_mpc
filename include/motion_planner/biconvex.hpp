@@ -83,6 +83,8 @@ class BiConvexMP{
 
         void optimize(Eigen::VectorXd x_init, int no_iters);
 
+        void optimize_osqp(Eigen::VectorXd x_init, int no_iters);
+
         //Shifting cost function for MPC by one knot point
         //TODO: Rename to shift_cost() ?
         void update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter_nrml);

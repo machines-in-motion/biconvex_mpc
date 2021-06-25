@@ -6,9 +6,8 @@ import pinocchio as pin
 
 from matplotlib import pyplot as plt
 
-from robot_properties_solo.config import Solo12Config
-from abstract_mpc_gait_gen import SoloMpcGaitGen
-from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
+from abstract_gait_gen import MpcGaitGen
+from py_biconvex_mpc.bullet_utils.a1_mpc_env import A1Env
 
 import subprocess
 
@@ -19,18 +18,23 @@ import subprocess
 time.sleep(2)
 
 ## robot config and init
-pin_robot = Solo12Config.buildRobotWrapper()
-urdf_path = Solo12Config.urdf_path
+urdf_path = "/home/pshah/Applications/raisim_utils/urdf/a1/urdf/a1.urdf"
+pinModel = pin.buildModelFromUrdf(urdf_path,
+                                  pin.JointModelFreeFlyer())
+pinData = pinModel.createData()
 dt = 0.05
-state_wt = np.array([0.] * 3 + [10] * 3 + [5.0] * (pin_robot.model.nv - 6) \
-                    + [0.00] * 3 + [0.01] * 3 + [10.0] *(pin_robot.model.nv - 6))
+state_wt = np.array([0.] * 3 + [10] * 3 + [10.0] * (pinModel.nv - 6) \
+                    + [0.00] * 3 + [0.01] * 3 + [10.0] *(pinModel.nv - 6))
 
-q0 = np.array(Solo12Config.initial_configuration)
-v0 = pin.utils.zero(pin_robot.model.nv)
-x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
+q0 = np.array(
+    [0.0, 0.0, 0.305, 0.0, 0.0, 0.0, 1.0]
+    + 2 * [0.0, 0.8, -1.6]
+    + 2 * [0.0, 0.8, -1.6])
+v0 = pin.utils.zero(pinModel.nv)
+x0 = np.concatenate([q0, pin.utils.zero(pinModel.nv)])
 
-plan_freq = 0.04
-gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, state_wt, x0, plan_freq)
+plan_freq = .04
+gg = MpcGaitGen(pinModel, pinData, urdf_path, dt, state_wt, x0, plan_freq)
 
 v_des = np.array([0.0, 0.0, 0.0])
 step_height = 0.125
@@ -39,7 +43,7 @@ step_height = 0.125
 sim_t = 0.0
 sim_dt = .001
 pln_ctr = 0
-robot = Solo12Env(2.0, 0.2, q0, v0, False)
+robot = A1Env(2.5, 0.3, q0, v0, pinModel = pinModel, pinData = pinData, vis_ghost = False)
 
 #lag = int(update_time/sim_dt)
 
@@ -57,17 +61,16 @@ while True:
         contact_configuration = gg.gait_planner.get_phase(sim_t)
         xs_plan, us_plan, f_plan = gg.optimize(q, v, round(sim_t*1000)/1000, next_loc, v_des, step_height, 5e-4, 9e-6, contact_configuration)
         contact_configuration = gg.gait_planner.get_phase(sim_t)
-        #gg.plot_plan()
-        if (sim_t > 10.0):
+        gg.plot_plan()
+        if (sim_t > 35.0):
             gg.plot_plan()
-            print(f_plan[0])
         gg.reset()
 
     # control loop
     #contact_configuration = gg.gait_planner.get_phase(sim_t)
     #print(contact_configuration)
-    q_des = xs_plan[plan_ctr][:pin_robot.model.nq].copy()
-    dq_des = xs_plan[plan_ctr][pin_robot.model.nq:].copy()
+    q_des = xs_plan[plan_ctr][:pinModel.nq].copy()
+    dq_des = xs_plan[plan_ctr][pinModel.nq:].copy()
 
     robot.send_joint_command(q_des, dq_des, us_plan[plan_ctr], f_plan[plan_ctr], contact_configuration)
     sim_t += sim_dt

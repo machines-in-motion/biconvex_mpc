@@ -1,4 +1,4 @@
- ## This file creates the contact plan for different gaits in an MPC fashion
+## This file creates the contact plan for different gaits in an MPC fashion
 ## Author : Avadesh Meduri
 ## Date : 6/05/2021
 
@@ -10,9 +10,9 @@ from py_biconvex_mpc.motion_planner.cpp_biconvex import BiConvexMP
 
 from matplotlib import pyplot as plt
 
-class SoloMpcGaitGen:
+class A1MpcGaitGen:
 
-    def __init__(self, robot, r_urdf, st, dt, state_wt, x_reg, plan_freq, gait = 1):
+    def __init__(self, pin_model, pin_data, r_urdf, st, dt, state_wt, x_reg, plan_freq, gait = 1):
         """
         Input:
             robot : robot model
@@ -23,11 +23,11 @@ class SoloMpcGaitGen:
             x_reg : joint config about which regulation is done
             plan_freq : planning frequency in seconds
             gait : which gait to generate
-        """     
+        """
 
         ## Note : only creates plan for horizon of 2*st
-        self.rmodel = robot.model
-        self.rdata = robot.data
+        self.rmodel = pin_model
+        self.rdata = pin_data
         self.r_urdf = r_urdf
         self.ik = InverseKinematics(r_urdf, dt, st)
         self.st = st
@@ -79,13 +79,13 @@ class SoloMpcGaitGen:
 
         self.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 
-        # constraints 
-        self.bx = 0.25
-        self.by = 0.25
-        self.bz = 0.25
-        self.fx_max = 15
-        self.fy_max = 15
-        self.fz_max = 15
+        # constraints
+        self.bx = 0.5
+        self.by = 0.5
+        self.bz = 0.5
+        self.fx_max = 50
+        self.fy_max = 50
+        self.fz_max = 50
 
         self.X_nom = np.zeros((9*int(2*self.st/dt)))
 
@@ -125,14 +125,14 @@ class SoloMpcGaitGen:
             else:
                 self.cnt_plan[1][i][1:4] = next_loc[i]
             self.cnt_plan[1][i][3] += self.foot_size
-            self.cnt_plan[1][i][4] = max(0, self.st - t - self.sp)    
-            self.cnt_plan[1][i][5] = self.st - t    
+            self.cnt_plan[1][i][4] = max(0, self.st - t - self.sp)
+            self.cnt_plan[1][i][5] = self.st - t
 
         for i in range(len(self.eff_names)):
             self.cnt_plan[2][i][0] = self.cnt_gait[(n+1)%2][i]
             self.cnt_plan[2][i][1:4] = next_loc[i]
             self.cnt_plan[2][i][3] += self.foot_size
-            self.cnt_plan[2][i][4] = self.st - t    
+            self.cnt_plan[2][i][4] = self.st - t
             self.cnt_plan[2][i][5] = 2*self.st - t
 
         if t > 0:
@@ -140,7 +140,7 @@ class SoloMpcGaitGen:
                 self.cnt_plan[3][i][0] = self.cnt_gait[(n+2)%2][i]
                 self.cnt_plan[3][i][1:4] = next_loc[i] + v_des*self.st
                 self.cnt_plan[2][i][3] += self.foot_size
-                self.cnt_plan[3][i][4] = 2*self.st - t    
+                self.cnt_plan[3][i][4] = 2*self.st - t
                 self.cnt_plan[3][i][5] = 2*self.st
         else:
             self.cnt_plan = self.cnt_plan[0:3]
@@ -162,69 +162,69 @@ class SoloMpcGaitGen:
 
         # first block
         for i in range(len(self.eff_names)):
-            st = self.cnt_plan[0][i][4] 
+            st = self.cnt_plan[0][i][4]
             et = min(self.cnt_plan[0][i][5], self.st - self.dt)
             if et - st > 0:
                 if self.cnt_plan[0][i][0] == 1:
                     N = int(np.round(((et - st)/self.dt),2))
                     pos = np.tile(self.cnt_plan[0][i][1:4], (N,1))
-                    self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0],\
-                                                    "cnt_" + str(0) + self.eff_names[i])
-        
+                    self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0], \
+                                                       "cnt_" + str(0) + self.eff_names[i])
+
                 else:
                     # pos = self.rdata.oMf[i].translation
-                    self.ik.add_position_tracking_task(self.f_id[i], et, et, self.cnt_plan[2][i][1:4]\
-                                                        , self.wt[1],\
-                                                    "end_pos_" + str(0) + self.eff_names[i])
-                    
+                    self.ik.add_position_tracking_task(self.f_id[i], et, et, self.cnt_plan[2][i][1:4] \
+                                                       , self.wt[1], \
+                                                       "end_pos_" + str(0) + self.eff_names[i])
+
                     if t < (self.st - self.sp)/2.0:
                         pos = self.cnt_plan[2][i][1:4] - v_des*(self.st - self.sp)/2.0
                         pos[2] = sh
                         time = et-(self.st - self.sp)/2.0
                         self.ik.add_position_tracking_task(self.f_id[i],time ,time, pos
-                                                        , self.wt[1],\
-                                                    "via_" + str(0) + self.eff_names[i])
+                                                           , self.wt[1], \
+                                                           "via_" + str(0) + self.eff_names[i])
 
             # second block
-            st = self.cnt_plan[1][i][4] 
+            st = self.cnt_plan[1][i][4]
             et = min(self.cnt_plan[1][i][5], self.st - self.dt)
             N = int(np.round(((et - st)/self.dt),2))
             if et == self.st - self.dt:
-                    pos = self.cnt_plan[1][i][1:4]
-                    self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, self.wt[0],\
-                                                "cnt_" + str(0) + self.eff_names[i])
+                pos = self.cnt_plan[1][i][1:4]
+                self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, self.wt[0], \
+                                                            "cnt_" + str(0) + self.eff_names[i])
             else:
                 pos = np.tile(self.cnt_plan[1][i][1:4], (N,1))
-                self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0],\
-                                                "cnt_" + str(0) + self.eff_names[i])
+                self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0], \
+                                                   "cnt_" + str(0) + self.eff_names[i])
 
         # third block
-        if self.cnt_plan[1][0][5] < self.st: 
+        if self.cnt_plan[1][0][5] < self.st:
             for i in range(len(self.eff_names)):
-                st = self.cnt_plan[2][i][4] 
+                st = self.cnt_plan[2][i][4]
                 et = min(self.cnt_plan[2][i][5], self.st)
                 if self.cnt_plan[2][i][0] == 1:
                     N = int(np.round(((et - st)/self.dt),2))
                     pos = np.tile(self.cnt_plan[2][i][1:4], (N,1))
-                    self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0],\
-                                                    "cnt_" + str(1) + self.eff_names[i])
-                    self.ik.add_terminal_position_tracking_task(self.f_id[i], pos[0], self.wt[0],\
-                                                "cnt_" + str(1) + self.eff_names[i])
+                    self.ik.add_position_tracking_task(self.f_id[i], st, et, pos, self.wt[0], \
+                                                       "cnt_" + str(1) + self.eff_names[i])
+                    self.ik.add_terminal_position_tracking_task(self.f_id[i], pos[0], self.wt[0], \
+                                                                "cnt_" + str(1) + self.eff_names[i])
                 else:
                     if et > st + self.st/2.0:
                         pos = self.cnt_plan[3][i][1:4] - v_des*self.st
                         pos[2] = sh
                         self.ik.add_position_tracking_task(self.f_id[i], st + self.st/2.0, st + self.st/2.0, pos
-                                                        , self.wt[1],\
-                                                    "via_" + str(t) + self.eff_names[i])
+                                                           , self.wt[1], \
+                                                           "via_" + str(t) + self.eff_names[i])
                         pos = self.cnt_plan[3][i][1:4]
-                        self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, self.wt[0],\
-                                                "cnt_" + str(1) + self.eff_names[i])
+                        self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, self.wt[0], \
+                                                                    "cnt_" + str(1) + self.eff_names[i])
                     else:
                         pos = self.cnt_plan[3][i][1:4] - v_des*self.st/2.0
                         pos[2] = sh
-                        self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, 10*self.wt[1],\
-                                                "via_" + str(1) + self.eff_names[i])
+                        self.ik.add_terminal_position_tracking_task(self.f_id[i], pos, 10*self.wt[1], \
+                                                                    "via_" + str(1) + self.eff_names[i])
 
 
         self.ik.add_state_regularization_cost(0, self.st, wt_xreg, "xReg", self.state_wt, self.x_reg, False)
@@ -239,11 +239,11 @@ class SoloMpcGaitGen:
         self.X_init = np.zeros(9)
         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
         self.X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q, v)
-        self.X_init[3:] = np.array(self.rdata.hg)            
+        self.X_init[3:] = np.array(self.rdata.hg)
         self.X_init[3:6] /= self.m
 
         self.X_nom[0::9] = self.X_init[0]
-        self.X_nom[2::9] = 0.2 #Reference
+        self.X_nom[2::9] = 0.2
         self.X_nom[3::9] = v_des[0]
         self.X_nom[4::9] = v_des[1]
         self.X_nom[5::9] = v_des[2]
@@ -286,7 +286,7 @@ class SoloMpcGaitGen:
         return omega
 
     def optimize(self, q, v, t, n, next_loc, v_des, sh, x_reg, u_reg, current_contact):
-      
+
         #TODO: Move to C++
         t1 = time.time()
         self.current_contact = current_contact
@@ -306,7 +306,7 @@ class SoloMpcGaitGen:
         self.com_traj.append(com_opt)
 
         # --- IK Optimization ---
-        
+
         # Add tracking costs from Dynamic optimization
         self.ik.add_centroidal_momentum_tracking_task(0, self.st, mom_opt[0:int(self.st/self.dt)], 1e2, "mom_track", False)
         self.ik.add_centroidal_momentum_tracking_task(0, self.st, mom_opt[int(self.st/self.dt)], 1e1, "mom_track", True)
@@ -314,13 +314,13 @@ class SoloMpcGaitGen:
         self.ik.add_com_position_tracking_task(0, self.st, com_opt[0:int(self.st/self.dt)], 1e4, "com_track_cost", False)
         self.ik.add_com_position_tracking_task(0, self.st, com_opt[int(self.st/self.dt)], 1e5, "com_track_cost", True)
         t4 = time.time()
-        self.ik.optimize(np.hstack((q,v))) 
+        self.ik.optimize(np.hstack((q,v)))
         t5 = time.time()
-        print("cost", t2 - t1)
-        print("dyn", t3 - t2)
-        print("ik", t5 - t4)
-        print("total", t5 - t1)
-        print("------------------------")
+        # print("cost", t2 - t1)
+        # print("dyn", t3 - t2)
+        # print("ik", t5 - t4)
+        # print("total", t5 - t1)
+        # print("------------------------")
         xs = self.ik.get_xs()
         us = self.ik.get_us()
         self.xs_traj.append(xs)
@@ -349,7 +349,7 @@ class SoloMpcGaitGen:
     def reset(self):
         self.ik = InverseKinematics(self.r_urdf, self.dt, self.st)
         self.mp = BiConvexMP(self.m, self.dt, 2*self.st, len(self.eff_names), rho = self.rho)
-    
+
 
     def plot(self, q_real=None):
         self.com_traj = np.array(self.com_traj)
@@ -379,7 +379,7 @@ class SoloMpcGaitGen:
                 ax[0].plot(x[st_hor], com[0], "o")
                 ax[1].plot(x[st_hor], com[1], "o")
                 ax[2].plot(x[st_hor], com[2], "o")
-        
+
                 ax[0].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,0])
                 ax[1].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,1])
                 ax[2].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,2])
@@ -423,8 +423,8 @@ class SoloMpcGaitGen:
             opt_mom[i][0:3] /= self.m
 
         self.mp.add_ik_com_cost(opt_com)
-        self.mp.add_ik_momentum_cost(opt_mom) 
-    
+        self.mp.add_ik_momentum_cost(opt_mom)
+
         self.mp.stats()
 
 
@@ -434,7 +434,7 @@ class SoloMpcGaitGen:
 
 
 
-                
+
 
 
 

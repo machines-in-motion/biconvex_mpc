@@ -64,7 +64,6 @@ namespace motion_planner{
 //            }
 //            std::cout << prob_data_f.x_k.segment(0,12) << std::endl;
             P_k_ += dyn_violation;
-
             //Keep track of any statistics that may be useful
             if (log_statistics) {
                 dyn_violation_hist_.push_back(dyn_violation.norm());

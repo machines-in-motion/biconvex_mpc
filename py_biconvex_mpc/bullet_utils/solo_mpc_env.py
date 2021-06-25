@@ -31,7 +31,7 @@ class Solo12Env:
         if self.bullet:
             print("loading bullet")
             self.env = BulletEnvWithGround()
-            self.robot = self.env.add_robot(Solo12Robot())
+            self.robot = self.env.add_robot(Solo12Robot)
             self.robot.reset_state(q0, v0)
 
         else:
@@ -56,6 +56,13 @@ class Solo12Env:
         """
         q, v = self.robot.get_state()
         return q, v
+
+    def get_com_location(self):
+        """
+        returns com locations
+        """
+        q, v = self.robot.get_state()
+        return self.sse.return_com_location(q, v)
 
     def get_hip_locations(self):
         """

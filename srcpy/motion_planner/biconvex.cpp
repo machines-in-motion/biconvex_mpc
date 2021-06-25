@@ -33,7 +33,6 @@ PYBIND11_MODULE(biconvex_mpc_cpp, m)
     mp.def("return_opt_f", &motion_planner::BiConvexMP::return_opt_f);
     mp.def("return_opt_p", &motion_planner::BiConvexMP::return_opt_p);
 
-
     mp.def("set_warm_start_vars", &motion_planner::BiConvexMP::set_warm_start_vars);
     mp.def("optimize", &motion_planner::BiConvexMP::optimize);
 

@@ -129,21 +129,21 @@ namespace dynamics{
             
             for (unsigned n = 1; n < n_eff_; ++n){
                 if (cnt_arr_(t,n)) {
-                    A_f.coeffRef(9*t+6, 9*t+1) += -F[3*t*n_eff_+3*n+2]*dt_;
-                    A_f.coeffRef(9*t+6, 9*t+2) += F[3*t*n_eff_+3*n+1]*dt_;
+                    A_f.coeffRef(9*t+6, 9*t+1) += -cnt_arr_(t,n)*F[3*t*n_eff_+3*n+2]*dt_;
+                    A_f.coeffRef(9*t+6, 9*t+2) += cnt_arr_(t,n)*F[3*t*n_eff_+3*n+1]*dt_;
                     
-                    A_f.coeffRef(9*t+7, 9*t+0) += F[3*t*n_eff_+3*n+2]*dt_;
-                    A_f.coeffRef(9*t+7, 9*t+2) += -F[3*t*n_eff_+3*n+0]*dt_;
+                    A_f.coeffRef(9*t+7, 9*t+0) += cnt_arr_(t,n)*F[3*t*n_eff_+3*n+2]*dt_;
+                    A_f.coeffRef(9*t+7, 9*t+2) += -cnt_arr_(t,n)*F[3*t*n_eff_+3*n+0]*dt_;
                     
-                    A_f.coeffRef(9*t+8, 9*t+0) += -F[3*t*n_eff_+3*n+1]*dt_;
-                    A_f.coeffRef(9*t+8, 9*t+1) += F[3*t*n_eff_+3*n+0]*dt_;
+                    A_f.coeffRef(9*t+8, 9*t+0) += -cnt_arr_(t,n)*F[3*t*n_eff_+3*n+1]*dt_;
+                    A_f.coeffRef(9*t+8, 9*t+1) += cnt_arr_(t,n)*F[3*t*n_eff_+3*n+0]*dt_;
                     
                     b_f[9*t+3] += -F[3*t*n_eff_+3*n+0]*dt_/m_;
                     b_f[9*t+4] += -F[3*t*n_eff_+3*n+1]*dt_/m_;
                     b_f[9*t+5] += -F[3*t*n_eff_+3*n+2]*dt_/m_;
-                    b_f[9*t+6] += (F[3*t*n_eff_+3*n+1]*r_[t](n,2) - F[3*t*n_eff_+3*n+2]*r_[t](n,1))*dt_;
-                    b_f[9*t+7] += (F[3*t*n_eff_+3*n+2]*r_[t](n,0) - F[3*t*n_eff_+3*n+0]*r_[t](n,2))*dt_;
-                    b_f[9*t+8] += (F[3*t*n_eff_+3*n+0]*r_[t](n,1) - F[3*t*n_eff_+3*n+1]*r_[t](n,0))*dt_;
+                    b_f[9*t+6] += (cnt_arr_(t,n)*F[3*t*n_eff_+3*n+1]*r_[t](n,2) - cnt_arr_(t,n)*F[3*t*n_eff_+3*n+2]*r_[t](n,1))*dt_;
+                    b_f[9*t+7] += (cnt_arr_(t,n)*F[3*t*n_eff_+3*n+2]*r_[t](n,0) - cnt_arr_(t,n)*F[3*t*n_eff_+3*n+0]*r_[t](n,2))*dt_;
+                    b_f[9*t+8] += (cnt_arr_(t,n)*F[3*t*n_eff_+3*n+0]*r_[t](n,1) - cnt_arr_(t,0)*F[3*t*n_eff_+3*n+1]*r_[t](n,0))*dt_;
                 }
             }
         }

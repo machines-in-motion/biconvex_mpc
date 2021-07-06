@@ -28,30 +28,33 @@ namespace motion_planner{
             Eigen::SparseMatrix<double> constraintMatX =
                     Eigen::MatrixXd::Identity(9*(horizon_+1), 9*(horizon_+1)).sparseView();
 
-            osqp_x.data()->setNumberOfVariables(9*(horizon_+1));
-            osqp_x.data()->setNumberOfConstraints(9*(horizon_+1));
+            #ifdef USE_OSQP
+                osqp_x.data()->setNumberOfVariables(9*(horizon_+1));
+                osqp_x.data()->setNumberOfConstraints(9*(horizon_+1));
 
-            osqp_x.data()->setLinearConstraintsMatrix(constraintMatX);
-            osqp_x.data()->setLowerBound(prob_data_x.lb_);
-            osqp_x.data()->setUpperBound(prob_data_x.ub_);
-            osqp_x.settings()->setAbsoluteTolerance(1e-5);
-            osqp_x.settings()->setRelativeTolerance(1e-5);
-            //osqp_x.settings()->setMaxIteration(25);
-            osqp_x.settings()->setScaling(0);
-            osqp_x.settings()->setWarmStart(true);
-            osqp_x.settings()->setVerbosity(false);
+                osqp_x.data()->setLinearConstraintsMatrix(constraintMatX);
+                osqp_x.data()->setLowerBound(prob_data_x.lb_);
+                osqp_x.data()->setUpperBound(prob_data_x.ub_);
+                osqp_x.settings()->setAbsoluteTolerance(1e-5);
+                osqp_x.settings()->setRelativeTolerance(1e-5);
+                //osqp_x.settings()->setMaxIteration(25);
+                osqp_x.settings()->setScaling(0);
+                osqp_x.settings()->setWarmStart(true);
+                osqp_x.settings()->setVerbosity(false);
 
-            osqp_f.data()->setNumberOfVariables(3*n_eff_* horizon_);
-            osqp_f.data()->setNumberOfConstraints(3*n_eff_*horizon_);
-            osqp_f.data()->setLinearConstraintsMatrix(constraintMatF);
-            osqp_f.data()->setLowerBound(prob_data_f.lb_);
-            osqp_f.data()->setUpperBound(prob_data_f.ub_);
-            osqp_f.settings()->setAbsoluteTolerance(1e-5);
-            osqp_f.settings()->setRelativeTolerance(1e-5);
-            //osqp_f.settings()->setMaxIteration(25);
-            osqp_f.settings()->setScaling(0);
-            osqp_f.settings()->setWarmStart(true);
-            osqp_f.settings()->setVerbosity(false);
+                osqp_f.data()->setNumberOfVariables(3*n_eff_* horizon_);
+                osqp_f.data()->setNumberOfConstraints(3*n_eff_*horizon_);
+                osqp_f.data()->setLinearConstraintsMatrix(constraintMatF);
+                osqp_f.data()->setLowerBound(prob_data_f.lb_);
+                osqp_f.data()->setUpperBound(prob_data_f.ub_);
+                osqp_f.settings()->setAbsoluteTolerance(1e-5);
+                osqp_f.settings()->setRelativeTolerance(1e-5);
+                //osqp_f.settings()->setMaxIteration(25);
+                osqp_f.settings()->setScaling(0);
+                osqp_f.settings()->setWarmStart(true);
+                osqp_f.settings()->setVerbosity(false);
+            #endif
+
     };
 
     void BiConvexMP::optimize(Eigen::VectorXd x_init, int num_iters){
@@ -88,61 +91,65 @@ namespace motion_planner{
         // std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }
 
-    void BiConvexMP::optimize_osqp(Eigen::VectorXd x_init, int num_iters){
-        // updating x_init
-        centroidal_dynamics.update_x_init(x_init);
+    #ifdef USE_OSQP
+        void BiConvexMP::optimize_osqp(Eigen::VectorXd x_init, int num_iters){
+            // updating x_init
 
-        for (unsigned i = 0; i < num_iters; ++i){
-            // optimizing for F
-            centroidal_dynamics.compute_x_mat(prob_data_x.x_k);
-            prob_data_f.set_data(centroidal_dynamics.A_x, centroidal_dynamics.b_x, P_k_, rho_);
+            centroidal_dynamics.update_x_init(x_init);
 
-            if (i == 0) {
-                osqp_f.data()->setHessianMatrix(prob_data_f.ATA_);
-                osqp_f.data()->setGradient(prob_data_f.ATbPk_);
-                osqp_f.initSolver();
+            for (unsigned i = 0; i < num_iters; ++i){
+                // optimizing for F
+                centroidal_dynamics.compute_x_mat(prob_data_x.x_k);
+                prob_data_f.set_data(centroidal_dynamics.A_x, centroidal_dynamics.b_x, P_k_, rho_);
+
+                if (i == 0) {
+                    osqp_f.data()->setHessianMatrix(prob_data_f.ATA_);
+                    osqp_f.data()->setGradient(prob_data_f.ATbPk_);
+                    osqp_f.initSolver();
+                }
+                else {
+                    osqp_f.updateHessianMatrix(prob_data_f.ATA_);
+                    osqp_f.updateGradient(prob_data_f.ATbPk_);
+                }
+                osqp_f.solve();
+                prob_data_f.x_k = osqp_f.getSolution();
+
+                // optimizing for X
+                centroidal_dynamics.compute_f_mat(prob_data_f.x_k);
+                prob_data_x.set_data(centroidal_dynamics.A_f, centroidal_dynamics.b_f, P_k_, rho_);
+
+                if (i == 0) {
+                    osqp_x.data()->setHessianMatrix(prob_data_x.ATA_);
+                    osqp_x.data()->setGradient(prob_data_x.ATbPk_);
+                    osqp_x.initSolver();
+                }
+                else {
+                    osqp_x.updateHessianMatrix(prob_data_x.ATA_);
+                    osqp_x.updateGradient(prob_data_x.ATbPk_);
+                }
+                osqp_x.solve();
+                prob_data_x.x_k = osqp_x.getSolution();
+
+                //Calculate dynamic violation
+                dyn_violation = centroidal_dynamics.A_f * prob_data_x.x_k - centroidal_dynamics.b_f;
+                P_k_ += dyn_violation;
+
+                //Keep track of any statistics that may be useful
+                if (log_statistics) {
+                    dyn_violation_hist_.push_back(dyn_violation.norm());
+                    std::cout << dyn_violation.norm() << std::endl;
+                }
+
+                if (dyn_violation.norm() < exit_tol){
+                    // std::cout << "breaking outerloop due to norm ..." << std::endl;
+                    //std::cout << "Optimizer finished after " << i << " iterations" << std::endl;
+                    break;
+                };
             }
-            else {
-                osqp_f.updateHessianMatrix(prob_data_f.ATA_);
-                osqp_f.updateGradient(prob_data_f.ATbPk_);
-            }
-            osqp_f.solve();
-            prob_data_f.x_k = osqp_f.getSolution();
-
-            // optimizing for X
-            centroidal_dynamics.compute_f_mat(prob_data_f.x_k);
-            prob_data_x.set_data(centroidal_dynamics.A_f, centroidal_dynamics.b_f, P_k_, rho_);
-
-            if (i == 0) {
-                osqp_x.data()->setHessianMatrix(prob_data_x.ATA_);
-                osqp_x.data()->setGradient(prob_data_x.ATbPk_);
-                osqp_x.initSolver();
-            }
-            else {
-                osqp_x.updateHessianMatrix(prob_data_x.ATA_);
-                osqp_x.updateGradient(prob_data_x.ATbPk_);
-            }
-            osqp_x.solve();
-            prob_data_x.x_k = osqp_x.getSolution();
-
-            //Calculate dynamic violation
-            dyn_violation = centroidal_dynamics.A_f * prob_data_x.x_k - centroidal_dynamics.b_f;
-            P_k_ += dyn_violation;
-
-            //Keep track of any statistics that may be useful
-            if (log_statistics) {
-                dyn_violation_hist_.push_back(dyn_violation.norm());
-                std::cout << dyn_violation.norm() << std::endl;
-            }
-
-            if (dyn_violation.norm() < exit_tol){
-                // std::cout << "breaking outerloop due to norm ..." << std::endl;
-                //std::cout << "Optimizer finished after " << i << " iterations" << std::endl;
-                break;
-            };
+            //std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
         }
-        //std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
-    }
+    #endif
+
 
     void BiConvexMP::update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter_nrml) {
         //Change for loop to prob_data_x.num_vars_ - (2*prob_data.x.state)

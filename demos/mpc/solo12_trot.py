@@ -39,7 +39,7 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.2, 0.0, 0])
+v_des = np.array([0.0, 0.0, 0])
 sl_arr = v_des*gait_time*0.5
 t = 0.0
 step_height = 0.07
@@ -68,7 +68,7 @@ q, v = robot.get_state()
 # plotting
 com_arr = []
 
-for o in range(int(50*(gait_time/sim_dt))):
+for o in range(int(5*(gait_time/sim_dt))):
     com_arr.append(robot.get_com_location())
     # this bit has to be put in shared memory
     if pln_ctr == 0:

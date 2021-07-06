@@ -157,10 +157,10 @@ class BiConvexMP{
         // solver for f optimization
         solvers::FISTA fista_f;
 
-//        #ifdef USE_OSQP
+        #ifdef USE_OSQP
             OsqpEigen::Solver osqp_x;
             OsqpEigen::Solver osqp_f;
-//        #endif
+        #endif
 
         Eigen::VectorXd dyn_violation;
         Eigen::VectorXd P_k_;

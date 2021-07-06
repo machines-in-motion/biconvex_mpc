@@ -18,7 +18,6 @@ namespace solvers
                                                                     (L_/2)*(prob_data_.G_k_norm*prob_data_.G_k_norm)){
                 L_ = beta_*L_;
                 // std::cout << "Line search called - " << L_ << std::endl;
-
             }
             else {
                 prob_data_.x_k_1 = prob_data_.y_k_1;
@@ -55,14 +54,22 @@ namespace solvers
 
         //Projection happens in the local frame
         for (unsigned int i=0; i < prob_data_.num_vars_; i+=3) {
-            //std::cout << prob_data_.y_k_1.segment(i,3) << std::endl;;
+            //Eigen::Vector3d rotated_force = prob_data_.rotation_matrices[i]*prob_data_.y_k_1.segment(1,3);
+            //soc_norm = rotated_force.segment(0,2).squaredNorm();
             soc_norm = prob_data_.y_k_1.segment(i,2).squaredNorm();
+            //auto z = rotated_force[2]
             auto z = prob_data_.y_k_1[i + 2];
             if (soc_norm*mu < -z || z < 0) {
                 prob_data_.y_k_1.segment(i,3) = Eigen::VectorXd::Zero(3);
             } else if (soc_norm > mu * z) {
+                //Apply second order cone projection
                 prob_data_.y_k_1.segment(i,2) *= ((mu * mu) * soc_norm + (mu * z)) / ( ((mu * mu) + 1) * soc_norm);
                 prob_data_.y_k_1[i + 2] = (mu * soc_norm + z) / ((mu * mu )+ 1);
+                //rotated_force.segment(0,2) *= ((mu * mu) * soc_norm + (mu * z)) / ( ((mu * mu) + 1) * soc_norm);
+                //rotated_force[2] = (mu * soc_norm + z) / ((mu * mu )+ 1);
+
+                //Rotate back into original frame
+                //prob_data_.y_k_1.segment(i,3) = prob_data_.rotation_matrices_trans[i]*rotated_force;
             }
         }
     }

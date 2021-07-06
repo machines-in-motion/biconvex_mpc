@@ -8,12 +8,13 @@ import pinocchio as pin
 from inverse_kinematics_cpp import InverseKinematics
 from py_biconvex_mpc.motion_planner.cpp_biconvex import BiConvexMP
 from gait_planner_cpp import GaitPlanner
+from py_biconvex_mpc.bullet_utils.a1_mpc_env import A1Env
 
 from matplotlib import pyplot as plt
 
 class MpcGaitGen:
 
-    def __init__(self, pin_model, pin_data, r_urdf, dt, state_wt, x_reg, planning_time):
+    def __init__(self, pin_model, pin_data, r_urdf, dt, state_wt, x_reg, planning_time, a1_env):
         """
         Input:
             robot : robot model
@@ -32,8 +33,15 @@ class MpcGaitGen:
         self.foot_size = 0.018
         self.step_height = 0.1
 
-        #TODO: DEPRECATE THIS...
-        #Use for a fixed frequency planning time
+        #Get Composite Inertia Matrix
+        pin.framesForwardKinematics(self.rmodel, self.rdata, x_reg[0:19])
+        pin.forwardKinematics(self.rmodel, self.rdata, x_reg[0:19])
+        pin.crba(self.rmodel, self.rdata, x_reg[0:19])
+        self.inertia_composite = self.rdata.Ycrb[1].inertia
+        self.inertia_composite_inv = np.linalg.inv(self.inertia_composite)
+
+        # TODO: DEPRECATE THIS...
+        # Use for a fixed frequency planning time
         self.planning_time = planning_time
 
         self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
@@ -47,6 +55,11 @@ class MpcGaitGen:
         self.state_wt = state_wt
         self.x_reg = x_reg
 
+        self.k_footstep = 0.03
+
+        # A1 environment. Used for visualization and getting terrain for contact planner
+        self.a1_env = a1_env
+
         # --- Set up gait parameters ---
         #Bounding
         # self.gait_period = 0.30
@@ -57,18 +70,18 @@ class MpcGaitGen:
         #                                 np.array(self.phase_offset), self.step_height)
 
         #Ambling gait
-        # self.gait_period = 0.30
-        # self.stance_percent = [0.35, 0.35, 0.35, 0.35]
+        # self.gait_period = 0.35
+        # self.stance_percent = [0.80, 0.80, 0.80, 0.80]
         # self.gait_dt = 0.05
-        # self.phase_offset = [0.45, 0.0, 0.45, 0.0]
+        # self.phase_offset = [0.50, 0.0, 0.50, 0.0]
         # self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
         #                                 np.array(self.phase_offset), self.step_height)
 
         # Trot
-        self.gait_period = 0.30
-        self.stance_percent = [1.0, 1.0, 0.79, 1.0]
+        self.gait_period = 0.5
+        self.stance_percent = [0.79, 0.79, 0.79, 0.79]
         self.gait_dt = 0.05
-        self.phase_offset = [0.0, 0.79, 0.79, 0.0]
+        self.phase_offset = [0.0, 0.5, 0.5, 0.0]
         self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
                                         np.array(self.phase_offset), self.step_height)
 
@@ -87,7 +100,7 @@ class MpcGaitGen:
         self.m = pin.computeTotalMass(self.rmodel)
         print("Mass: ", self.m)
         print()
-        self.rho = 5e4 # penalty on dynamic constraint violation
+        self.rho = 5e4 #penalty on dynamic constraint violation
         self.mp = BiConvexMP(self.m, self.gait_dt, 2*self.gait_period, len(self.eff_names), rho = self.rho)
 
         #Different horizon parameterizations; only self.gait_horizon works for now
@@ -97,18 +110,23 @@ class MpcGaitGen:
         self.horizon = int(round(self.gait_horizon*self.gait_period/self.gait_dt))
 
         # Set up Weights & Matrices for Dynamics
-        self.W_X = np.array([1e-2, 1e-2, 1e4, 1e1, 1e1, 1e1, 1e6, 1e4, 6e3])
-        self.W_X_ter = 5*np.array([1e-3, 1e-3, 1e5, 1e1, 1e1, 1e1, 1e4, 1e4, 1e4])
-        self.W_F = np.array(4*[1e-2, 1e-2, 1e-2])
+        self.W_X = np.array([1e5, 1e5, 1e6, 1e1, 1e1, 1e1, 1e6, 1e4, 1e4])
+        self.W_X_ter = 5*np.array([1e4, 1e4, 1e5, 1e1, 1e1, 1e1, 1e6, 1e4, 1e5])
+        self.W_F = np.array(4*[1e-1, 1e-1, 1e-1])
         self.X_nom = np.zeros((9*self.horizon))
+
+        # self.W_X = np.array([1e-2, 1e-2, 1e4, 1e1, 1e1, 1e1, 1e6, 1e4, 6e3])
+        # self.W_X_ter = 5*np.array([1e-3, 1e-3, 1e5, 1e1, 1e1, 1e1, 1e4, 1e4, 1e4])
+        # self.W_F = np.array(4*[1e-2, 1e-2, 1e-2])
+        # self.X_nom = np.zeros((9*self.horizon))
 
         # Set up constraints for Dynamics
         self.bx = 0.35
         self.by = 0.35
         self.bz = 0.35
-        self.fx_max = 100.0
-        self.fy_max = 100.0
-        self.fz_max = 100.0
+        self.fx_max = 55.0
+        self.fy_max = 55.0
+        self.fz_max = 55.0
 
         # --- Set up other variables ---
         # For interpolation (should be moved to the controller)
@@ -161,18 +179,19 @@ class MpcGaitGen:
                         else:
                             # If I was in swing previously, use the raibert heuristic
                             # Raibert heuristic is based off the previous contact location
-                            self.cnt_plan[i][j][1:4] = self.prev_cnt[j][1:4] + v_des*self.stance_percent[j]*self.gait_period
+                            self.cnt_plan[i][j][1:4] = self.prev_cnt[j][1:4] + \
+                                                       v_des*self.stance_percent[j]*self.gait_period/2.0
                             # self.cnt_plan[i][j][3] += self.foot_size
                     else:
                         # If foot will not be in contact
                         self.cnt_plan[i][j][0] = 0
                         # self.cnt_plan[i][j][1:4] = (self.prev_cnt[j][1:4] + \
                         #     (self.prev_cnt[j][1:4] + v_des*self.stance_percent[j]*self.gait_period) ) / 2.0
-                        self.cnt_plan[i][j][1:4] = (self.prev_cnt[j][1:4] + v_des*self.stance_percent[j]*self.gait_period)
+                        self.cnt_plan[i][j][1:4] = (self.prev_cnt[j][1:4] +
+                                                    v_des*self.stance_percent[j]*self.gait_period/2.0)
                         self.prev_cnt[j][0] = 0
 
         #print(self.cnt_plan)
-
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, t, wt_xreg, wt_ureg):
@@ -206,10 +225,10 @@ class MpcGaitGen:
                     #print(i,j)
                     pos = self.cnt_plan[i][j][1:4]
                     pos[2] = self.step_height
-                    self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, 0.5*self.wt[1],
+                    self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, self.wt[1],
                                                               "via_" + str(0) + self.eff_names[j], i)
                     #else:
-                    self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], self.wt[1],
+                    self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], 0.6*self.wt[1],
                                                               "end_pos_" + str(0) + self.eff_names[j], i)
 
         self.ik.add_state_regularization_cost(0, self.gait_period, wt_xreg, "xReg", self.state_wt, self.x_reg, False)
@@ -227,23 +246,29 @@ class MpcGaitGen:
         self.X_init[3:] = np.array(self.rdata.hg)
         self.X_init[3:6] /= self.m
 
+        # Set reference positions
         self.X_nom[0::9] = self.X_init[0]
-        self.X_nom[2::9] = 0.28
+        self.X_nom[0::9] = 0.0
+        self.X_nom[2::9] = 0.30
+
+        # Set reference velocities
         self.X_nom[3::9] = v_des[0]
         self.X_nom[4::9] = v_des[1]
         self.X_nom[5::9] = v_des[2]
 
         amom = 0.8*self.compute_ori_correction(q, np.array([0,0,0,1])) #Changed to 0 for bounding
-        self.X_nom[6::9] = amom[0]*0.1
-        self.X_nom[7::9] = amom[1]*0.2
-        self.X_nom[8::9] = amom[2]*0.0
+        self.X_nom[6::9] = amom[0]*1.0
+        self.X_nom[7::9] = amom[1]*0.7
+        self.X_nom[8::9] = amom[2]*0.5
 
+        #Set terminal constraints
         X_ter = np.zeros_like(self.X_init)
         X_ter[0:3] = self.X_init[0:3].copy()
-        X_ter[2] = 0.28
+        X_ter[2] = 0.30
 
         X_ter[0:2] = self.X_init[0:2] + (self.horizon*v_des*self.gait_dt)[0:2] #Changed this
-        X_ter[0:2] = 0.0
+        #X_ter[0] = 0.0
+        #X_ter[1] = 0.0
         X_ter[3:6] = v_des
         X_ter[6:] = 0.0
         # print("X_ter")
@@ -268,7 +293,7 @@ class MpcGaitGen:
         pin_quat = pin.Quaternion(np.array(q[3:7]))
         pin_des_quat = pin.Quaternion(np.array(des_quat))
 
-        omega = pin.log3((pin_des_quat*(pin_quat.inverse())).toRotationMatrix())
+        omega = pin.log3( (pin_des_quat*(pin_quat.inverse())).toRotationMatrix() )
 
         return omega
 
@@ -289,7 +314,7 @@ class MpcGaitGen:
 
         # Optimize Dynamics
         t2 = time.time()
-        com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 150)
+        com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 50)
         t3 = time.time()
 
         self.com_traj.append(com_opt)
@@ -297,8 +322,8 @@ class MpcGaitGen:
         # --- IK Optimization ---
 
         # Add tracking costs from Dynamic optimization
-        self.ik.add_centroidal_momentum_tracking_task(0, self.gait_period, mom_opt[0:int(round(self.gait_period/self.gait_dt))], 1e4, "mom_track", False)
-        self.ik.add_centroidal_momentum_tracking_task(0, self.gait_period, mom_opt[int(round(self.gait_period/self.gait_dt))], 1e2, "mom_track", True) #Final state
+        self.ik.add_centroidal_momentum_tracking_task(0, self.gait_period, mom_opt[0:int(round(self.gait_period/self.gait_dt))], 1e3, "mom_track", False)
+        self.ik.add_centroidal_momentum_tracking_task(0, self.gait_period, mom_opt[int(round(self.gait_period/self.gait_dt))], 1e3, "mom_track", True) #Final state
 
         self.ik.add_com_position_tracking_task(0, self.gait_period, com_opt[0:int(round(self.gait_period/self.gait_dt))], 1e3, "com_track_cost", False)
         self.ik.add_com_position_tracking_task(0, self.gait_period, com_opt[int(round(self.gait_period/self.gait_dt))], 1e4, "com_track_cost", True) #Final State
@@ -310,6 +335,8 @@ class MpcGaitGen:
         print("dyn", t3 - t2)
         print("ik", t5 - t4)
         print("total", t5 - t1)
+        if (t5-t1 > self.planning_time):
+            print("WARNING: total optimization time too slow")
         print("------------------------")
         xs = self.ik.get_xs()
         us = self.ik.get_us()

@@ -21,6 +21,7 @@ PYBIND11_MODULE(biconvex_mpc_cpp, m)
     mp.def("set_contact_plan_2", &motion_planner::BiConvexMP::set_contact_plan_2);
     mp.def("create_contact_array", &motion_planner::BiConvexMP::create_cnt_array);
     mp.def("create_contact_array_2", &motion_planner::BiConvexMP::create_cnt_array_2);
+    mp.def("set_rotation_matrix_f", &motion_planner::BiConvexMP::set_rotation_matrix_f);
     mp.def("return_A_x", &motion_planner::BiConvexMP::return_A_x);
     mp.def("return_b_x", &motion_planner::BiConvexMP::return_b_x);
     mp.def("return_A_f", &motion_planner::BiConvexMP::return_A_f);
@@ -35,6 +36,7 @@ PYBIND11_MODULE(biconvex_mpc_cpp, m)
 
     mp.def("set_warm_start_vars", &motion_planner::BiConvexMP::set_warm_start_vars);
     mp.def("optimize", &motion_planner::BiConvexMP::optimize);
+    mp.def("optimize_osqp", &motion_planner::BiConvexMP::optimize_osqp);
 
     py::class_<dynamics::CentroidalDynamics> dyn (m, "CentroidalDynamics");
     dyn.def(py::init<double, double, double, int>());

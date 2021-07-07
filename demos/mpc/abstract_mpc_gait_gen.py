@@ -51,16 +51,16 @@ class SoloMpcGaitGen:
 
         self.current_contact = np.zeros(4)
 
-        self.wt = [1e3, 1e4]
+        self.wt = [1e4, 1e4]
         self.state_wt = state_wt
         self.x_reg = x_reg
 
         # --- Set up gait parameters ---
         #Bounding
         # self.gait_period = 0.5
-        # self.stance_percent = [0.6, 0.6, 0.6, 0.6]
+        # self.stance_percent = [0.7, 0.7, 0.7, 0.7]
         # self.gait_dt = 0.05
-        # self.phase_offset = [0.0, 0.0, 0.2, 0.2]
+        # self.phase_offset = [0.0, 0.0, 0.1, 0.2]
         # self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
         #                                 np.array(self.phase_offset), self.step_height)
 
@@ -73,20 +73,20 @@ class SoloMpcGaitGen:
         #                                 np.array(self.phase_offset), self.step_height)
 
         # Trot
-        # self.gait_period = 0.5
-        # self.stance_percent = [0.75, 0.75, 0.75, 0.75]
-        # self.gait_dt = 0.05
-        # self.phase_offset = [0.0, 0.5, 0.5, 0.0]
-        # self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
-        #                                 np.array(self.phase_offset), self.step_height)
-
-        #Standing still
         self.gait_period = 0.5
-        self.stance_percent = [0.5, 0.5, 0.5, 0.5]
+        self.stance_percent = [0.75, 0.75, 0.75, 0.75]
         self.gait_dt = 0.05
-        self.phase_offset = [0.4, 0.4, 0.4, 0.4]
+        self.phase_offset = [0.0, 0.5, 0.5, 0.0]
         self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
                                         np.array(self.phase_offset), self.step_height)
+
+        #Standing still
+        # self.gait_period = 0.5
+        # self.stance_percent = [0.5, 0.5, 0.5, 0.5]
+        # self.gait_dt = 0.05
+        # self.phase_offset = [0.4, 0.4, 0.4, 0.4]
+        # self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
+        #                                 np.array(self.phase_offset), self.step_height)
 
         #Different horizon parameterizations; only self.gait_horizon works for now
         self.gait_horizon = 1
@@ -107,7 +107,7 @@ class SoloMpcGaitGen:
         self.W_X_ter = 10*np.array([1e-5, 1e-5, 1e+6, 1e+4, 1e+2, 1e+2, 1e+5, 1e+5, 1e+5])
         self.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
         self.X_nom = np.zeros((9*self.horizon))
-        self.nom_ht = 0.25
+        self.nom_ht = 0.22
 
         # Set up constraints for Dynamics
         self.bx = 0.25

@@ -81,6 +81,12 @@ class BiConvexMP{
         void set_bounds_f(Eigen::VectorXd lb, Eigen::VectorXd ub) 
                 {prob_data_f.lb_ = lb; prob_data_f.ub_ = ub;}
 
+        void set_rotation_matrix_f(Eigen::MatrixXd rot_matrix)
+        {
+            prob_data_f.rotation_matrices.push_back(rot_matrix);
+            prob_data_f.rotation_matrices_trans.push_back(rot_matrix.transpose());
+        }
+
         void optimize(Eigen::VectorXd x_init, int no_iters);
 
         void optimize_osqp(Eigen::VectorXd x_init, int no_iters);
@@ -137,8 +143,9 @@ class BiConvexMP{
         // tolerance for exiting biconvex
         double exit_tol = 1e-3;
 
-        int horizon_ = 0.0;
-        int dt_ = 0.0;
+        int horizon_ = 0;
+        double dt_ = 0.0;
+        int n_eff_ = 0;
         
         // problem data for x optimization (Used in optimization for Forces)
         function::ProblemData prob_data_x;

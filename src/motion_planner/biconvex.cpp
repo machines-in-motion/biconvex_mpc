@@ -4,15 +4,15 @@
 namespace motion_planner{
 
     BiConvexMP::BiConvexMP(double m, double dt, double T, int n_eff):
-        m_(m), centroidal_dynamics(m, dt, T, n_eff), 
-        prob_data_x(9, int(T/dt)+1), prob_data_f(3*n_eff, int(T/dt)), 
+        m_(m), n_eff_(n_eff), centroidal_dynamics(m, dt, T, n_eff),
+        prob_data_x(9, int(ceil(T/dt))+1), prob_data_f(3*n_eff, int(ceil(T/dt))),
         fista_x(), fista_f(){
-            horizon_ = T;
             dt_ = dt;
+            horizon_ = int(ceil(T/dt_));
 
-            dyn_violation.resize(9*(int (T/dt)+1)); 
+            dyn_violation.resize(9*(int (ceil(T/dt))+1));
             dyn_violation.setZero();
-            P_k_.resize(9*(int (T/dt)+1)); 
+            P_k_.resize(9*(int (ceil(T/dt))+1));
             P_k_.setZero();
 
             // setting starting line search params
@@ -23,16 +23,38 @@ namespace motion_planner{
             fista_f.set_soc_true();
 
             //Set number of variables and constraints for osqp-eigen
-            #ifdef USE_OSQP
-                //osqp_x();
-                //osqp_f();
-                std::cout << "OSQP found" << std::endl;
-                osqp_x.data()->setNumberOfVariables(9*(int (T/dt)+1));
-                osqp_x.data()->setNumberOfConstraints( 2 * 9*(int (T/dt)+1));
+            Eigen::SparseMatrix<double> constraintMatF =
+                    Eigen::MatrixXd::Identity(3*n_eff_* horizon_, 3*n_eff_* horizon_).sparseView();
+            Eigen::SparseMatrix<double> constraintMatX =
+                    Eigen::MatrixXd::Identity(9*(horizon_+1), 9*(horizon_+1)).sparseView();
 
-                osqp_f.data()->setNumberOfVariables(3*n_eff*int (T/dt));
-                osqp_f.data()->setNumberOfConstraints(2 * 3*n_eff*int (T/dt));
+            #ifdef USE_OSQP
+                osqp_x.data()->setNumberOfVariables(9*(horizon_+1));
+                osqp_x.data()->setNumberOfConstraints(9*(horizon_+1));
+
+                osqp_x.data()->setLinearConstraintsMatrix(constraintMatX);
+                osqp_x.data()->setLowerBound(prob_data_x.lb_);
+                osqp_x.data()->setUpperBound(prob_data_x.ub_);
+                osqp_x.settings()->setAbsoluteTolerance(1e-5);
+                osqp_x.settings()->setRelativeTolerance(1e-5);
+                //osqp_x.settings()->setMaxIteration(25);
+                osqp_x.settings()->setScaling(0);
+                osqp_x.settings()->setWarmStart(true);
+                osqp_x.settings()->setVerbosity(false);
+
+                osqp_f.data()->setNumberOfVariables(3*n_eff_* horizon_);
+                osqp_f.data()->setNumberOfConstraints(3*n_eff_*horizon_);
+                osqp_f.data()->setLinearConstraintsMatrix(constraintMatF);
+                osqp_f.data()->setLowerBound(prob_data_f.lb_);
+                osqp_f.data()->setUpperBound(prob_data_f.ub_);
+                osqp_f.settings()->setAbsoluteTolerance(1e-5);
+                osqp_f.settings()->setRelativeTolerance(1e-5);
+                //osqp_f.settings()->setMaxIteration(25);
+                osqp_f.settings()->setScaling(0);
+                osqp_f.settings()->setWarmStart(true);
+                osqp_f.settings()->setVerbosity(false);
             #endif
+
     };
 
     void BiConvexMP::optimize(Eigen::VectorXd x_init, int num_iters){
@@ -44,25 +66,16 @@ namespace motion_planner{
             //maxit = init_maxit/(int(i)/10 + 1);
 
             // optimizing for F
-            // std::cout << "optimizing F..." << std::endl;
             centroidal_dynamics.compute_x_mat(prob_data_x.x_k);
             prob_data_f.set_data(centroidal_dynamics.A_x, centroidal_dynamics.b_x, P_k_, rho_);
             fista_f.optimize(prob_data_f, maxit, tol);
 
             // optimizing for X
-            // std::cout << "optimizing X..." << std::endl;
             centroidal_dynamics.compute_f_mat(prob_data_f.x_k);
             prob_data_x.set_data(centroidal_dynamics.A_f, centroidal_dynamics.b_f, P_k_, rho_);
             fista_x.optimize(prob_data_x, maxit, tol);
 
             dyn_violation = centroidal_dynamics.A_f * prob_data_x.x_k - centroidal_dynamics.b_f;
-//            std::cout << "Equations: " << std::endl;
-//            std::cout << centroidal_dynamics.A_x * prob_data_f.x_k << std::endl;
-//            std::cout << "Printing lengths: " << std::endl;
-//            for (unsigned j = 0; j < 4; ++j) {
-//                std::cout << centroidal_dynamics.A_x.coeffRef(9 * 0 + 6, 3 * 4 * 0 + 3 * j + 2) << std::endl;
-//            }
-//            std::cout << prob_data_f.x_k.segment(0,12) << std::endl;
             P_k_ += dyn_violation;
             //Keep track of any statistics that may be useful
             if (log_statistics) {
@@ -71,56 +84,72 @@ namespace motion_planner{
             }
 
             if (dyn_violation.norm() < exit_tol){
-                // std::cout << "breaking outerloop due to norm ..." << std::endl;
+                // std::cout << "breaking outer loop due to norm ..." << std::endl;
                 break;
             };
         }
         // std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }
 
-    void BiConvexMP::optimize_osqp(Eigen::VectorXd x_init, int num_iters){
-        // updating x_init
-        centroidal_dynamics.update_x_init(x_init);
+    #ifdef USE_OSQP
+        void BiConvexMP::optimize_osqp(Eigen::VectorXd x_init, int num_iters){
+            // updating x_init
 
-        for (unsigned i = 0; i < num_iters; ++i){
-            // optimizing for F
-            centroidal_dynamics.compute_x_mat(prob_data_x.x_k);
-            prob_data_f.set_data(centroidal_dynamics.A_x, centroidal_dynamics.b_x, P_k_, rho_);
+            centroidal_dynamics.update_x_init(x_init);
 
-            #ifdef USE_OSQP
-                osqp_f.data()->setHessianMatrix(prob_data_f.ATA_);
-                osqp_f.data()->setGradient(prob_data_f.ATbPk_);
-                osqp_f.data()->setLowerBound(prob_data_f.lb_);
-                osqp_f.data()->setUpperBound(prob_data_f.ub_);
-            #endif
+            for (unsigned i = 0; i < num_iters; ++i){
+                // optimizing for F
+                centroidal_dynamics.compute_x_mat(prob_data_x.x_k);
+                prob_data_f.set_data(centroidal_dynamics.A_x, centroidal_dynamics.b_x, P_k_, rho_);
 
-            // optimizing for X
-            centroidal_dynamics.compute_f_mat(prob_data_f.x_k);
-            prob_data_x.set_data(centroidal_dynamics.A_f, centroidal_dynamics.b_f, P_k_, rho_);
+                if (i == 0) {
+                    osqp_f.data()->setHessianMatrix(prob_data_f.ATA_);
+                    osqp_f.data()->setGradient(prob_data_f.ATbPk_);
+                    osqp_f.initSolver();
+                }
+                else {
+                    osqp_f.updateHessianMatrix(prob_data_f.ATA_);
+                    osqp_f.updateGradient(prob_data_f.ATbPk_);
+                }
+                osqp_f.solve();
+                prob_data_f.x_k = osqp_f.getSolution();
 
-            #ifdef USE_OSQP
-                osqp_x.data()->setHessianMatrix(prob_data_x.ATA_);
-                osqp_x.data()->setGradient(prob_data_x.ATbPk_);
-                osqp_x.data()->setLowerBound(prob_data_x.lb_);
-                osqp_x.data()->setUpperBound(prob_data_x.ub_);
-            #endif
+                // optimizing for X
+                centroidal_dynamics.compute_f_mat(prob_data_f.x_k);
+                prob_data_x.set_data(centroidal_dynamics.A_f, centroidal_dynamics.b_f, P_k_, rho_);
 
-            dyn_violation = centroidal_dynamics.A_f * prob_data_x.x_k - centroidal_dynamics.b_f;
-            P_k_ += dyn_violation;
+                if (i == 0) {
+                    osqp_x.data()->setHessianMatrix(prob_data_x.ATA_);
+                    osqp_x.data()->setGradient(prob_data_x.ATbPk_);
+                    osqp_x.initSolver();
+                }
+                else {
+                    osqp_x.updateHessianMatrix(prob_data_x.ATA_);
+                    osqp_x.updateGradient(prob_data_x.ATbPk_);
+                }
+                osqp_x.solve();
+                prob_data_x.x_k = osqp_x.getSolution();
 
-            //Keep track of any statistics that may be useful
-            if (log_statistics) {
-                dyn_violation_hist_.push_back(dyn_violation.norm());
-                std::cout << dyn_violation.norm() << std::endl;
+                //Calculate dynamic violation
+                dyn_violation = centroidal_dynamics.A_f * prob_data_x.x_k - centroidal_dynamics.b_f;
+                P_k_ += dyn_violation;
+
+                //Keep track of any statistics that may be useful
+                if (log_statistics) {
+                    dyn_violation_hist_.push_back(dyn_violation.norm());
+                    std::cout << dyn_violation.norm() << std::endl;
+                }
+
+                if (dyn_violation.norm() < exit_tol){
+                    // std::cout << "breaking outerloop due to norm ..." << std::endl;
+                    //std::cout << "Optimizer finished after " << i << " iterations" << std::endl;
+                    break;
+                };
             }
-
-            if (dyn_violation.norm() < exit_tol){
-                // std::cout << "breaking outerloop due to norm ..." << std::endl;
-                break;
-            };
+            //std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
         }
-        // std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
-    }
+    #endif
+
 
     void BiConvexMP::update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter_nrml) {
         //Change for loop to prob_data_x.num_vars_ - (2*prob_data.x.state)

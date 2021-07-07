@@ -11,7 +11,7 @@ namespace function
 class ProblemData 
     {
     public:
-        ProblemData(int num_vars, int horizon);
+        ProblemData(int state, int horizon);
 
         // this sets the data for the optimization problem
         void set_data(Eigen::SparseMatrix<double> A, Eigen::VectorXd b, 
@@ -21,6 +21,11 @@ class ProblemData
         void set_cost(Eigen::SparseMatrix<double> Q, Eigen::VectorXd q){
             Q_ = Q; q_ = q;
         }
+
+        void resize_rotation_vector(const int length) {
+            rotation_matrices.resize(length);
+            rotation_matrices_trans.resize(length);
+        };
 
         //Compute cost function for given x
         double compute_obj(Eigen::VectorXd x_k);
@@ -40,6 +45,13 @@ class ProblemData
 
         Eigen::VectorXd lb_;
         Eigen::VectorXd ub_;
+
+        Eigen::VectorXd lb_rotated_;
+        Eigen::VectorXd ub_rotated_;
+
+        std::vector<Eigen::Matrix3d> rotation_matrices;
+        std::vector<Eigen::Matrix3d> rotation_matrices_trans;
+
         Eigen::VectorXd P_k_; //Dynamic Violation
 
         Eigen::SparseMatrix<double> Q_;

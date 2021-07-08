@@ -14,24 +14,27 @@ trot = BiconvexMotionParams("solo12", "Trot")
 
 # Cnt
 trot.gait_period = 0.5
-trot.stance_percent = [0.75, 0.75, 0.75, 0.75]
+trot.stance_percent = [0.6, 0.6, 0.6, 0.6]
 trot.gait_dt = 0.05
-trot.phase_offset = [0.0, 0.5, 0.5, 0.0]
+trot.phase_offset = [0.0, 0.4, 0.4, 0.0]
 
 # IK
-trot.state_wt = np.array([0., 0, 1000] + [100] * 3 + [2.0] * (pin_robot.model.nv - 6) \
+trot.state_wt = 0*np.array([0., 0, 100] + [300] * 3 + [2.0] * (pin_robot.model.nv - 6) \
                         + [0.00] * 3 + [500] * 3 + [10.0] *(pin_robot.model.nv - 6))
-trot.swing_wt = [1e2,5e3]
-trot.cent_wt = [1e3, 1e1]
+
+trot.ctrl_wt = [100.0] * 3 + [200, 1000, 200] + [5.0] *(pin_robot.model.nv - 6)
+
+trot.swing_wt = [1e3,1e3]
+trot.cent_wt = [1e2, 1e1]
 trot.step_ht = 0.08
 trot.nom_ht = 0.22
-trot.reg_wt = [5e-3, 7e-4]
+trot.reg_wt = [5e-3, 1e-3]
 
 # Dyn 
 trot.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+2, 1e+2, 1e+3, 1e+4, 1e+4, 1e4])
 trot.W_X_ter = 10*np.array([1e-5, 1e-5, 1e+4, 1e+2, 1e+2, 1e+3, 1e+5, 1e+5, 1e+5])
 trot.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
-trot.nom_ht = 0.25
+trot.nom_ht = 0.2
 trot.rho = 5e+4
 trot.ori_correction = [0.5, 0.5, 0.5]
 

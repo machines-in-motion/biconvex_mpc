@@ -34,6 +34,7 @@ class BiconvexMotionParams:
         self.cent_wt = np.zeros(2)
 
         self.state_wt = None
+        self.ctrl_wt = None
 
         ## Gains
         self.kp = None

@@ -69,6 +69,8 @@ class SoloMpcGaitGen:
         self.cent_wt = self.params.cent_wt # centeroidal cost
         
         self.state_wt = self.params.state_wt
+        self.ctrl_wt = self.params.ctrl_wt
+
         self.x_reg = x_reg
         self.reg_wt = self.params.reg_wt
 
@@ -197,11 +199,11 @@ class SoloMpcGaitGen:
                             self.cnt_plan[i][j][3] += self.foot_size
 
                     else:
-                        self.curr_cnt[j] += 4
+                        self.curr_cnt[j] += 1/(1 - self.params.stance_percent[j])
                         self.cnt_plan[i][j][0] = 0
                         self.cnt_plan[i][j][1:3] = com + self.offsets[j] + v_des[0:2]*self.curr_cnt[j]*self.gait_dt
                         self.cnt_plan[i][j][3] += self.foot_size
-
+        
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, t):
@@ -231,9 +233,11 @@ class SoloMpcGaitGen:
                                                               "via_" + str(0) + self.eff_names[j], i)
 
         self.ik.add_state_regularization_cost(0, self.ik_horizon, self.reg_wt[0], "xReg", self.state_wt, self.x_reg, False)
-        self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.reg_wt[1], "uReg", False)
+        # self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.reg_wt[1], "uReg", False)
+        self.ik.add_ctrl_regularization_cost_2(0, self.ik_horizon, self.reg_wt[1], "uReg", self.ctrl_wt, np.zeros(self.rmodel.nv), False)
         self.ik.add_state_regularization_cost(0, self.ik_horizon, self.reg_wt[0], "xReg", self.state_wt, self.x_reg, True)
-        self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.reg_wt[1], "uReg", True)
+        # self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.reg_wt[1], "uReg", True)
+        self.ik.add_ctrl_regularization_cost_2(0, self.ik_horizon, self.reg_wt[1], "uReg", self.ctrl_wt, np.zeros(self.rmodel.nv), True)
 
         self.ik.setup_costs()
 

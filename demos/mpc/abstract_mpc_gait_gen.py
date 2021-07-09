@@ -51,17 +51,18 @@ class SoloMpcGaitGen:
             self.offsets[i] = self.rdata.oMf[self.rmodel.getFrameId(self.hip_names[i])].translation[0:2] - com_init[0:2].copy()
 
         self.offsets[0][0] += 0.00
-        self.offsets[0][1] += 0.05
+        self.offsets[0][1] += 0.04
         
         self.offsets[1][0] += 0.0
-        self.offsets[1][1] -= 0.05
+        self.offsets[1][1] -= 0.04
         
         self.offsets[2][0] += 0.00
-        self.offsets[2][1] += 0.05
+        self.offsets[2][1] += 0.04
         
         self.offsets[3][0] += 0.00
-        self.offsets[3][1] -= 0.05
+        self.offsets[3][1] -= 0.04
 
+        self.apply_offset = True
 
         self.current_contact = np.zeros(4)
 
@@ -171,7 +172,7 @@ class SoloMpcGaitGen:
 
         com = pin.centerOfMass(self.rmodel, self.rdata, q, v)[0:2]
         self.cnt_plan = np.zeros((self.horizon, len(self.eff_names), 4))
-        self.prev_cnt = np.zeros((len(self.eff_names), 4))
+        self.prev_cnt = np.zeros((len(self.eff_names), 3))
         self.curr_cnt = np.zeros(len(self.eff_names))
         # Contact Plan Matrix: horizon x num_eef x 4: The '4' gives the contact plan and location:
         # i.e. the last vector should be [1/0, x, y, z] where 1/0 gives a boolean for contact (1 = contact, 0 = no cnt)
@@ -182,9 +183,11 @@ class SoloMpcGaitGen:
                     if self.gait_planner.get_phase(t, j) == 1:
                         self.cnt_plan[i][j][0] = 1
                         self.cnt_plan[i][j][1:4] = self.rdata.oMf[self.ee_frame_id[j]].translation
+                        self.prev_cnt[j] = self.cnt_plan[i][j][1:4]
                     else:
                         self.cnt_plan[i][j][0] = 0
                         self.cnt_plan[i][j][1:4] = self.rdata.oMf[self.ee_frame_id[j]].translation
+                        #     self.cnt_plan[i][j][1:3] += self.offsets[j]
 
                 else:
                     #All other time steps
@@ -195,15 +198,29 @@ class SoloMpcGaitGen:
                         if self.cnt_plan[i-1][j][0] == 1:
                             self.cnt_plan[i][j][1:4] = self.cnt_plan[i-1][j][1:4]
                         else:
-                            self.cnt_plan[i][j][1:3] = com + self.offsets[j] + v_des[0:2]*self.curr_cnt[j]*self.gait_dt
-                            self.cnt_plan[i][j][3] += self.foot_size
+                            # self.curr_cnt[j] += 1/(1 - self.params.stance_percent[j])
+                            # self.cnt_plan[i][j][1:3] = com + self.offsets[j] + 1.0*v_des[0:2]*self.curr_cnt[j]*self.gait_dt
+                            hip_loc = com + self.offsets[j] + i*self.params.gait_dt*v_des[0:2]
+                            tmp = 0.5*v_des*self.params.gait_period*self.params.stance_percent[j]
+                            self.cnt_plan[i][j][1:3] = tmp[0:2] + hip_loc
+                            self.cnt_plan[i][j][3] = self.foot_size
 
-                    else:
-                        self.curr_cnt[j] += 1/(1 - self.params.stance_percent[j])
+                        self.prev_cnt[j] = self.cnt_plan[i][j][1:4]
+
+                    else:                            
                         self.cnt_plan[i][j][0] = 0
-                        self.cnt_plan[i][j][1:3] = com + self.offsets[j] + v_des[0:2]*self.curr_cnt[j]*self.gait_dt
-                        self.cnt_plan[i][j][3] += self.foot_size
-        
+                        per_ph = np.round(self.gait_planner.get_percent_in_phase(ft, j), 3)
+                        hip_loc = com + self.offsets[j] + i*self.params.gait_dt*v_des[0:2]
+                        if per_ph < 0.5:
+                            self.cnt_plan[i][j][1:3] = (0.5 - per_ph)*(hip_loc - self.prev_cnt[j][0:2]) + hip_loc
+                        else:
+                            tmp = 0.5*v_des*self.params.gait_period*self.params.stance_percent[j]
+                            self.cnt_plan[i][j][1:3] = (per_ph - 0.5)*tmp[0:2] + hip_loc
+
+                        # self.curr_cnt[j] += 1/(1 - self.params.stance_percent[j])
+                        # self.cnt_plan[i][j][1:3] = com + self.offsets[j] + 1.0*v_des[0:2]*self.curr_cnt[j]*self.gait_dt
+                        self.cnt_plan[i][j][3] = self.foot_size
+
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, t):

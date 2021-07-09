@@ -37,12 +37,12 @@ dt = 5e-2
 
 n_eff = 4
 q0 = np.array(Solo12Config.initial_configuration)
-# q0[7:13] = 2 * [0.0, -0.8, 1.6]
+# q0[13:] = 2 * [0.0, 0.8, -1.6]
 
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.2,0.0, 0])
+v_des = np.array([0.3,0.0, 0])
 step_height = gait_params.step_ht
 
 plan_freq = 0.05 # sec
@@ -54,7 +54,7 @@ gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, gait_params, x0, plan_freq, q0)
 # while True:
 
 sim_t = 0.0
-step_t = 0
+step_t = 0.0
 sim_dt = .001
 index = 0
 pln_ctr = 0
@@ -81,6 +81,9 @@ for o in range(int(50*(gait_time/sim_dt))):
         pr_et = time.time()
         # print("time", pr_et - pr_st)
     
+    # if np.round(step_t,3) == 0:
+    #     print(gg.cnt_plan)
+    #     print("-------------------------------")
     # update of plan
     # first loop assume that trajectory is planned
     if o < int(plan_freq/sim_dt):
@@ -103,8 +106,17 @@ for o in range(int(50*(gait_time/sim_dt))):
     dq_des = xs[index][pin_robot.model.nq:].copy()
     robot.send_joint_command(q_des, dq_des, us[index], f[index], contact_configuration)
     sim_t += sim_dt
-
     step_t = (step_t + sim_dt)%gait_time
+    # if o == 3*(gait_time/sim_dt):
+    #     print("v_des updated")
+    #     v_des = np.array([0.4,0.0, 0])
+    # if o == 8*(gait_time/sim_dt):
+    #     print("v_des updated")
+    #     v_des = np.array([0.5,0.0, 0])
+    # if o == 12*(gait_time/sim_dt):
+    #     print("v_des updated")
+    #     v_des = np.array([0.6,0.0, 0])
+
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
 

@@ -6,14 +6,14 @@ project(biconvex_mpc VERSION 0.0.1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-##Configure packages
+#Configure packages
 find_package(pybind11 CONFIG REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 # robot packages
 find_package(pinocchio REQUIRED)
 find_package(crocoddyl REQUIRED)
-find_package(Python REQUIRED
+find_package(Python REQUIRED)
 
 # for benchmarking
 if ( OSQP )

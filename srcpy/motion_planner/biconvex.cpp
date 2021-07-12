@@ -36,8 +36,9 @@ PYBIND11_MODULE(biconvex_mpc_cpp, m)
 
     mp.def("set_warm_start_vars", &motion_planner::BiConvexMP::set_warm_start_vars);
     mp.def("optimize", &motion_planner::BiConvexMP::optimize);
-    mp.def("optimize_osqp", &motion_planner::BiConvexMP::optimize_osqp);
-
+    #ifdef USE_OSQP
+        mp.def("optimize_osqp", &motion_planner::BiConvexMP::optimize_osqp);
+    #endif
     py::class_<dynamics::CentroidalDynamics> dyn (m, "CentroidalDynamics");
     dyn.def(py::init<double, double, double, int>());
     dyn.def("create_contact_array", &dynamics::CentroidalDynamics::create_contact_array);

@@ -50,4 +50,28 @@ namespace ik{
         }
     };
 
+    void InverseKinematics::add_ctrl_regularization_cost_2(double st, double et, double wt, 
+                                                        std::string cost_name,  Eigen::VectorXd controlWeights, 
+                                                        Eigen::VectorXd u_reg, bool isTerminal)
+    {
+        if (!isTerminal){
+            sn = st/dt_; 
+            en = et/dt_;                            
+            for (unsigned i = sn; i < en; ++i){
+                boost::shared_ptr<crocoddyl::ActivationModelAbstract> control_activation =
+                    boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(controlWeights);
+                boost::shared_ptr<crocoddyl::CostModelAbstract> ctrl_reg =
+                    boost::make_shared<crocoddyl::CostModelControl>(state_, control_activation, u_reg);
+                rcost_arr_[i].get()->addCost(cost_name,ctrl_reg, wt);
+            }
+        }
+        else{
+                boost::shared_ptr<crocoddyl::ActivationModelAbstract> control_activation =
+                    boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(controlWeights);
+                boost::shared_ptr<crocoddyl::CostModelAbstract> ctrl_reg =
+                    boost::make_shared<crocoddyl::CostModelControl>(state_, control_activation, u_reg);
+                tcost_model_->addCost(cost_name,ctrl_reg, wt);
+        }
+    };
+
 }

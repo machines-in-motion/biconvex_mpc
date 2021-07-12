@@ -15,7 +15,7 @@ class RegularizationCosts:
             ## class
         pass
 
-    def add_state_regularization_cost(self, st, et, wt, cost_name, stateWeights, xreg):
+    def add_state_regularization_cost(self, st, et, wt, cost_name, stateWeights, xreg, isTerminal = False):
         """
         This funtions adds regularization cost on the state
         Input:
@@ -33,7 +33,7 @@ class RegularizationCosts:
 
             self.rcost_model_arr[i].addCost(cost_name+str(i), xRegCost, wt)
         
-    def add_ctrl_regularization_cost(self, st, et, wt, cost_name):
+    def add_ctrl_regularization_cost(self, st, et, wt, cost_name, isTerminal = False):
         """
         This funtions adds regularization cost on the control
         Input:

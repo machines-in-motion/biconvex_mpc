@@ -42,7 +42,7 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.3,0.0, 0])
+v_des = np.array([0.5,0.0, 0])
 step_height = gait_params.step_ht
 
 plan_freq = 0.05 # sec

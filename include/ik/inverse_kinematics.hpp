@@ -12,7 +12,9 @@
 #include "pinocchio/multibody/data.hpp"
 
 #include "crocoddyl/core/fwd.hpp"
+#include "crocoddyl/multibody/actuations/full.hpp"
 #include "crocoddyl/multibody/actuations/floating-base.hpp"
+
 #include "crocoddyl/core/integrator/euler.hpp"
 #include <crocoddyl/core/solver-base.hpp>
 #include "crocoddyl/core/optctrl/shooting.hpp"
@@ -29,6 +31,9 @@
 #include "crocoddyl/core/costs/control.hpp"
 
 #include "ik/action_model.hpp"
+
+// to be removed
+#include <crocoddyl/multibody/actions/free-fwddyn.hpp>
 
 
 
@@ -93,7 +98,8 @@ namespace ik{
             // crocoddyl state 
             boost::shared_ptr<crocoddyl::StateMultibody> state_;
             // crocoddyl 
-            boost::shared_ptr<crocoddyl::ActuationModelFloatingBase> actuation_;
+            // boost::shared_ptr<crocoddyl::ActuationModelFloatingBase> actuation_;
+            boost::shared_ptr<crocoddyl::ActuationModelFull> actuation_;
 
             // running cost model array
             std::vector<boost::shared_ptr<crocoddyl::CostModelSum>> rcost_arr_;

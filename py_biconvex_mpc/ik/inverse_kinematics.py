@@ -27,7 +27,11 @@ class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks
         self.rdata = rmodel.createData()
 
         self.state = crocoddyl.StateMultibody(rmodel)
-        self.actuation = crocoddyl.ActuationModelFloatingBase(self.state)
+        # self.actuation = crocoddyl.ActuationModelFloatingBase(self.state)
+        # print("floating model")
+        self.actuation = crocoddyl.ActuationModelFull(self.state)
+        print("full model")
+
         self.dt = dt
         self.T = T
         self.N = int(T/dt)
@@ -74,5 +78,10 @@ class InverseKinematics(EndEffectorTasks, RegularizationCosts, CenterOfMassTasks
         et = time.time()
         print("net time:", et - st)
         self.opt_sol = ddp.xs
+        self.us = ddp.us
 
-        return self.opt_sol, ddp.us
+    def get_xs(self):
+        return self.opt_sol
+
+    def get_us(self):
+        self.us

@@ -6,8 +6,8 @@ import numpy as np
 import pinocchio as pin
 import crocoddyl
 
-# from py_biconvex_mpc.ik.inverse_kinematics import InverseKinematics
-from inverse_kinematics_cpp import InverseKinematics
+from py_biconvex_mpc.ik.inverse_kinematics import InverseKinematics
+# from inverse_kinematics_cpp import InverseKinematics
 
 
 class GaitGenerator:
@@ -25,8 +25,8 @@ class GaitGenerator:
 
         self.rmodel = robot.model
         self.rdata = robot.data
-        self.ik = InverseKinematics(r_urdf, dt, T)
-        # self.ik = InverseKinematics(self.rmodel, dt, T)
+        # self.ik = InverseKinematics(r_urdf, dt, T)
+        self.ik = InverseKinematics(self.rmodel, dt, T)
 
         self.t = 0
         self.T = T
@@ -104,8 +104,8 @@ class GaitGenerator:
         self.ik.add_state_regularization_cost(0, self.T, wt_xreg, "xReg", state_wt, x_reg, False)
         self.ik.add_ctrl_regularization_cost(0, self.T, wt_ureg, "uReg", False)
 
-        self.ik.add_state_regularization_cost(0, self.T, wt_xreg, "xReg", state_wt, x_reg, True)
-        self.ik.add_ctrl_regularization_cost(0, self.T, wt_ureg, "uReg", True)
+        # self.ik.add_state_regularization_cost(0, self.T, wt_xreg, "xReg", state_wt, x_reg, True)
+        # self.ik.add_ctrl_regularization_cost(0, self.T, wt_ureg, "uReg", True)
 
         self.ik.setup_costs()
         

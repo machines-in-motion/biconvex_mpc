@@ -6,34 +6,24 @@ project(biconvex_mpc VERSION 0.0.1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/python3.8/dist-packages/")
-list(APPEND CMAKE_PREFIX_PATH "/home/ameduri/.local/lib/python3.8/site-packages")
-
-set (python_install_dir "/usr/local/lib/python3.8/dist-packages/")
-#set(PYTHON_EXECUTABLE /home/pshah/anaconda3/envs/mpc_environment/bin/python)
-# set(PYTHON_LIBRARIES "/home/pshah/anaconda3/)
-
-##Configure packages
+#Configure packages
 find_package(pybind11 CONFIG REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 # robot packages
 find_package(pinocchio REQUIRED)
 find_package(crocoddyl REQUIRED)
-# find_package(Python REQUIRED)
+find_package(Python REQUIRED)
 
 # for benchmarking
 if ( OSQP )
+    message("Building with OSQP")
     find_package(OsqpEigen REQUIRED)
 endif()
 
 # TODO: Create individual directories for each sub-module (i.e. optimizer, etc.)
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
-#  ${CMAKE_CURRENT_SOURCE_DIR}/include/motion_planner/
-#  ${CMAKE_CURRENT_SOURCE_DIR}/include/dynamics/
-#  ${CMAKE_CURRENT_SOURCE_DIR}/include/ik/
-
 )
 
 add_library(${PROJECT_NAME} SHARED
@@ -51,13 +41,13 @@ add_library(${PROJECT_NAME} SHARED
     )
 
 target_link_libraries(biconvex_mpc Eigen3::Eigen)
+target_link_libraries(biconvex_mpc pinocchio::pinocchio)
+target_link_libraries(biconvex_mpc crocoddyl::crocoddyl)
+
 if ( OsqpEigen_FOUND )
     target_link_libraries(biconvex_mpc OsqpEigen::OsqpEigen)
     target_compile_definitions(biconvex_mpc PUBLIC USE_OSQP="True")
 endif()
-
-target_link_libraries(biconvex_mpc pinocchio::pinocchio)
-target_link_libraries(biconvex_mpc crocoddyl::crocoddyl)
 
 #Pybind setup
 pybind11_add_module(biconvex_mpc_cpp MODULE srcpy/motion_planner/biconvex.cpp)
@@ -72,12 +62,6 @@ pybind11_add_module(gait_planner_cpp MODULE srcpy/gait_planner/py_gait_planner.c
 target_include_directories(gait_planner_cpp PRIVATE ${EIGEN3_INCLUDE_DIR})
 #target_link_directories(gait_planner_cpp PRIVATE pybind11::module)
 target_link_libraries(gait_planner_cpp PRIVATE biconvex_mpc)
-
-#Adding some test function for c++ testing
-add_executable(test_ik src/test_ik.cpp)
-add_dependencies(test_ik biconvex_mpc)
-target_link_libraries(test_ik PUBLIC biconvex_mpc)
-install(TARGETS test_ik DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 
 #Install PyBind library
 install(TARGETS biconvex_mpc_cpp LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})

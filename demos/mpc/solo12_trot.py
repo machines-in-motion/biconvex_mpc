@@ -13,7 +13,7 @@ from py_biconvex_mpc.ik_utils.gait_generator import GaitGenerator
 from robot_properties_solo.config import Solo12Config
 from abstract_mpc_gait_gen import SoloMpcGaitGen
 
-from solo12_gait_params import trot, walk
+from solo12_gait_params import trot, walk, bound
 
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 
@@ -26,7 +26,7 @@ import subprocess
 time.sleep(2)
 
 ## Motion
-gait_params = trot
+gait_params = bound
 
 ## robot config and init
 
@@ -42,14 +42,13 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.5,0.0, 0])
+v_des = np.array([0.0,0.0, 0])
 step_height = gait_params.step_ht
 
 plan_freq = 0.05 # sec
 update_time = 0.02 # sec (time of lag)
 
 gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, gait_params, x0, plan_freq, q0)
-# gg.update_params(swing_wt = [1e2,5e3], cent_wt= [1e3, 1e1], nom_ht = 0.2)
 
 # while True:
 
@@ -72,6 +71,7 @@ for o in range(int(50*(gait_time/sim_dt))):
     # this bit has to be put in shared memory
     if pln_ctr == 0:
         q, v = robot.get_state()        
+        # print(v[0:2])
         contact_configuration = robot.get_current_contacts()
         pr_st = time.time()
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(step_t,3), v_des, gait_params.step_ht, contact_configuration)
@@ -107,15 +107,9 @@ for o in range(int(50*(gait_time/sim_dt))):
     robot.send_joint_command(q_des, dq_des, us[index], f[index], contact_configuration)
     sim_t += sim_dt
     step_t = (step_t + sim_dt)%gait_time
-    # if o == 3*(gait_time/sim_dt):
-    #     print("v_des updated")
-    #     v_des = np.array([0.4,0.0, 0])
-    # if o == 8*(gait_time/sim_dt):
-    #     print("v_des updated")
-    #     v_des = np.array([0.5,0.0, 0])
-    # if o == 12*(gait_time/sim_dt):
-    #     print("v_des updated")
-    #     v_des = np.array([0.6,0.0, 0])
+    if o == 4*(gait_time/sim_dt):
+        print("v_des updated")
+        v_des = np.array([-0.5,0.0, 0])
 
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1

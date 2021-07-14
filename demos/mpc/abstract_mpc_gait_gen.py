@@ -49,6 +49,7 @@ class SoloMpcGaitGen:
         for i in range(len(self.eff_names)):
             self.ee_frame_id.append(self.rmodel.getFrameId(self.eff_names[i]))
             self.offsets[i] = self.rdata.oMf[self.rmodel.getFrameId(self.hip_names[i])].translation[0:2] - com_init[0:2].copy()
+            self.offsets[i] = np.round(self.offsets[i], 3)
 
         self.offsets[0][0] += 0.00
         self.offsets[0][1] += 0.04
@@ -76,17 +77,6 @@ class SoloMpcGaitGen:
         self.reg_wt = self.params.reg_wt
 
         # --- Set up gait parameters ---
-        #Bounding
-        # self.gait_period = 0.5
-        # self.stance_percent = [0.8, 0.8, 0.8, 0.8]
-        # self.gait_dt = 0.05
-        # self.phase_offset = [0.2, 0.2, 0.4, 0.4]
-        # self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
-        #                                 np.array(self.phase_offset), self.step_height)
-
-        #walk gait
-
-        # Trot
         self.gait_period = self.params.gait_period
         self.stance_percent = self.params.stance_percent
         self.gait_dt = self.params.gait_dt
@@ -94,20 +84,12 @@ class SoloMpcGaitGen:
         self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
                                         np.array(self.phase_offset), self.step_height)
 
-        #Standing still
-        # self.gait_period = 0.5
-        # self.stance_percent = [0.5, 0.5, 0.5, 0.5]
-        # self.gait_dt = 0.05
-        # self.phase_offset = [0.4, 0.4, 0.4, 0.4]
-        # self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
-        #                                 np.array(self.phase_offset), self.step_height)
-
         #Different horizon parameterizations; only self.gait_horizon works for now
-        self.gait_horizon = 1.0
+        self.gait_horizon = self.params.gait_horizon
         self.horizon = int(round(self.gait_horizon*self.gait_period/self.gait_dt))
         
         # --- Set up Inverse Kinematics ---
-        self.ik_horizon = 0.5*self.gait_period
+        self.ik_horizon = 0.5*self.gait_horizon*self.gait_period
         self.ik = InverseKinematics(r_urdf, self.gait_dt, self.ik_horizon)
 
         # --- Set up Dynamics ---
@@ -121,15 +103,6 @@ class SoloMpcGaitGen:
         self.W_F = self.params.W_F
         self.X_nom = np.zeros((9*self.horizon))
         self.nom_ht = self.params.nom_ht
-
-        # walk
-
-        # bounding
-        # self.W_X =        np.array([1e-5, 1e-5, 1e+3, 1e+1, 1e+1, 1e+2, 1e+2, 1e+2, 1e+2])
-        # self.W_X_ter = 10*np.array([1e-5, 1e-5, 1e+2, 1e+1, 1e+1, 1e+2, 1e+2, 1e+2, 1e+2])
-        # self.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
-        # self.X_nom = np.zeros((9*self.horizon))
-        # self.nom_ht = 0.22
 
         # Set up constraints for Dynamics
         self.bx = 0.28
@@ -170,7 +143,13 @@ class SoloMpcGaitGen:
         pin.forwardKinematics(self.rmodel, self.rdata, q, v)
         pin.updateFramePlacements(self.rmodel, self.rdata)
 
-        com = pin.centerOfMass(self.rmodel, self.rdata, q, v)[0:2]
+        com = np.round(pin.centerOfMass(self.rmodel, self.rdata, q, v)[0:2], 3)
+        vcom = np.round(v[0:2], 3)
+
+        vtrack = v_des[0:2] # this effects the step location (if set to vcom it becomes raibert)
+        vtrack[1] = vcom[1]
+        # vtrack = vcom[0:2]
+
         self.cnt_plan = np.zeros((self.horizon, len(self.eff_names), 4))
         self.prev_cnt = np.zeros((len(self.eff_names), 3))
         self.curr_cnt = np.zeros(len(self.eff_names))
@@ -182,11 +161,11 @@ class SoloMpcGaitGen:
                 if i == 0:
                     if self.gait_planner.get_phase(t, j) == 1:
                         self.cnt_plan[i][j][0] = 1
-                        self.cnt_plan[i][j][1:4] = self.rdata.oMf[self.ee_frame_id[j]].translation
+                        self.cnt_plan[i][j][1:4] = np.round(self.rdata.oMf[self.ee_frame_id[j]].translation, 3)
                         self.prev_cnt[j] = self.cnt_plan[i][j][1:4]
                     else:
                         self.cnt_plan[i][j][0] = 0
-                        self.cnt_plan[i][j][1:4] = self.rdata.oMf[self.ee_frame_id[j]].translation
+                        self.cnt_plan[i][j][1:4] = np.round(self.rdata.oMf[self.ee_frame_id[j]].translation, 3)
                         #     self.cnt_plan[i][j][1:3] += self.offsets[j]
 
                 else:
@@ -200,8 +179,8 @@ class SoloMpcGaitGen:
                         else:
                             # self.curr_cnt[j] += 1/(1 - self.params.stance_percent[j])
                             # self.cnt_plan[i][j][1:3] = com + self.offsets[j] + 1.0*v_des[0:2]*self.curr_cnt[j]*self.gait_dt
-                            hip_loc = com + self.offsets[j] + i*self.params.gait_dt*v_des[0:2]
-                            tmp = 0.5*v_des*self.params.gait_period*self.params.stance_percent[j]
+                            hip_loc = com + self.offsets[j] + i*self.params.gait_dt*vtrack
+                            tmp = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
                             self.cnt_plan[i][j][1:3] = tmp[0:2] + hip_loc
                             self.cnt_plan[i][j][3] = self.foot_size
 
@@ -210,11 +189,11 @@ class SoloMpcGaitGen:
                     else:                            
                         self.cnt_plan[i][j][0] = 0
                         per_ph = np.round(self.gait_planner.get_percent_in_phase(ft, j), 3)
-                        hip_loc = com + self.offsets[j] + i*self.params.gait_dt*v_des[0:2]
+                        hip_loc = com + self.offsets[j] + i*self.params.gait_dt*vtrack
                         if per_ph < 0.5:
                             self.cnt_plan[i][j][1:3] = (0.5 - per_ph)*(hip_loc - self.prev_cnt[j][0:2]) + hip_loc
                         else:
-                            tmp = 0.5*v_des*self.params.gait_period*self.params.stance_percent[j]
+                            tmp = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.5*(vtrack - v_des[0:2])
                             self.cnt_plan[i][j][1:3] = (per_ph - 0.5)*tmp[0:2] + hip_loc
 
                         # self.curr_cnt[j] += 1/(1 - self.params.stance_percent[j])

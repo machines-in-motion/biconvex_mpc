@@ -67,8 +67,22 @@ terrain_size = 20.0
 terrain_samples = 5
 terrain = np.zeros((terrain_samples, terrain_samples))
 terrain[1, 1] = 0.5
-robot.create_height_map(terrain_size, terrain_samples, terrain)
+#robot.create_height_map(terrain_size, terrain_samples, terrain)
 
+# Perlin Height Map
+
+terrain = raisim.TerrainProperties()
+terrain.frequency = 0.2
+terrain.zScale = 0.02
+terrain.xSize = 20.0
+terrain.ySize = 20.0
+terrain.xSamples = 50
+terrain.ySamples = 50
+terrain.fractalOctaves = 4
+terrain.fractalLacunarity = 3.0
+terrain.fractalGain = 0.1
+
+robot.create_height_map_perlin(terrain)
 
 # ---
 

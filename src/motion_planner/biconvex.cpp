@@ -77,14 +77,20 @@ namespace motion_planner{
 
             dyn_violation = centroidal_dynamics.A_f * prob_data_x.x_k - centroidal_dynamics.b_f;
             P_k_ += dyn_violation;
+            // std::cout << dyn_violation.norm() << std::endl;
             //Keep track of any statistics that may be useful
             if (log_statistics) {
                 dyn_violation_hist_.push_back(dyn_violation.norm());
                 std::cout << dyn_violation.norm() << std::endl;
-            }
+            };
+
+            if(std::isnan(dyn_violation.norm())){
+                std::cout << "ERROR: solver diverged, Dyn violation is NaN" << std::endl;
+                break;
+            };
 
             if (dyn_violation.norm() < exit_tol){
-                // std::cout << "breaking outer loop due to norm ..." << std::endl;
+                std::cout << "breaking outer loop due to norm ..." << std::endl;
                 break;
             };
         }

@@ -46,6 +46,7 @@ class BiConvexMP(BiConvexCosts):
         
         # C++ version Biconvex MP
         self.dyn_planer = BiconvexMP(self.m, self.dt, self.T, self.n_eff)
+        self.dyn_planer.set_rho(self.rho)
 
     def create_contact_array(self, cnt_plan):
         '''

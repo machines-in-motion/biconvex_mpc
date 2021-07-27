@@ -124,7 +124,7 @@ class SoloMpcGaitGen:
         self.q_traj = []
         self.v_traj = []
 
-    def update_params(self, swing_wt = None, cent_wt = None, nom_ht = None, W_X = None, W_X_ter = None):
+    def update_params(self, swing_wt = None, cent_wt = None, nom_ht = None, W_X = None, W_X_ter = None, X_nom = None):
         """
         updates parameters
         """
@@ -138,7 +138,9 @@ class SoloMpcGaitGen:
             self.W_X = W_X
         if isinstance(W_X_ter, np.ndarray):
             self.W_X_ter = W_X_ter
-            
+        if isinstance(X_nom, np.ndarray):
+            self.X_nom = X_nom
+    
     def create_cnt_plan(self, q, v, t, v_des):
         pin.forwardKinematics(self.rmodel, self.rdata, q, v)
         pin.updateFramePlacements(self.rmodel, self.rdata)
@@ -147,10 +149,12 @@ class SoloMpcGaitGen:
         vcom = np.round(v[0:2], 3)
 
         vtrack = v_des[0:2] # this effects the step location (if set to vcom it becomes raibert)
-        vtrack[1] = vcom[1]
+        # vtrack[1] = vcom[1]
         # vtrack = vcom[0:2]
 
         self.cnt_plan = np.zeros((self.horizon, len(self.eff_names), 4))
+        # This array determines when the swing foot cost should be enforced in the ik
+        self.swing_time = np.zeros((self.horizon, len(self.eff_names)))
         self.prev_cnt = np.zeros((len(self.eff_names), 3))
         self.curr_cnt = np.zeros(len(self.eff_names))
         # Contact Plan Matrix: horizon x num_eef x 4: The '4' gives the contact plan and location:
@@ -196,8 +200,9 @@ class SoloMpcGaitGen:
                             tmp = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.5*(vtrack - v_des[0:2])
                             self.cnt_plan[i][j][1:3] = (per_ph - 0.5)*tmp[0:2] + hip_loc
 
-                        # self.curr_cnt[j] += 1/(1 - self.params.stance_percent[j])
-                        # self.cnt_plan[i][j][1:3] = com + self.offsets[j] + 1.0*v_des[0:2]*self.curr_cnt[j]*self.gait_dt
+                        if per_ph - 0.5 < 0.02:
+                            self.swing_time[i][j] = 1
+
                         self.cnt_plan[i][j][3] = self.foot_size
 
         return self.cnt_plan
@@ -218,21 +223,18 @@ class SoloMpcGaitGen:
         for i in range(int(round(self.ik_horizon/self.gait_dt))):
             for j in range(len(self.eff_names)):
                 if self.cnt_plan[i][j][0] == 1:
-                    # print(self.cnt_plan[i][j][0], self.eff_names[j])
-                    #If stance phase add tracking to current position
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], self.swing_wt[0],
                                                               "cnt_" + str(0) + self.eff_names[j], i)
-                else:
+                elif self.swing_time[i][j] == 1:
                     pos = self.cnt_plan[i][j][1:4].copy()
                     pos[2] = self.step_height
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, self.swing_wt[1],
                                                               "via_" + str(0) + self.eff_names[j], i)
 
         self.ik.add_state_regularization_cost(0, self.ik_horizon, self.reg_wt[0], "xReg", self.state_wt, self.x_reg, False)
-        # self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.reg_wt[1], "uReg", False)
         self.ik.add_ctrl_regularization_cost_2(0, self.ik_horizon, self.reg_wt[1], "uReg", self.ctrl_wt, np.zeros(self.rmodel.nv), False)
+
         self.ik.add_state_regularization_cost(0, self.ik_horizon, self.reg_wt[0], "xReg", self.state_wt, self.x_reg, True)
-        # self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.reg_wt[1], "uReg", True)
         self.ik.add_ctrl_regularization_cost_2(0, self.ik_horizon, self.reg_wt[1], "uReg", self.ctrl_wt, np.zeros(self.rmodel.nv), True)
 
         self.ik.setup_costs()
@@ -245,7 +247,13 @@ class SoloMpcGaitGen:
         self.X_init[3:] = np.array(self.rdata.hg)
         self.X_init[3:6] /= self.m
 
+        # if (np.any(abs(self.X_init[6:]) > 0.15)) :
+        #     np.savez("./dat_file/debug.npz", q = q, v = v, t = t)
+        #     assert False
+
         self.X_nom[0::9] = self.X_init[0]
+        
+
         self.X_nom[2::9] = self.nom_ht
         self.X_nom[3::9] = v_des[0]
         self.X_nom[4::9] = v_des[1]
@@ -256,14 +264,15 @@ class SoloMpcGaitGen:
         self.X_nom[7::9] = amom[1]*self.params.ori_correction[1]
         self.X_nom[8::9] = amom[2]*self.params.ori_correction[2]
 
-        X_ter = np.zeros_like(self.X_init)
+        X_ter = np.zeros_like(self.X_init)        
         X_ter[0:3] = self.X_init[0:3].copy()
         X_ter[2] = self.nom_ht
 
         X_ter[0:2] = self.X_init[0:2] + (self.gait_horizon*self.gait_period*v_des)[0:2] #Changed this
         X_ter[3:6] = v_des
-        # X_ter[6:] = amom
+        X_ter[6:] = amom
         # Setup dynamic optimization
+
         self.mp.create_contact_array_2(np.array(self.cnt_plan))
         self.mp.create_bound_constraints_2(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(self.W_X, self.W_X_ter, X_ter, self.X_nom)
@@ -286,7 +295,7 @@ class SoloMpcGaitGen:
 
         return omega
 
-    def optimize(self, q, v, t, v_des, step_height, current_contact):
+    def optimize(self, q, v, t, v_des, step_height, current_contact, X_wm = None, F_wm = None, P_wm = None):
 
         #TODO: Move to C++
         t1 = time.time()
@@ -298,19 +307,18 @@ class SoloMpcGaitGen:
         self.create_costs(q, v, v_des, t)
         self.q_traj.append(q)
         self.v_traj.append(v)
+
+
         # --- Dynamics optimization ---
 
-        # Optimize Dynamics
         t2 = time.time()
-        com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 50)
+        com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 50, X_wm, F_wm, P_wm)
         t3 = time.time()
-
         com_tmp = pin.centerOfMass(self.rmodel, self.rdata, self.q_traj[-1], self.v_traj[-1])
 
         self.com_traj.append(com_opt)
 
         # --- IK Optimization ---
-
         # Add tracking costs from Dynamic optimization
         self.ik.add_centroidal_momentum_tracking_task(0, self.ik_horizon, mom_opt[0:int(round(self.ik_horizon/self.gait_dt))], self.cent_wt[1], "mom_track", False)
         self.ik.add_centroidal_momentum_tracking_task(0, self.ik_horizon, mom_opt[int(round(self.ik_horizon/self.gait_dt))], self.cent_wt[1], "mom_track", True) #Final state
@@ -321,14 +329,19 @@ class SoloMpcGaitGen:
         t4 = time.time()
         self.ik.optimize(np.hstack((q,v)))
         t5 = time.time()
+
+        xs = self.ik.get_xs()
+        us = self.ik.get_us()
+
+        self.xs_traj.append(xs)
+        # opt_mom, opt_com = self.compute_optimal_com_and_mom(xs, us)
+        # self.mp.add_ik_com_cost(opt_com)
+        # self.mp.add_ik_momentum_cost(opt_mom)
         # print("cost", t2 - t1)
         # print("dyn", t3 - t2)
         # print("ik", t5 - t4)
         # print("total", t5 - t1)
         # print("------------------------")
-        xs = self.ik.get_xs()
-        us = self.ik.get_us()
-        self.xs_traj.append(xs)
 
         n_eff = 3*len(self.eff_names)
         ind = int(self.planning_time/self.dt) + 1 # 1 is to account for time lag
@@ -349,6 +362,26 @@ class SoloMpcGaitGen:
                 self.mom_int = np.vstack((self.mom_int, np.linspace(mom_opt[i], mom_opt[i+1], int(self.dt/0.001))))
 
         return self.xs_int, self.us_int, self.f_int
+
+    def compute_optimal_com_and_mom(self, xs, us):
+        """
+        This function computes the optimal momentum based on the solution
+        """
+
+        opt_mom = np.zeros((len(xs), 6))
+        opt_com = np.zeros((len(xs), 3))
+        m = pin.computeTotalMass(self.rmodel)
+        for i in range(len(xs)):
+            q = xs[i][:self.rmodel.nq]
+            v = xs[i][self.rmodel.nq:]
+            pin.forwardKinematics(self.rmodel, self.rdata, q, v)
+            pin.computeCentroidalMomentum(self.rmodel, self.rdata)
+            opt_com[i] = pin.centerOfMass(self.rmodel, self.rdata, q, v)
+            opt_mom[i] = np.array(self.rdata.hg)
+            opt_mom[i][0:3] /= m
+
+        return opt_com, opt_mom
+
 
     def reset(self):
         self.ik = InverseKinematics(self.r_urdf, self.gait_dt, self.ik_horizon)

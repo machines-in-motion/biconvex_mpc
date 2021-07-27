@@ -9,6 +9,7 @@
 #include "OsqpEigen/OsqpEigen.h"
 #endif
 
+#include <stdio.h> 
 #include <iostream>
 
 #include "dynamics/centroidal.hpp"
@@ -67,6 +68,10 @@ class BiConvexMP{
 
         void set_cost_f(Eigen::SparseMatrix<double> Q_f, Eigen::VectorXd q_f){
             prob_data_f.Q_ = Q_f; prob_data_f.q_ = q_f;
+        }
+        
+        void set_rho(double rho){
+            rho_ = rho;
         }
         
         void set_warm_start_vars(Eigen::VectorXd x_wm, Eigen::VectorXd f_wm, Eigen::VectorXd P_wm){

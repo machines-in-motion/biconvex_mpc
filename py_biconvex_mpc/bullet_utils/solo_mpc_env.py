@@ -41,6 +41,7 @@ class Solo12Env:
             print("loading rai")
             self.env = RaiEnv()
             self.robot = self.env.add_robot(Solo12Config, urdf_path, vis_ghost = self.vis_ghost)
+            self.robot.reset_state(q0, v0)
             self.env.launch_server()
 
         self.f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]

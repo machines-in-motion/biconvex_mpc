@@ -6,7 +6,7 @@
 import numpy as np
 
 from blmc_controllers.robot_id_controller import InverseDynamicsController
-from blmc_controllers.tsid_controller import TSID_controller
+#from blmc_controllers.tsid_controller import TSID_controller
 from bullet_utils.env import BulletEnvWithGround
 from robot_properties_solo.solo12wrapper import Solo12Robot, Solo12Config
 
@@ -22,11 +22,11 @@ class Solo12Env:
         self.kd = kd
 
         #Change the urdf_path to load from raisim_utils
-        # urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-        # model_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf"
+        urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
+        model_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf"
 
-        urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-        model_path = "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf"
+        #urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
+        #model_path = "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf"
         
         self.vis_ghost = vis_ghost
         self.bullet = loadBullet
@@ -123,3 +123,9 @@ class Solo12Env:
         else:
             contact_configuration = self.robot.get_current_contacts()
         return contact_configuration
+
+    def create_height_map(self, size, samples, terrain):
+        self.env.create_height_map(size, samples, terrain)
+
+    def create_height_map_perlin(self, raisimTerrain):
+        self.env.create_height_map_perlin(raisimTerrain)

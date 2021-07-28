@@ -132,3 +132,7 @@ class Solo12Env:
     def create_height_map_perlin(self, raisimTerrain):
         height_map = self.env.create_height_map_perlin(raisimTerrain)
         return height_map
+
+    def create_height_map_png(self, path_to_png, size, scale, z_offset):
+        height_map = self.env.create_height_map_png(path_to_png, size, scale, z_offset)
+        return height_map

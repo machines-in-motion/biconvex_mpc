@@ -11,6 +11,7 @@ from abstract_mpc_gait_gen import SoloMpcGaitGen
 from solo12_gait_params import trot, walk, bound
 
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
+import os
 
 import subprocess
 
@@ -46,7 +47,6 @@ plan_freq = 0.05 # sec
 update_time = 0.0 # sec (time of lag)
 
 # while True:
-
 sim_t = 0.0
 step_t = 0.0
 sim_dt = .001
@@ -62,7 +62,7 @@ terrain_size = 20.0
 terrain_samples = 5
 terrain = np.zeros((terrain_samples, terrain_samples))
 terrain[1, 1] = 0.5
-height_map = robot.create_height_map(terrain_size, terrain_samples, terrain)
+#height_map = robot.create_height_map(terrain_size, terrain_samples, terrain)
 
 #Perlin Height Map
 
@@ -78,6 +78,9 @@ height_map = robot.create_height_map(terrain_size, terrain_samples, terrain)
 # terrain.fractalGain = 0.1
 
 # robot.create_height_map_perlin(terrain)
+
+mountain = os.path.dirname(os.path.realpath(__file__)) + "/terrain/Heightmap.png"
+height_map = robot.create_height_map_png(mountain, 15, .0003, -0.0)
 
 gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, gait_params, x0, plan_freq, q0, height_map)
 

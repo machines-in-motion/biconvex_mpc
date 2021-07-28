@@ -13,21 +13,22 @@ from py_biconvex_mpc.ik_utils.gait_generator import GaitGenerator
 from robot_properties_solo.config import Solo12Config
 from abstract_mpc_gait_gen import SoloMpcGaitGen
 
+import raisimpy as raisim
+
 from solo12_gait_params import trot, walk, bound
 
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
-import raisimpy as raisim
 
 import subprocess
 
 # subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
-# subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
+subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
 # subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisimUnity.x86_64"])
 
 time.sleep(2)
 
 ## Motion
-gait_params = walk
+gait_params = trot
 
 ## robot config and init
 
@@ -46,9 +47,10 @@ x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 v_des = np.array([0.4,0.0, 0])
 step_height = gait_params.step_ht
 
+
 # plan_freq = 0.8*(gait_params.gait_horizon*gait_params.gait_period*0.5) - dt #0.05 # sec
 plan_freq = 0.05 # sec
-update_time = 0.03 # sec (time of lag)
+update_time = 0.0 # sec (time of lag)
 
 gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, gait_params, x0, plan_freq, q0)
 
@@ -61,32 +63,31 @@ index = 0
 pln_ctr = 0
 robot = Solo12Env(gait_params.kp, gait_params.kd, q0, v0, False, False)
 
+lag = int(update_time/sim_dt)
+
 #Terrain Information --
 
-terrain_size = 20.0
-terrain_samples = 5
-terrain = np.zeros((terrain_samples, terrain_samples))
-terrain[1, 1] = 0.5
-#robot.create_height_map(terrain_size, terrain_samples, terrain)
+# terrain_size = 20.0
+# terrain_samples = 5
+# terrain = np.zeros((terrain_samples, terrain_samples))
+# terrain[1, 1] = 0.5
+# robot.create_height_map(terrain_size, terrain_samples, terrain)
+
 
 # Perlin Height Map
 
-terrain = raisim.TerrainProperties()
-terrain.frequency = 0.2
-terrain.zScale = 0.02
-terrain.xSize = 20.0
-terrain.ySize = 20.0
-terrain.xSamples = 50
-terrain.ySamples = 50
-terrain.fractalOctaves = 4
-terrain.fractalLacunarity = 3.0
-terrain.fractalGain = 0.1
+# terrain = raisim.TerrainProperties()
+# terrain.frequency = 0.2
+# terrain.zScale = 0.02
+# terrain.xSize = 20.0
+# terrain.ySize = 20.0
+# terrain.xSamples = 50
+# terrain.ySamples = 50
+# terrain.fractalOctaves = 4
+# terrain.fractalLacunarity = 3.0
+# terrain.fractalGain = 0.1
 
-robot.create_height_map_perlin(terrain)
-
-# ---
-
-lag = int(update_time/sim_dt)
+# robot.create_height_map_perlin(terrain)
 
 q, v = robot.get_state()
 
@@ -146,7 +147,7 @@ for o in range(int(500*(plan_freq/sim_dt))):
     #     v_des = np.array([-1.2,0.0, 0])
 
 
-    time.sleep(0.001)
+    # time.sleep(0.001)
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
 

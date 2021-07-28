@@ -337,11 +337,11 @@ class SoloMpcGaitGen:
         # opt_mom, opt_com = self.compute_optimal_com_and_mom(xs, us)
         # self.mp.add_ik_com_cost(opt_com)
         # self.mp.add_ik_momentum_cost(opt_mom)
-        # print("cost", t2 - t1)
-        # print("dyn", t3 - t2)
-        # print("ik", t5 - t4)
-        # print("total", t5 - t1)
-        # print("------------------------")
+        print("cost", t2 - t1)
+        print("dyn", t3 - t2)
+        print("ik", t5 - t4)
+        print("total", t5 - t1)
+        print("------------------------")
 
         n_eff = 3*len(self.eff_names)
         ind = int(self.planning_time/self.dt) + 1 # 1 is to account for time lag

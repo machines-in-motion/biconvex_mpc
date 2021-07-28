@@ -48,7 +48,7 @@ step_height = gait_params.step_ht
 
 # plan_freq = 0.8*(gait_params.gait_horizon*gait_params.gait_period*0.5) - dt #0.05 # sec
 plan_freq = 0.05 # sec
-update_time = 0.0 # sec (time of lag)
+update_time = 0.03 # sec (time of lag)
 
 gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, gait_params, x0, plan_freq, q0)
 
@@ -116,12 +116,12 @@ for o in range(int(500*(plan_freq/sim_dt))):
         print("v_des updated")
         v_des = np.array([-1.0,0.0, 0])
 
-    if o == 12*(gait_time/sim_dt):
-        print("v_des updated")
-        v_des = np.array([-1.2,0.0, 0])
+    # if o == 12*(gait_time/sim_dt):
+    #     print("v_des updated")
+    #     v_des = np.array([-1.2,0.0, 0])
 
 
-    # time.sleep(0.001)
+    time.sleep(0.001)
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
 

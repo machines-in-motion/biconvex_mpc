@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 
 class SoloMpcGaitGen:
 
-    def __init__(self, robot, r_urdf, dt, weight_abstract, x_reg, planning_time, q0):
+    def __init__(self, robot, r_urdf, dt, weight_abstract, x_reg, planning_time, q0, height_map = None):
         """
         Input:
             robot : robot model
@@ -124,6 +124,9 @@ class SoloMpcGaitGen:
         self.q_traj = []
         self.v_traj = []
 
+        #Height Map (for contacts)
+        self.height_map = height_map
+
     def update_params(self, swing_wt = None, cent_wt = None, nom_ht = None, W_X = None, W_X_ter = None, X_nom = None):
         """
         updates parameters
@@ -186,7 +189,12 @@ class SoloMpcGaitGen:
                             hip_loc = com + self.offsets[j] + i*self.params.gait_dt*vtrack
                             tmp = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
                             self.cnt_plan[i][j][1:3] = tmp[0:2] + hip_loc
-                            self.cnt_plan[i][j][3] = self.foot_size
+
+                            if self.height_map != None:
+                                self.cnt_plan[i][j][3] = self.height_map.getHeight(self.cnt_plan[i][j][1], self.cnt_plan[i][j][2]) +\
+                                                                                   self.foot_size
+                            else:
+                                self.cnt_plan[i][j][3] = self.foot_size
 
                         self.prev_cnt[j] = self.cnt_plan[i][j][1:4]
 
@@ -203,7 +211,11 @@ class SoloMpcGaitGen:
                         if per_ph - 0.5 < 0.02:
                             self.swing_time[i][j] = 1
 
-                        self.cnt_plan[i][j][3] = self.foot_size
+                        if self.height_map != None:
+                            self.cnt_plan[i][j][3] = self.height_map.getHeight(self.cnt_plan[i][j][1], self.cnt_plan[i][j][2]) + \
+                                                     self.foot_size
+                        else:
+                            self.cnt_plan[i][j][3] = self.foot_size
 
         return self.cnt_plan
 

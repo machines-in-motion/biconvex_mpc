@@ -125,7 +125,10 @@ class Solo12Env:
         return contact_configuration
 
     def create_height_map(self, size, samples, terrain):
-        self.env.create_height_map(size, samples, terrain)
+        height_map = self.env.create_height_map(size, samples, terrain)
+        print(height_map)
+        return height_map
 
     def create_height_map_perlin(self, raisimTerrain):
-        self.env.create_height_map_perlin(raisimTerrain)
+        height_map = self.env.create_height_map_perlin(raisimTerrain)
+        return height_map

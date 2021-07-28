@@ -43,7 +43,7 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.2,0.0, 0])
+v_des = np.array([0.4,0.0, 0])
 step_height = gait_params.step_ht
 
 # plan_freq = 0.8*(gait_params.gait_horizon*gait_params.gait_period*0.5) - dt #0.05 # sec
@@ -133,13 +133,13 @@ for o in range(int(500*(plan_freq/sim_dt))):
     robot.send_joint_command(q_des, dq_des, us[index], f[index], contact_configuration)
     sim_t += sim_dt
     step_t = (step_t + sim_dt)%gait_time
-    if o == 4*(gait_time/sim_dt):
-        print("v_des updated")
-        v_des = np.array([-0.7,0.0, 0])
+    # if o == 4*(gait_time/sim_dt):
+    #     print("v_des updated")
+    #     v_des = np.array([-0.7,0.0, 0])
 
-    if o == 8*(gait_time/sim_dt):
-        print("v_des updated")
-        v_des = np.array([-1.0,0.0, 0])
+    # if o == 8*(gait_time/sim_dt):
+    #     print("v_des updated")
+    #     v_des = np.array([-1.0,0.0, 0])
 
     # if o == 12*(gait_time/sim_dt):
     #     print("v_des updated")

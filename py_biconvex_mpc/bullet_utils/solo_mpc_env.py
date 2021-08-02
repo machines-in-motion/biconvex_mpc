@@ -6,13 +6,15 @@
 import numpy as np
 
 from blmc_controllers.robot_id_controller import InverseDynamicsController
-#from blmc_controllers.tsid_controller import TSID_controller
+from blmc_controllers.tsid_controller import TSID_controller
 from bullet_utils.env import BulletEnvWithGround
 from robot_properties_solo.solo12wrapper import Solo12Robot, Solo12Config
 
 from raisim_utils.rai_env import RaiEnv
 from py_biconvex_mpc.bullet_utils.solo_state_estimator import SoloStateEstimator
 
+import os
+import time
 
 class Solo12Env:
 
@@ -22,6 +24,10 @@ class Solo12Env:
         self.kd = kd
 
         #Change the urdf_path to load from raisim_utils
+        str = os.path.dirname(os.path.abspath(__file__))
+        str_2 = str.replace("py_biconvex_mpc/bullet_utils", "")
+        str_3 = str_2 + "robots/urdf/solo12/solo12.urdf"
+
         urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
         model_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf"
 
@@ -46,7 +52,7 @@ class Solo12Env:
 
         self.f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
 
-        # self.robot_tsid_ctrl = TSID_controller(self.robot, urdf_path, model_path, self.f_arr, q0, v0)
+        self.robot_tsid_ctrl = TSID_controller(self.robot, urdf_path, model_path, self.f_arr, q0, v0)
 
         self.robot_id_ctrl = InverseDynamicsController(self.robot, self.f_arr)
         self.robot_id_ctrl.set_gains(kp, kd, [10.0, 10.0, 10.0], [1.0, 1.0, 1.0], [200.0, 200.0, 200.0], [50.0, 50.0, 50.0])
@@ -98,21 +104,21 @@ class Solo12Env:
             self.robot.set_state_ghost(q_des, v_des)
         self.env.step() # You can sleep here if you want to slow down the replay
 
-    # def send_joint_command_tsid(self, t, q_des, v_des, a_des, F_des, des_contact_arr):
-    #     """
-    #     computes the torques using the ID controller and plugs the torques
-    #     Input:
-    #         q_des : desired joint configuration at current time step
-    #         v_des : desired joint velocity at current time step
-    #         F_des : desired feed forward forces at current time step
-    #     """
-    #     q, v = self.robot.get_state()
-    #     self.robot.forward_robot(q,v)
-    #     tau = self.robot_tsid_ctrl.compute_id_torques(t, q, v, q_des, v_des, a_des, F_des, des_contact_arr)
-    #     self.robot.send_joint_command(tau)
-    #     if self.vis_ghost:
-    #         self.robot.set_state_ghost(q_des, v_des)
-    #     self.env.step() # You can sleep here if you want to slow down the replay
+    def send_joint_command_tsid(self, t, q_des, v_des, a_des, F_des, des_contact_arr):
+        """
+        computes the torques using the ID controller and plugs the torques
+        Input:
+            q_des : desired joint configuration at current time step
+            v_des : desired joint velocity at current time step
+            F_des : desired feed forward forces at current time step
+        """
+        q, v = self.robot.get_state()
+        self.robot.forward_robot(q,v)
+        tau = self.robot_tsid_ctrl.compute_id_torques(t, q, v, q_des, v_des, a_des, F_des, des_contact_arr)
+        self.robot.send_joint_command(tau)
+        if self.vis_ghost:
+            self.robot.set_state_ghost(q_des, v_des)
+        self.env.step() # You can sleep here if you want to slow down the replay
 
     def get_current_contacts(self):
         """

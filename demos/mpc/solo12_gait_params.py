@@ -46,21 +46,21 @@ still.kd = 0.1
 gallop = BiconvexMotionParams("solo12", "Gallop")
 
 # Cnt
-gallop.gait_period = 0.4
-gallop.stance_percent = [0.5, 0.5, 0.5, 0.5]
+gallop.gait_period = 0.5
+gallop.stance_percent = [0.4, 0.4, 0.4, 0.4]
 gallop.gait_dt = 0.05
-gallop.phase_offset = [0.0, 0.20, 0.60, 0.80]
+gallop.phase_offset = [0.0, 0.20, 0.30, 0.50]
 
 # IK
-gallop.state_wt = np.array([0., 0, 10] + [1000] * 3 + [1.0] * (pin_robot.model.nv - 6) \
-                          + [0.00] * 3 + [100] * 3 + [0.5] *(pin_robot.model.nv - 6))
+gallop.state_wt = np.array([0., 0, 10] + [5000] * 3 + [100.0] * (pin_robot.model.nv - 6) \
+                          + [0.00] * 3 + [100] * 3 + [20.0] *(pin_robot.model.nv - 6))
 
 gallop.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
 
-gallop.swing_wt = [1e4, 1e4]
-gallop.cent_wt = [0*5e+1, 5e+2]
-gallop.step_ht = 0.07
-gallop.nom_ht = 0.22
+gallop.swing_wt = [1e6, 1e4]
+gallop.cent_wt = [5e+1, 5e+2]
+gallop.step_ht = 0.08
+gallop.nom_ht = 0.24
 gallop.reg_wt = [5e-2, 1e-5]
 
 # Dyn
@@ -68,11 +68,11 @@ gallop.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+4, 1e
 gallop.W_X_ter = 10*np.array([1e+5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e+5])
 gallop.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 gallop.rho = 5e+4
-gallop.ori_correction = [0.4, 0.5, 0.4]
+gallop.ori_correction = [0.2, 0.5, 0.4]
 gallop.gait_horizon = 2.0
 
 # Gains
-gallop.kp = 2.5
+gallop.kp = 5.0
 gallop.kd = 0.2
 
 
@@ -83,7 +83,7 @@ trot = BiconvexMotionParams("solo12", "Trot")
 trot.gait_period = 0.5
 trot.stance_percent = [0.6, 0.6, 0.6, 0.6]
 trot.gait_dt = 0.05
-trot.phase_offset = [0.0, 0.4, 0.4, 0.0]
+trot.phase_offset = [0.0, 0.5, 0.5, 0.0]
 
 # IK
 trot.state_wt = np.array([0., 0, 10] + [1000] * 3 + [1.0] * (pin_robot.model.nv - 6) \
@@ -107,7 +107,7 @@ trot.gait_horizon = 2.0
 
 # Gains
 trot.kp = 3.0
-trot.kd = 0.1
+trot.kd = 0.3
 
 #### Walking #######################################
 # walk = BiconvexMotionParams("solo12", "walk")

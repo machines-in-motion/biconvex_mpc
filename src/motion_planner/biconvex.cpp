@@ -147,7 +147,7 @@ namespace motion_planner{
                 }
 
                 if (dyn_violation.norm() < exit_tol){
-                    // std::cout << "breaking outerloop due to norm ..." << std::endl;
+                    std::cout << "breaking outerloop due to norm ..." << std::endl;
                     //std::cout << "Optimizer finished after " << i << " iterations" << std::endl;
                     break;
                 };

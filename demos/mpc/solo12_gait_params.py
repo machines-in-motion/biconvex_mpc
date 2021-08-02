@@ -52,23 +52,23 @@ gallop.gait_dt = 0.05
 gallop.phase_offset = [0.0, 0.20, 0.30, 0.50]
 
 # IK
-gallop.state_wt = np.array([0., 0, 10] + [5000] * 3 + [100.0] * (pin_robot.model.nv - 6) \
-                          + [0.00] * 3 + [100] * 3 + [20.0] *(pin_robot.model.nv - 6))
+gallop.state_wt = np.array([0., 0, 10] + [5000] * 3 + [00.0] * (pin_robot.model.nv - 6) \
+                          + [0.00] * 3 + [1000] * 3 + [30.0] *(pin_robot.model.nv - 6))
 
 gallop.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
 
-gallop.swing_wt = [1e6, 1e4]
-gallop.cent_wt = [5e+1, 5e+2]
+gallop.swing_wt = [1e4, 1e4]
+gallop.cent_wt = [5e+2, 5e+2]
 gallop.step_ht = 0.08
-gallop.nom_ht = 0.24
+gallop.nom_ht = 0.26
 gallop.reg_wt = [5e-2, 1e-5]
 
 # Dyn
-gallop.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+4, 1e4])
+gallop.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e4])
 gallop.W_X_ter = 10*np.array([1e+5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e+5])
 gallop.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 gallop.rho = 5e+4
-gallop.ori_correction = [0.2, 0.5, 0.4]
+gallop.ori_correction = [0.4, 0.6, 0.4]
 gallop.gait_horizon = 2.0
 
 # Gains

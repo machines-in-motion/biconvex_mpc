@@ -52,7 +52,7 @@ class Solo12Env:
 
         self.f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
 
-        self.robot_tsid_ctrl = TSID_controller(self.robot, urdf_path, model_path, self.f_arr, q0, v0)
+        self.robot_tsid_ctrl = TSID_controller(urdf_path, model_path, self.f_arr, q0, v0)
 
         self.robot_id_ctrl = InverseDynamicsController(self.robot, self.f_arr)
         self.robot_id_ctrl.set_gains(kp, kd, [10.0, 10.0, 10.0], [1.0, 1.0, 1.0], [200.0, 200.0, 200.0], [50.0, 50.0, 50.0])

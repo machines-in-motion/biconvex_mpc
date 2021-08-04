@@ -14,7 +14,7 @@ class A1StateEstimator:
         self.pinData = pinData
         self.x = np.zeros(3)
         self.xd = np.zeros(3)
-        self.robot_mass = sum([i.mass for i in pinModel.inertias[1:]])
+        #self.robot_mass = sum([i.mass for i in pinModel.inertias[1:]])
 
     def get_frame_location(self, q, dq, frame_idx):
         """

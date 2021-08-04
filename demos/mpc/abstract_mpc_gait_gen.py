@@ -51,20 +51,21 @@ class SoloMpcGaitGen:
             self.offsets[i] = self.rdata.oMf[self.rmodel.getFrameId(self.hip_names[i])].translation[0:2] - com_init[0:2].copy()
             self.offsets[i] = np.round(self.offsets[i], 3)
 
-        self.offsets[0][0] += 0.00
-        self.offsets[0][1] += 0.04
+        # Contact-planning offsets
+        self.offsets[0][0] -= 0.00 #Front Left_X
+        self.offsets[0][1] += 0.04 #Front Left_Y
         
-        self.offsets[1][0] += 0.0
-        self.offsets[1][1] -= 0.04
+        self.offsets[1][0] -= 0.00 #Front Right_X
+        self.offsets[1][1] -= 0.04 #Front Right_Y
         
-        self.offsets[2][0] += 0.00
-        self.offsets[2][1] += 0.04
+        self.offsets[2][0] += 0.00 #Hind Left_X
+        self.offsets[2][1] += 0.04 #Hind Left_Y
         
-        self.offsets[3][0] += 0.00
-        self.offsets[3][1] -= 0.04
+        self.offsets[3][0] += 0.00 #Hind Right X
+        self.offsets[3][1] -= 0.04 #Hind Right Y
+        self.apply_offset = False
 
-        self.apply_offset = True
-
+        #Current Contact
         self.current_contact = np.zeros(4)
 
         self.swing_wt = self.params.swing_wt # swing foot cost
@@ -105,12 +106,12 @@ class SoloMpcGaitGen:
         self.nom_ht = self.params.nom_ht
 
         # Set up constraints for Dynamics
-        self.bx = 0.28
-        self.by = 0.28
-        self.bz = 0.25
-        self.fx_max = 15
-        self.fy_max = 15
-        self.fz_max = 15
+        self.bx = 0.45
+        self.by = 0.45
+        self.bz = 0.45
+        self.fx_max = 16.5
+        self.fy_max = 16.5
+        self.fz_max = 75
 
         # --- Set up other variables ---
         # For interpolation (should be moved to the controller)
@@ -208,6 +209,8 @@ class SoloMpcGaitGen:
                             tmp = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.5*(vtrack - v_des[0:2])
                             self.cnt_plan[i][j][1:3] = (per_ph - 0.5)*tmp[0:2] + hip_loc
 
+
+                        #What is this?
                         if per_ph - 0.5 < 0.02:
                             self.swing_time[i][j] = 1
 
@@ -255,7 +258,9 @@ class SoloMpcGaitGen:
         # initial and terminal state
         self.X_init = np.zeros(9)
         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
-        self.X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q, v)
+        self.X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
+        print("CoM: ")
+        print(self.X_init[0:3])
         self.X_init[3:] = np.array(self.rdata.hg)
         self.X_init[3:6] /= self.m
 
@@ -264,7 +269,9 @@ class SoloMpcGaitGen:
         #     assert False
 
         self.X_nom[0::9] = self.X_init[0]
-        
+        for i in range(1, self.horizon):
+            self.X_nom[9*i+0] = self.X_nom[9*(i-1)+0] + v_des[0]*self.dt
+            self.X_nom[9*i+1] = self.X_nom[9*(i-1)+1] + v_des[1]*self.dt
 
         self.X_nom[2::9] = self.nom_ht
         self.X_nom[3::9] = v_des[0]
@@ -276,15 +283,13 @@ class SoloMpcGaitGen:
         self.X_nom[7::9] = amom[1]*self.params.ori_correction[1]
         self.X_nom[8::9] = amom[2]*self.params.ori_correction[2]
 
-        X_ter = np.zeros_like(self.X_init)        
-        X_ter[0:3] = self.X_init[0:3].copy()
-        X_ter[2] = self.nom_ht
-
+        X_ter = np.zeros_like(self.X_init)
         X_ter[0:2] = self.X_init[0:2] + (self.gait_horizon*self.gait_period*v_des)[0:2] #Changed this
+        X_ter[2] = self.nom_ht
         X_ter[3:6] = v_des
         X_ter[6:] = amom
-        # Setup dynamic optimization
 
+        # Setup dynamic optimization
         self.mp.create_contact_array_2(np.array(self.cnt_plan))
         self.mp.create_bound_constraints_2(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(self.W_X, self.W_X_ter, X_ter, self.X_nom)
@@ -324,7 +329,7 @@ class SoloMpcGaitGen:
         # --- Dynamics optimization ---
 
         t2 = time.time()
-        com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 50, X_wm, F_wm, P_wm)
+        com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 85, X_wm, F_wm, P_wm)
         t3 = time.time()
         com_tmp = pin.centerOfMass(self.rmodel, self.rdata, self.q_traj[-1], self.v_traj[-1])
 

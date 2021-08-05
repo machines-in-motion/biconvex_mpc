@@ -63,7 +63,7 @@ class SoloMpcGaitGen:
         
         self.offsets[3][0] += 0.00 #Hind Right X
         self.offsets[3][1] -= 0.04 #Hind Right Y
-        self.apply_offset = False
+        self.apply_offset = True
 
         #Current Contact
         self.current_contact = np.zeros(4)

@@ -8,21 +8,21 @@ import pinocchio as pin
 
 from robot_properties_solo.config import Solo12Config
 from abstract_mpc_gait_gen import SoloMpcGaitGen
-from solo12_gait_params import trot, walk, bound, still, gallop
+from solo12_gait_params import trot, walk, bound, still, gallop, jump
 
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 import os
-
+import raisimpy as raisim
 import subprocess
 
 # subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
 # subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
-# subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisimUnity.x86_64"])
+subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisimUnity.x86_64"])
 
 time.sleep(2)
 
 ## Motion
-gait_params = gallop
+gait_params = jump
 
 ## robot config and init
 
@@ -33,7 +33,7 @@ dt = 5e-2
 
 n_eff = 4
 q0 = np.array(Solo12Config.initial_configuration)
-q0[13:] = 2 * [0.0, 0.8, -1.6] #Invert legs
+# q0[13:] = 2 * [0.0, 0.8, -1.6] #Invert legs
 
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
@@ -80,7 +80,7 @@ terrain[1, 1] = 0.5
 # robot.create_height_map_perlin(terrain)
 
 mountain = os.path.dirname(os.path.realpath(__file__)) + "/terrain/Heightmap.png"
-#height_map = robot.create_height_map_png(mountain, 15, .001, -0.0)
+# height_map = robot.create_height_map_png(mountain, 15, .001, -0.0)
 
 gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, gait_params, x0, plan_freq, q0)
 
@@ -143,7 +143,7 @@ for o in range(int(500*(plan_freq/sim_dt))):
     #     v_des = np.array([-1.2,0.0, 0])
 
 
-    # time.sleep(0.001)
+    time.sleep(0.001)
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
 

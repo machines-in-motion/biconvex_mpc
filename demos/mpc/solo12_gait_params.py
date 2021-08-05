@@ -72,8 +72,8 @@ gallop.ori_correction = [0.6, 0.6, 0.4]
 gallop.gait_horizon = 2.0
 
 # Gains
-gallop.kp = 5.0
-gallop.kd = 0.2
+gallop.kp = 3.5
+gallop.kd = 0.1
 
 
 #### Trot #########################################
@@ -110,38 +110,6 @@ trot.kp = 3.0
 trot.kd = 0.3
 
 #### Walking #######################################
-# walk = BiconvexMotionParams("solo12", "walk")
-
-# # Cnt
-# walk.gait_period = 0.6
-# walk.stance_percent = [0.8, 0.8, 0.8, 0.8]
-# walk.gait_dt = 0.05
-# walk.phase_offset = [0.6, 0.0, 0.2, 0.8]
-
-# # IK
-# walk.state_wt = np.array([0., 0, 10] + [1e3] * 3 + [50.0] * (pin_robot.model.nv - 6) \
-#                         + [0.00] * 3 + [50] * 3 + [1e-2] *(pin_robot.model.nv - 6))
-
-# walk.ctrl_wt = [0, 0, 2] + [10, 10, 20] + [5e-3] *(pin_robot.model.nv - 6)
-
-# walk.swing_wt = [1e4,1e4]
-# walk.cent_wt = [5e+1, 1e+2]
-# walk.step_ht = 0.06
-# walk.reg_wt = [5e-3, 7e-3]
-
-# # Dyn 
-# walk.W_X =        0.05*np.array([1e-5, 1e-5, 1e+5, 1e2, 1e2, 2e+2, 1e+3, 4e+3, 4e3])
-# walk.W_X_ter = 100*np.array([1e-5, 1e-5, 1e+4, 1e2, 1e2, 1e+4, 4e+3, 4e+3, 4e+3])
-# walk.W_F = np.array(4*[5e+1, 5e+1, 5e+1])
-# walk.nom_ht = 0.22
-# walk.rho = 5e+4
-# walk.ori_correction = [0.0, 0.0, 0.0]
-# walk.gait_horizon = 5.0
-
-# # Gains
-# walk.kp = 10.0
-# walk.kd = 0.15
-
 walk = BiconvexMotionParams("solo12", "walk")
 
 # Cnt
@@ -239,3 +207,36 @@ bound.gait_horizon = 2.0
 # Gains
 bound.kp = 3.0
 bound.kd = 0.05
+
+#### jump #########################################
+jump = BiconvexMotionParams("solo12", "Jump")
+
+# Cnt
+jump.gait_period = 0.5
+jump.stance_percent = [0.4, 0.4, 0.4, 0.4]
+jump.gait_dt = 0.05
+jump.phase_offset = [0.3, 0.3, 0.3, 0.3]
+
+# IK
+jump.state_wt = np.array([0., 0, 10] + [1000] * 3 + [1.0] * (pin_robot.model.nv - 6) \
+                        + [0.00] * 3 + [100] * 3 + [0.5] *(pin_robot.model.nv - 6))
+
+jump.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
+
+jump.swing_wt = [1e4, 1e4]
+jump.cent_wt = [0*5e+1, 5e+2]
+jump.step_ht = 0.05
+jump.nom_ht = 0.25
+jump.reg_wt = [5e-2, 1e-5]
+
+# Dyn 
+jump.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+4, 1e4])
+jump.W_X_ter = 10*np.array([1e+5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e+5])
+jump.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
+jump.rho = 5e+4
+jump.ori_correction = [0.2, 0.5, 0.4]
+jump.gait_horizon = 1.0
+
+# Gains
+jump.kp = 2.5
+jump.kd = 0.08

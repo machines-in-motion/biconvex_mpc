@@ -20,7 +20,7 @@ namespace motion_planner{
             fista_f.set_l0(506.25);
 
             //Use Second Order Cone Projection
-            fista_f.set_soc_true();
+            // fista_f.set_soc_true();
 
             //Set number of variables and constraints for osqp-eigen
             Eigen::SparseMatrix<double> constraintMatF =
@@ -94,7 +94,7 @@ namespace motion_planner{
                 break;
             };
         }
-        // std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
+        std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }
 
     #ifdef USE_OSQP

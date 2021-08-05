@@ -28,8 +28,8 @@ class Solo12Env:
         str_2 = str.replace("py_biconvex_mpc/bullet_utils", "")
         str_3 = str_2 + "robots/urdf/solo12/solo12.urdf"
 
-        urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-        model_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf"
+        urdf_path =  "/home/paarth/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
+        model_path = "/home/paarth/Applications/raisim_utils/urdf/solo12/urdf"
 
         #urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
         #model_path = "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf"
@@ -139,6 +139,6 @@ class Solo12Env:
         height_map = self.env.create_height_map_perlin(raisimTerrain)
         return height_map
 
-    def create_height_map_png(self, path_to_png, size, scale, z_offset):
-        height_map = self.env.create_height_map_png(path_to_png, size, scale, z_offset)
+    def create_height_map_png(self, x_center, y_center, path_to_png, size, scale, z_offset):
+        height_map = self.env.create_height_map_png(x_center, y_center, path_to_png, size, scale, z_offset)
         return height_map

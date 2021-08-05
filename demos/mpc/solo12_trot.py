@@ -4,6 +4,7 @@
 
 import time
 import numpy as np
+import copy
 import pinocchio as pin
 
 from robot_properties_solo.config import Solo12Config
@@ -22,7 +23,7 @@ import subprocess
 time.sleep(2)
 
 ## Motion
-gait_params = gallop
+gait_params = trot
 
 ## robot config and init
 
@@ -38,7 +39,7 @@ q0[13:] = 2 * [0.0, 0.8, -1.6] #Invert legs
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.4,0.0,0.0])
+v_des = np.array([0.2,0.0,0.0])
 step_height = gait_params.step_ht
 
 
@@ -80,9 +81,11 @@ terrain[1, 1] = 0.5
 # robot.create_height_map_perlin(terrain)
 
 mountain = os.path.dirname(os.path.realpath(__file__)) + "/terrain/Heightmap.png"
-#height_map = robot.create_height_map_png(mountain, 15, .001, -0.0)
+stairs = os.path.dirname(os.path.realpath(__file__)) + "/terrain/stairs_1.png"
 
-gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, gait_params, x0, plan_freq, q0)
+height_map = robot.create_height_map_png(1.2, 0.0, stairs, 3, .00001, -0.325)
+
+gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, gait_params, x0, plan_freq, q0, height_map)
 
 q, v = robot.get_state()
 
@@ -93,14 +96,16 @@ for o in range(int(500*(plan_freq/sim_dt))):
     com_arr.append(robot.get_com_location())
     # this bit has to be put in shared memory
     if pln_ctr == 0:
-        q, v = robot.get_state()        
+        q, v = robot.get_state()
+        print("Actual CoM X: ")
+        print(q[0])
         # reseting origin (causes scaling issues I think otherwise)
         q[0:2] = 0
         contact_configuration = robot.get_current_contacts()
         pr_st = time.time()
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(step_t,3), v_des, gait_params.step_ht, contact_configuration)
-        # if o == 0:
-        #     gg.plot_plan()
+        if o >= 2000:
+            gg.plot_plan()
         gg.reset()
         pr_et = time.time()
         # print("time", pr_et - pr_st)

@@ -23,7 +23,7 @@ subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisi
 time.sleep(2)
 
 ## Motion
-gait_params = jump
+gait_params = trot
 
 ## robot config and init
 
@@ -81,11 +81,7 @@ terrain[1, 1] = 0.5
 # robot.create_height_map_perlin(terrain)
 
 mountain = os.path.dirname(os.path.realpath(__file__)) + "/terrain/Heightmap.png"
-<<<<<<< HEAD
-# height_map = robot.create_height_map_png(mountain, 15, .001, -0.0)
-=======
 stairs = os.path.dirname(os.path.realpath(__file__)) + "/terrain/stairs_1.png"
->>>>>>> c633c20f65dee97995c72d60b3704e3cfcc6d215
 
 height_map = robot.create_height_map_png(1.2, 0.0, stairs, 3, .00001, -0.325)
 

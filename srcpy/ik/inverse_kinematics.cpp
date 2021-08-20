@@ -32,6 +32,7 @@ PYBIND11_MODULE(inverse_kinematics_cpp, m)
     ik.def("add_com_position_tracking_task", &ik::InverseKinematics::add_com_position_tracking_task);
     ik.def("add_centroidal_momentum_tracking_task", &ik::InverseKinematics::add_centroidal_momentum_tracking_task);
     ik.def("add_state_regularization_cost", &ik::InverseKinematics::add_state_regularization_cost);
+    ik.def("add_state_regularization_cost_single", &ik::InverseKinematics::add_state_regularization_cost_single);
     ik.def("add_ctrl_regularization_cost", &ik::InverseKinematics::add_ctrl_regularization_cost);
     ik.def("add_ctrl_regularization_cost_2", &ik::InverseKinematics::add_ctrl_regularization_cost_2);
 

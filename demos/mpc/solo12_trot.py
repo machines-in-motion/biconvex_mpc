@@ -9,7 +9,7 @@ import pinocchio as pin
 
 from robot_properties_solo.config import Solo12Config
 from abstract_mpc_gait_gen import SoloMpcGaitGen
-from solo12_gait_params import trot, walk, bound, still, gallop, jump
+from solo12_gait_params import trot, walk, air_bound, bound, still, gallop, jump
 
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 import os
@@ -23,7 +23,7 @@ subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisi
 time.sleep(2)
 
 ## Motion
-gait_params = trot
+gait_params = bound
 
 ## robot config and init
 
@@ -39,7 +39,7 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.2,0.0,0.0])
+v_des = np.array([0.4,0.0,0.0])
 step_height = gait_params.step_ht
 
 
@@ -80,12 +80,12 @@ terrain[1, 1] = 0.5
 
 # robot.create_height_map_perlin(terrain)
 
-mountain = os.path.dirname(os.path.realpath(__file__)) + "/terrain/Heightmap.png"
-stairs = os.path.dirname(os.path.realpath(__file__)) + "/terrain/stairs_1.png"
+# mountain = os.path.dirname(os.path.realpath(__file__)) + "/terrain/Heightmap.png"
+# stairs = os.path.dirname(os.path.realpath(__file__)) + "/terrain/stairs_1.png"
 
-height_map = robot.create_height_map_png(1.2, 0.0, stairs, 3, .00001, -0.325)
+# height_map = robot.create_height_map_png(1.2, 0.0, stairs, 3, .00001, -0.325)
 
-gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, gait_params, x0, plan_freq, q0, height_map)
+gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, gait_params, x0, plan_freq, q0, None)
 
 q, v = robot.get_state()
 
@@ -104,8 +104,8 @@ for o in range(int(500*(plan_freq/sim_dt))):
         contact_configuration = robot.get_current_contacts()
         pr_st = time.time()
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(step_t,3), v_des, gait_params.step_ht, contact_configuration)
-        if o >= 2000:
-            gg.plot_plan()
+        # if o >= 2000:
+        #     gg.plot_plan()
         gg.reset()
         pr_et = time.time()
         # print("time", pr_et - pr_st)

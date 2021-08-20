@@ -74,6 +74,10 @@ namespace ik{
                                         std::string cost_name, Eigen::VectorXd stateWeights, 
                                         Eigen::VectorXd x_reg, bool isTerminal = false);
 
+            void add_state_regularization_cost_single(int time_step, double wt, 
+                                        std::string cost_name, Eigen::VectorXd stateWeights, 
+                                        Eigen::VectorXd x_reg);
+
             void add_ctrl_regularization_cost_2(double st, double et, double wt, 
                                         std::string cost_name,  Eigen::VectorXd controlWeights, 
                                         Eigen::VectorXd u_reg, bool isTerminal);

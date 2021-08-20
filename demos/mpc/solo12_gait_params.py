@@ -83,7 +83,7 @@ trot = BiconvexMotionParams("solo12", "Trot")
 trot.gait_period = 0.5
 trot.stance_percent = [0.6, 0.6, 0.6, 0.6]
 trot.gait_dt = 0.05
-trot.phase_offset = [0.0, 0.5, 0.5, 0.0]
+trot.phase_offset = [0.0, 0.4, 0.4, 0.0]
 
 # IK
 trot.state_wt = np.array([0., 0, 10] + [1000] * 3 + [1.0] * (pin_robot.model.nv - 6) \
@@ -93,8 +93,8 @@ trot.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
 
 trot.swing_wt = [1e4, 1e4]
 trot.cent_wt = [0*5e+1, 5e+2]
-trot.step_ht = 0.13
-trot.nom_ht = 0.26
+trot.step_ht = 0.05
+trot.nom_ht = 0.2
 trot.reg_wt = [5e-2, 1e-5]
 
 # Dyn 
@@ -102,12 +102,12 @@ trot.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+4, 1e4]
 trot.W_X_ter = 10*np.array([1e+5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e+5])
 trot.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 trot.rho = 5e+4
-trot.ori_correction = [0.4, 0.5, 0.4]
-trot.gait_horizon = 2.0
+trot.ori_correction = [0.0, 0.5, 0.4]
+trot.gait_horizon = 1.0
 
 # Gains
 trot.kp = 3.0
-trot.kd = 0.3
+trot.kd = 0.05
 
 #### Walking #######################################
 walk = BiconvexMotionParams("solo12", "walk")
@@ -143,70 +143,70 @@ walk.kp = 3.5
 walk.kd = 0.15
 
 #### Bound #######################################
-# bound = BiconvexMotionParams("solo12", "bound")
-
-# # Cnt
-# bound.gait_period = 0.3
-# bound.stance_percent = [0.5, 0.5, 0.5, 0.5]
-# bound.gait_dt = 0.05
-# bound.phase_offset = [0.0, 0.0, 0.5, 0.5]
-
-# # IK
-# bound.state_wt = np.array([0., 0, 1e3] + [10, 10, 10] + [50.0] * (pin_robot.model.nv - 6) \
-#                         + [0.00] * 3 + [100, 10, 100] + [0.5] *(pin_robot.model.nv - 6))
-
-# bound.ctrl_wt = [0.5, 0.5, 0.5] + [1, 1, 1] + [0.5] *(pin_robot.model.nv - 6)
-
-# bound.swing_wt = [1e4, 1e4]
-# bound.cent_wt = [5e+1, 5e+2]
-# bound.step_ht = 0.07
-# bound.reg_wt = [7e-3, 7e-5]
-
-# # Dyn 
-# bound.W_X =        np.array([1e-5, 1e-5, 5e+4, 1e1, 1e1, 1e+3, 5e+3, 1e+4, 5e+3])
-# bound.W_X_ter = 10*np.array([1e-5, 1e-5, 5e+4, 1e1, 1e1, 1e+3, 1e+4, 1e+4, 1e+4])
-# bound.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
-# bound.nom_ht = 0.25
-# bound.rho = 5e+4
-# bound.ori_correction = [0.2, 0.8, 0.8]
-# bound.gait_horizon = 2.0
-
-# # Gains
-# bound.kp = 3.0
-# bound.kd = 0.05
-
-
 bound = BiconvexMotionParams("solo12", "bound")
-
+# 
 # Cnt
 bound.gait_period = 0.3
-bound.stance_percent = [0.4, 0.4, 0.4, 0.4]
+bound.stance_percent = [0.5, 0.5, 0.5, 0.5]
 bound.gait_dt = 0.05
 bound.phase_offset = [0.0, 0.0, 0.5, 0.5]
-
+# 
 # IK
 bound.state_wt = np.array([0., 0, 1e3] + [10, 10, 10] + [50.0] * (pin_robot.model.nv - 6) \
                         + [0.00] * 3 + [100, 10, 100] + [0.5] *(pin_robot.model.nv - 6))
-
+# 
 bound.ctrl_wt = [0.5, 0.5, 0.5] + [1, 1, 1] + [0.5] *(pin_robot.model.nv - 6)
-
+# 
 bound.swing_wt = [1e4, 1e4]
 bound.cent_wt = [5e+1, 5e+2]
 bound.step_ht = 0.07
 bound.reg_wt = [7e-3, 7e-5]
-
+# 
 # Dyn 
 bound.W_X =        np.array([1e-5, 1e-5, 5e+4, 1e1, 1e1, 1e+3, 5e+3, 1e+4, 5e+3])
 bound.W_X_ter = 10*np.array([1e-5, 1e-5, 5e+4, 1e1, 1e1, 1e+3, 1e+4, 1e+4, 1e+4])
-bound.W_F = np.array(4*[1e+1, 1e+1, 3e+1])
+bound.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 bound.nom_ht = 0.25
 bound.rho = 5e+4
 bound.ori_correction = [0.2, 0.8, 0.8]
 bound.gait_horizon = 2.0
-
+# 
 # Gains
 bound.kp = 3.0
 bound.kd = 0.05
+
+############ Air_bound #################################################################
+air_bound = BiconvexMotionParams("solo12", "air_bound")
+
+# Cnt
+air_bound.gait_period = 0.3
+air_bound.stance_percent = [0.4, 0.4, 0.4, 0.4]
+air_bound.gait_dt = 0.05
+air_bound.phase_offset = [0.0, 0.0, 0.5, 0.5]
+
+# IK
+air_bound.state_wt = np.array([0., 0, 1e3] + [10, 10, 10] + [50.0] * (pin_robot.model.nv - 6) \
+                        + [0.00] * 3 + [100, 10, 100] + [0.5] *(pin_robot.model.nv - 6))
+
+air_bound.ctrl_wt = [0.5, 0.5, 0.5] + [1, 1, 1] + [0.5] *(pin_robot.model.nv - 6)
+
+air_bound.swing_wt = [1e4, 1e4]
+air_bound.cent_wt = [5e+1, 5e+2]
+air_bound.step_ht = 0.07
+air_bound.reg_wt = [7e-3, 7e-5]
+
+# Dyn 
+air_bound.W_X =        np.array([1e-5, 1e-5, 5e+4, 1e1, 1e1, 1e+3, 5e+3, 1e+4, 5e+3])
+air_bound.W_X_ter = 10*np.array([1e-5, 1e-5, 5e+4, 1e1, 1e1, 1e+3, 1e+4, 1e+4, 1e+4])
+air_bound.W_F = np.array(4*[1e+1, 1e+1, 3e+1])
+air_bound.nom_ht = 0.25
+air_bound.rho = 5e+4
+air_bound.ori_correction = [0.2, 0.8, 0.8]
+air_bound.gait_horizon = 2.0
+
+# Gains
+air_bound.kp = 3.0
+air_bound.kd = 0.05
 
 #### jump #########################################
 jump = BiconvexMotionParams("solo12", "Jump")

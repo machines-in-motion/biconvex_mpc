@@ -82,16 +82,18 @@ def generate_plan(q, v, t):
 
     dt = 5e-2
     T = 1.1
-    rt = 0.4
+    rt = 0.3
     st = 0.5
 
     swing_wt = [1e5, 1e4]
     reg_wt = [1e-2, 7e-5]
 
-    state_wt = np.array([0., 0, 0] + [100, 0, 100] + 4*[50.0, 50.0, 50] \
+    state_wt = np.array([0., 0, 100] + [100, 0, 100] + 4*[50.0, 50.0, 50] \
                             + [0.00] * 3 + [10, 10, 10] + [3.5] *(pin_robot.model.nv - 6))
 
-    state_wt2 = np.array([0., 0, 1000.0] + [100, 100, 100] + 4*[1e4, 50.0, 50] \
+    x_reg[2] = 0.3
+
+    state_wt2 = np.array([0., 0, 1000.0] + [100, 100, 100] + 4*[1e3, 50.0, 50] \
                             + [0.00] * 3 + [10, 10, 10] + [3.5] *(pin_robot.model.nv - 6))
 
     x_reg2 = x_reg.copy()
@@ -116,14 +118,10 @@ def generate_plan(q, v, t):
 
     m = pin.computeTotalMass(rmodel)
 
-    # if t < 0.2:
     bx = 0.15
     by = 0.15
     bz = 0.25
-    # else:
-    #     bx = 100
-    #     by = 100
-    #     bz = 100
+
     fx_max = 25
     fy_max = 25
     fz_max = 25
@@ -131,7 +129,7 @@ def generate_plan(q, v, t):
     W_X =        np.array([1e+2, 1e-2, 1e+5, 1e-2, 1e-2, 1e-4, 1e+3, 1e+4, 1e+4])
     W_X_ter = 10*np.array([1e+2, 1e-2, 1e+5, 1e-2, 1e-2, 1e-4, 1e+3, 1e+4, 1e+4])
     W_F = np.array(4*[1e+1, 1e+1, 1e+1])
-    nom_ht  = [0.6, 0, 0.3]
+    nom_ht  = [0.6, 0, 0.35]
     rho = 5e+4
 
     for l in range(1):

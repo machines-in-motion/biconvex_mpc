@@ -41,7 +41,7 @@ x_reg2[13:19] = 2 * [0.0, -np.pi - 0.8, 1.6]
 subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisimUnity.x86_64"])
 
 robot = Solo12Env(7.5, 0.2, q0, v0, False, False)
-time.sleep(4)
+time.sleep(2)
 sim_t = 0.0
 step_t = 0.0
 sim_dt = .001
@@ -73,7 +73,7 @@ for o in range(int(500*(plan_freq/sim_dt))):
         index = min(index, len(xs) - 1)
     robot.send_joint_command(q_des, dq_des, us[index], f[index], contact_configuration)
 
-    time.sleep(0.001)
+    time.sleep(0.01)
 
     sim_t += sim_dt
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))

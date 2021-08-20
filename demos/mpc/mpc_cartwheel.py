@@ -25,15 +25,15 @@ def gen_cnt_plan(t, st, rt, T):
                 [ 1.,      0.0054,   0.14695,  0., 0.,  st    ],
                 [ 1.,      0.0054,  -0.14695,  0., 0.,  st    ]],
 
-                [[ 1.,      0.3946,   0.14695,  0., st, st + rt   ],
-                [ 1.,      0.3946,  -0.14695,  0., st, st + rt   ],
+               [[ 0.,      0.3946,   0.14695,  0., st, st + rt   ],
+                [ 0.,      0.3946,  -0.14695,  0., st, st + rt   ],
                 [ 0.,      0.0054,   0.14695,  0., st, st + rt   ],
                 [ 0.,      0.0054,  -0.14695,  0., st, st + rt   ]],
 
-                [[ 1.,      0.3946,   0.14695,  0., st + rt, T    ],
+               [[ 1.,      0.3946,   0.14695,  0., st + rt, T    ],
                 [ 1.,      0.3946,  -0.14695,  0., st + rt, T    ],
-                [ 1.,      0.9054,   0.14695,  0., st + rt, T    ],
-                [ 1.,      0.9054,  -0.14695,  0., st + rt, T    ]]]
+                [ 1.,      0.8054,   0.14695,  0., st + rt, T    ],
+                [ 1.,      0.8054,  -0.14695,  0., st + rt, T    ]]]
 
     cnt_plan = np.array(cnt_plan)
 
@@ -81,14 +81,14 @@ def generate_plan(q, v, t):
         ee_frame_id.append(rmodel.getFrameId(eff_names[i]))
 
     dt = 5e-2
-    T = 1.1
+    T = 0.8
     rt = 0.3
-    st = 0.5
+    st = 0.3
 
     swing_wt = [1e5, 1e4]
     reg_wt = [1e-2, 7e-5]
 
-    state_wt = np.array([0., 0, 100] + [100, 0, 100] + 4*[50.0, 50.0, 50] \
+    state_wt = np.array([0., 0, 100] + [100, 0, 100] + 4*[1e3, 50.0, 50] \
                             + [0.00] * 3 + [10, 10, 10] + [3.5] *(pin_robot.model.nv - 6))
 
     x_reg[2] = 0.3
@@ -126,10 +126,10 @@ def generate_plan(q, v, t):
     fy_max = 25
     fz_max = 25
 
-    W_X =        np.array([1e+2, 1e-2, 1e+5, 1e-2, 1e-2, 1e-4, 1e+3, 1e+4, 1e+4])
-    W_X_ter = 10*np.array([1e+2, 1e-2, 1e+5, 1e-2, 1e-2, 1e-4, 1e+3, 1e+4, 1e+4])
+    W_X =        np.array([1e-2, 1e-2, 1e+5, 1e-2, 1e-2, 1e-4, 1e+3, 1e+4, 1e+4])
+    W_X_ter = 10*np.array([1e-2, 1e-2, 1e+5, 1e-2, 1e-2, 1e-4, 1e+3, 1e+4, 1e+4])
     W_F = np.array(4*[1e+1, 1e+1, 1e+1])
-    nom_ht  = [0.6, 0, 0.35]
+    nom_ht  = [0.5, 0, 0.35]
     rho = 5e+4
 
     for l in range(1):
@@ -202,7 +202,6 @@ def generate_plan(q, v, t):
                                                                         "cnt_" + str(0) + eff_names[j], i)
 
 
-        # ik.add_state_regularization_cost(0, T, reg_wt[0], "xReg", state_wt, x_reg, False)
         ik.add_ctrl_regularization_cost_2(0, T, reg_wt[1], "uReg", ctrl_wt, np.zeros(rmodel.nv), True)
 
         ik.setup_costs()

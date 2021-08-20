@@ -47,7 +47,7 @@ step_t = 0.0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-plan_freq = 10.0 #0.05 # sec
+plan_freq = 0.5 #0.05 # sec
 update_time = 0.0 # sec (time of lag)
 lag = int(update_time/sim_dt)
 
@@ -64,13 +64,13 @@ for o in range(int(500*(plan_freq/sim_dt))):
         f = f[lag:]
         index = 0
 
-    if index < len(xs) - 1:
-        q_des = xs[index][:pin_robot.model.nq].copy()
-        dq_des = xs[index][pin_robot.model.nq:].copy()
-    else:
-        q_des = x_reg2[0:len(q0)]
-        dq_des = v0
-        index = min(index, len(xs) - 1)
+    # if index < len(xs) - 1:
+    q_des = xs[index][:pin_robot.model.nq].copy()
+    dq_des = xs[index][pin_robot.model.nq:].copy()
+    # else:
+    #     q_des = x_reg2[0:len(q0)]
+    #     dq_des = v0
+    #     index = min(index, len(xs) - 1)
     robot.send_joint_command(q_des, dq_des, us[index], f[index], contact_configuration)
 
     time.sleep(0.01)

@@ -18,7 +18,24 @@ import subprocess
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 
 
-def gen_cnt_plan(t, st, rt, T):
+robot = Solo12Config.buildRobotWrapper()
+rmodel = robot.model
+rdata = robot.data
+
+pin_robot = Solo12Config.buildRobotWrapper()
+urdf = Solo12Config.urdf_path
+
+
+q0 = np.array(Solo12Config.initial_configuration)
+v0 = pin.utils.zero(pin_robot.model.nv)
+x_reg = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
+
+eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
+hip_names = ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]
+    
+
+
+def gen_cnt_plan(rdata, fid, t, st, rt, T):
 
     cnt_plan = [[[ 1.,      0.3946,   0.14695,  0., 0.,  st    ],
                 [ 1.,      0.3946,  -0.14695,  0., 0.,  st    ],
@@ -42,35 +59,31 @@ def gen_cnt_plan(t, st, rt, T):
     cnt_plan[1][:,5] -= t
     cnt_plan[2][:,4] -= t
 
+    if t == 0:
+        for j in range(len(fid)):
+            cnt_plan[0][j][1:3] = np.round(rdata.oMf[fid[j]].translation, 3)[0:2]
 
     if t >= st and t < st + rt:
         cnt_plan = cnt_plan[1:]
-        
+
     elif t >= st + rt:
         cnt_plan = cnt_plan[2:]
+        # updating foot location after the flip has happened
+        for i in range(len(cnt_plan)):
+            for j in range(len(fid)):
+                cnt_plan[i][j][1:3] = np.round(rdata.oMf[fid[j]].translation, 3)[0:2]
 
     cnt_plan[0][:,4] = 0    
+
+
 
     return cnt_plan
 
 
 ## make this a class
 def generate_plan(q, v, t):
-    robot = Solo12Config.buildRobotWrapper()
-    rmodel = robot.model
-    rdata = robot.data
+    t1 = time.time()
 
-    pin_robot = Solo12Config.buildRobotWrapper()
-    urdf = Solo12Config.urdf_path
-
-
-    q0 = np.array(Solo12Config.initial_configuration)
-    v0 = pin.utils.zero(pin_robot.model.nv)
-    x_reg = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
-
-    eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
-    hip_names = ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]
-    
     pin.forwardKinematics(rmodel, rdata, q, v)
     pin.updateFramePlacements(rmodel, rdata)
 
@@ -85,15 +98,15 @@ def generate_plan(q, v, t):
     rt = 0.3
     st = 0.3
 
-    swing_wt = [1e5, 1e4]
+    swing_wt = [1e4, 1e4]
     reg_wt = [1e-2, 7e-5]
 
-    state_wt = np.array([0., 0, 100] + [100, 0, 100] + 4*[1e3, 50.0, 50] \
+    state_wt = np.array([0., 0, 100] + [100, 0, 100] + 4*[1e3, 50.0, 20] \
                             + [0.00] * 3 + [10, 10, 10] + [3.5] *(pin_robot.model.nv - 6))
 
     x_reg[2] = 0.3
 
-    state_wt2 = np.array([0., 0, 1000.0] + [100, 100, 100] + 4*[1e3, 50.0, 50] \
+    state_wt2 = np.array([0., 0, 1000.0] + [100, 100, 100] + 4*[1e3, 1e2, 50] \
                             + [0.00] * 3 + [10, 10, 10] + [3.5] *(pin_robot.model.nv - 6))
 
     x_reg2 = x_reg.copy()
@@ -102,19 +115,9 @@ def generate_plan(q, v, t):
     x_reg2[7:13] = 2 * [0.0, -np.pi + 0.8, -1.6]
     x_reg2[13:19] = 2 * [0.0, -np.pi - 0.8, 1.6]
 
-
-    state_wt3 = np.array([0., 0, 0.0] + [10, 10, 10] + 4*[50.0, 50.0, 50.0] \
-                            + [0.00] * 3 + [10, 10, 10] + [3.5] *(pin_robot.model.nv - 6))
-
-    x_reg3 = x_reg.copy()
-    x_reg3[7:13] = 2 * [0.0, -np.pi/2 + 0.8, -1.6]
-    x_reg3[13:19] = 2 * [0.0, np.pi/2 - 0.8, 1.6]
-    x_reg3[3:7] = [0,0.7071,0,0.7071]
-
     ctrl_wt = [0, 0, 10] + [1, 1, 1] + [50.0] *(pin_robot.model.nv - 6)
 
-
-    cnt_plan = gen_cnt_plan(t, st, rt, T)
+    cnt_plan = gen_cnt_plan(rdata, ee_frame_id, t, st, rt, T)
 
     m = pin.computeTotalMass(rmodel)
 
@@ -126,88 +129,85 @@ def generate_plan(q, v, t):
     fy_max = 25
     fz_max = 25
 
-    W_X =        np.array([1e-2, 1e-2, 1e+5, 1e-2, 1e-2, 1e-4, 1e+3, 1e+4, 1e+4])
+    W_X =        np.array([1e-2, 1e-2, 1e+5, 1e-2, 1e-2, 1e-4, 1e+3, 1e+3, 1e+4])
     W_X_ter = 10*np.array([1e-2, 1e-2, 1e+5, 1e-2, 1e-2, 1e-4, 1e+3, 1e+4, 1e+4])
     W_F = np.array(4*[1e+1, 1e+1, 1e+1])
-    nom_ht  = [0.5, 0, 0.35]
+    nom_ht  = [0.5, 0, 0.5]
     rho = 5e+4
 
-    for l in range(1):
+    dyn_hor = T
+    mp = BiConvexMP(m, dt, dyn_hor, len(eff_names), rho = rho)
 
-        mp = BiConvexMP(m, dt, T, len(eff_names), rho = rho)
+    X_init = np.zeros(9)
+    pin.computeCentroidalMomentum(rmodel, rdata)
+    X_init[0:3] = pin.centerOfMass(rmodel, rdata, q, v)
+    X_init[3:] = np.array(rdata.hg)
+    X_init[3:6] /= m
 
-        X_init = np.zeros(9)
-        pin.computeCentroidalMomentum(rmodel, rdata)
-        X_init[0:3] = pin.centerOfMass(rmodel, rdata, q, v)
-        X_init[3:] = np.array(rdata.hg)
-        X_init[3:6] /= m
-        print(X_init)
-        X_nom_tmp = np.zeros((9*int(T/dt)))
-        X_nom_tmp[9*(int(0.5*st/dt)) + 2::9] = nom_ht[2]
+    X_nom_tmp = np.zeros((9*int(T/dt)))
+    X_nom_tmp[9*(int(0.5*st/dt)) + 2::9] = nom_ht[2]
 
-        X_nom_tmp[7::9] = 0.2
-        X_nom_tmp[9*(int(st/dt)) + 7::9] = 0.8
-        X_nom_tmp[9*(int((st + rt)/dt)) + 7::9] = 0.1
-        X_ter = np.zeros_like(X_init)
-        X_ter[2] = 0.2
-        X_ter[0] = 0.5
+    X_nom_tmp[7::9] = 0.2
+    X_nom_tmp[9*(int(st/dt)) + 7::9] = 0.8
+    X_nom_tmp[9*(int((st + rt)/dt)) + 7::9] = 0.1
+    X_ter = np.zeros_like(X_init)
+    X_ter[2] = 0.2
+    X_ter[0] = 0.5
+    
+    X_nom = np.zeros_like(X_nom_tmp)
+    X_nom[0:len(X_nom[9*int(t/dt):])] = X_nom_tmp[9*int(t/dt):]
+    for b in range(9):
+        X_nom[len(X_nom[9*int(t/dt):])+b::9] = X_ter[b]
+    
+    X_nom = X_nom[0:9*int(dyn_hor/dt)]
+    if int(dyn_hor/dt) < T:
+        X_ter = X_nom[9*int(dyn_hor/dt):9*int(dyn_hor/dt)+9]
+
+    mp.create_contact_array(np.array(cnt_plan))
+    mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
+    mp.create_cost_X(W_X, W_X_ter, X_ter, X_nom)
+    mp.create_cost_F(W_F)
+
+    com_opt, F_opt, mom_opt = mp.optimize(X_init, 150)
+    t2 = time.time()
+    
+    ik_hor = min(dyn_hor, T)
+
+    t3 = time.time()
+
+    ik = InverseKinematics(urdf, dt, ik_hor)
+    
+    ik.add_com_position_tracking_task(0, ik_hor, com_opt[0:int(ik_hor/dt)], 1, "com", False)
+    ik.add_centroidal_momentum_tracking_task(0, ik_hor, mom_opt[0:int(ik_hor/dt)], 1e2, "mom", False)
+
+    for i in range(int(ik_hor/dt)):
+        lt = i*dt #local time
+
+        if lt < st + rt and len(cnt_plan) > 2:
+            ik.add_state_regularization_cost_single(i, reg_wt[0], "xReg", state_wt, x_reg)
+        else:
+            ik.add_state_regularization_cost_single(i, 500*reg_wt[0], "xReg2", state_wt2, x_reg2)
         
-        X_nom = np.zeros_like(X_nom_tmp)
-        X_nom[0:len(X_nom[9*int(t/dt):])] = X_nom_tmp[9*int(t/dt):]
-        for b in range(9):
-            X_nom[len(X_nom[9*int(t/dt):])+b::9] = X_ter[b]
-        
-        mp.create_contact_array(np.array(cnt_plan))
-        mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
-        mp.create_cost_X(W_X, W_X_ter, X_ter, X_nom)
-        mp.create_cost_F(W_F)
-
-        if l > 0:
-            opt_mom = np.zeros((len(xs), 6))
-            opt_com = np.zeros((len(xs), 3))
-            m = pin.computeTotalMass(rmodel)
-            for i in range(len(xs)):
-                q1 = xs[i][:rmodel.nq]
-                v1 = xs[i][rmodel.nq:]
-                pin.forwardKinematics(rmodel, rdata, q1, v1)
-                pin.computeCentroidalMomentum(rmodel, rdata)
-                opt_com[i] = pin.centerOfMass(rmodel, rdata, q1, v1)
-                opt_mom[i] = np.array(rdata.hg)
-                opt_mom[i][0:3] /= m
-
-            mp.add_ik_com_cost(opt_com)
-            mp.add_ik_momentum_cost(opt_mom)
-
-        com_opt, F_opt, mom_opt = mp.optimize(X_init, 150)
-
-        
-        ik = InverseKinematics(urdf, dt, T)
-        
-        ik.add_com_position_tracking_task(0, T, com_opt, 1, "com", False)
-        ik.add_centroidal_momentum_tracking_task(0, T, mom_opt, 1e2, "mom", False)
-
-        for i in range(int(T/dt)):
-            lt = i*dt #local time
-
-            if lt < st + rt and len(cnt_plan) > 1:
-                ik.add_state_regularization_cost_single(i, reg_wt[0], "xReg", state_wt, x_reg)
-            else:
-                ik.add_state_regularization_cost_single(i, reg_wt[0], "xReg2", state_wt2, x_reg2)
-            
-            for j in range(len(eff_names)):
-                for b in range(len(cnt_plan)):
-                    if lt < cnt_plan[b][j][5] and lt >= cnt_plan[b][j][4] and cnt_plan[b][j][0] == 1:
-                        pos = cnt_plan[b][j][1:4]
-                        ik.add_position_tracking_task_single(ee_frame_id[j], pos, swing_wt[0],
-                                                                        "cnt_" + str(0) + eff_names[j], i)
+        for j in range(len(eff_names)):
+            for b in range(len(cnt_plan)):
+                if lt < cnt_plan[b][j][5] and lt >= cnt_plan[b][j][4] and cnt_plan[b][j][0] == 1:
+                    pos = cnt_plan[b][j][1:4]
+                    ik.add_position_tracking_task_single(ee_frame_id[j], pos, swing_wt[0],
+                                                                    "cnt_" + str(0) + eff_names[j], i)
 
 
-        ik.add_ctrl_regularization_cost_2(0, T, reg_wt[1], "uReg", ctrl_wt, np.zeros(rmodel.nv), True)
+    ik.add_ctrl_regularization_cost_2(0, ik_hor, reg_wt[1], "uReg", ctrl_wt, np.zeros(rmodel.nv), True)
 
-        ik.setup_costs()
-        ik.optimize(x0)
-        xs = ik.get_xs()
-        us = ik.get_us()
+    ik.setup_costs()
+
+    ik.optimize(x0)
+    t4 = time.time()
+    print("dyn :", t2 - t1)
+    print("ik :", t4 - t3)
+    print("total :", t4 - t1)
+
+    xs = ik.get_xs()
+    us = ik.get_us()
         
     n_eff = 3*4
 

@@ -15,7 +15,7 @@ import os
 
 
 ## Motion
-gait_params = still
+gait_params = trot
 
 ## robot config and init
 pin_robot = A1Config.buildRobotWrapper()
@@ -28,11 +28,11 @@ q0 = np.array(A1Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.0,0.0,0.0])
+v_des = np.array([1.0,0.0,0.0])
 step_height = gait_params.step_ht
 
 plan_freq = 0.04 # sec
-update_time = 0.0 # sec (time of lag)
+update_time = 0.008 # sec (time of lag)
 
 sim_t = 0.0
 step_t = 0.0
@@ -78,13 +78,10 @@ for o in range(int(500*(plan_freq/sim_dt))):
         index = 0
 
     # control loop
-
-    # if np.all((contact_configuration==0)):
-    #     print("flight phase")
     q_des = xs[index][:pin_robot.model.nq].copy()
     dq_des = xs[index][pin_robot.model.nq:].copy()
-    #robot.send_joint_command(q_des, dq_des, us[index], f[index], contact_configuration)
-    robot.send_joint_command_tsid(sim_t, q_des, dq_des, us[index], f[index], contact_configuration)
+    robot.send_joint_command(q_des, dq_des, us[index], f[index], contact_configuration)
+    #robot.send_joint_command_tsid(sim_t, q_des, dq_des, us[index], f[index], contact_configuration)
     sim_t += sim_dt
     step_t = (step_t + sim_dt)%gait_time
 

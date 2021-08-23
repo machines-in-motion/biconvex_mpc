@@ -54,4 +54,4 @@ gg.create_contact_task(des_pos_right[0], 0, T, "l_foot", "L_step", 1e5)
 gg.create_centroidal_task(des_mom, 0, T, "mom track", 1e4)
 
 xs, us = gg.optimize(x0, stateWeights, x0, wt_xreg=5e-3)
-np.savez("../motion_planner/dat_file/ik", xs = xs)
+# np.savez("../motion_planner/dat_file/ik", xs = xs)

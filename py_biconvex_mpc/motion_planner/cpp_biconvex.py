@@ -251,10 +251,12 @@ class BiConvexMP(BiConvexCosts):
 
     def stats(self):
 
+        t = self.dt*np.arange(0, len(self.X_opt[0::9]))
+
         fig, ax = plt.subplots(3,1)
-        ax[0].plot(self.X_opt[0::9], label = "Cx")
-        ax[0].plot(self.X_opt[1::9], label = "Cy")
-        ax[0].plot(self.X_opt[2::9], label = "Cz")
+        ax[0].plot(t, self.X_opt[0::9], label = "Cx")
+        ax[0].plot(t, self.X_opt[1::9], label = "Cy")
+        ax[0].plot(t, self.X_opt[2::9], label = "Cz")
 
         # ax[0].plot(self.X_opt_old[0::9], label = "Cx_old")
         # ax[0].plot(self.X_opt_old[1::9], label = "Cy_old")
@@ -262,39 +264,39 @@ class BiConvexMP(BiConvexCosts):
 
 
         if isinstance(self.ik_com_opt, np.ndarray):
-            ax[0].plot(self.ik_com_opt[:,0], label = "ik_Cx")
-            ax[0].plot(self.ik_com_opt[:,1], label = "ik_Cy")
-            ax[0].plot(self.ik_com_opt[:,2], label = "ik_Cz")
+            ax[0].plot(t, self.ik_com_opt[:,0], label = "ik_Cx")
+            ax[0].plot(t, self.ik_com_opt[:,1], label = "ik_Cy")
+            ax[0].plot(t, self.ik_com_opt[:,2], label = "ik_Cz")
         ax[0].grid()
         ax[0].legend()
 
-        ax[1].plot(self.X_opt[3::9], label = "Vx")
-        ax[1].plot(self.X_opt[4::9], label = "Vy")
-        ax[1].plot(self.X_opt[5::9], label = "Vz")
+        ax[1].plot(t, self.X_opt[3::9], label = "Vx")
+        ax[1].plot(t, self.X_opt[4::9], label = "Vy")
+        ax[1].plot(t, self.X_opt[5::9], label = "Vz")
 
         # ax[1].plot(self.X_opt_old[3::9], label = "Vx_old")
         # ax[1].plot(self.X_opt_old[4::9], label = "Vy_old")
         # ax[1].plot(self.X_opt_old[5::9], label = "Vz_old")
 
         if isinstance(self.ik_mom_opt, np.ndarray):
-            ax[1].plot(self.ik_mom_opt[:,0], label = "ik_Vx")
-            ax[1].plot(self.ik_mom_opt[:,1], label = "ik_Vy")
-            ax[1].plot(self.ik_mom_opt[:,2], label = "ik_Vz")
+            ax[1].plot(t, self.ik_mom_opt[:,0], label = "ik_Vx")
+            ax[1].plot(t, self.ik_mom_opt[:,1], label = "ik_Vy")
+            ax[1].plot(t, self.ik_mom_opt[:,2], label = "ik_Vz")
             
         ax[1].grid()
         ax[1].legend()
 
-        ax[2].plot(self.X_opt[6::9], label = "ang_x")
-        ax[2].plot(self.X_opt[7::9], label = "ang_y")
-        ax[2].plot(self.X_opt[8::9], label = "ang_z")
+        ax[2].plot(t, self.X_opt[6::9], label = "ang_x")
+        ax[2].plot(t, self.X_opt[7::9], label = "ang_y")
+        ax[2].plot(t, self.X_opt[8::9], label = "ang_z")
         # ax[2].plot(self.X_opt_old[6::9], label = "ang_x_old")
         # ax[2].plot(self.X_opt_old[7::9], label = "ang_y_old")
         # ax[2].plot(self.X_opt_old[8::9], label = "ang_z_old")
 
         if isinstance(self.ik_mom_opt, np.ndarray):
-            ax[2].plot(self.ik_mom_opt[:,3], label = "ik_ang_x")
-            ax[2].plot(self.ik_mom_opt[:,4], label = "ik_ang_y")
-            ax[2].plot(self.ik_mom_opt[:,5], label = "ik_ang_z")
+            ax[2].plot(t, self.ik_mom_opt[:,3], label = "ik_ang_x")
+            ax[2].plot(t, self.ik_mom_opt[:,4], label = "ik_ang_y")
+            ax[2].plot(t, self.ik_mom_opt[:,5], label = "ik_ang_z")
             
         ax[2].grid()
         ax[2].legend()
@@ -315,9 +317,9 @@ class BiConvexMP(BiConvexCosts):
 
         fig, ax_f = plt.subplots(self.n_eff,1)
         for n in range(self.n_eff):
-            ax_f[n].plot(self.F_opt[3*n::3*self.n_eff], label = "ee: " + str(n) + "Fx")
-            ax_f[n].plot(self.F_opt[3*n+1::3*self.n_eff], label = "ee: " + str(n) + "Fy")
-            ax_f[n].plot(self.F_opt[3*n+2::3*self.n_eff], label = "ee: " + str(n) + "Fz")
+            ax_f[n].plot(t[:-1], self.F_opt[3*n::3*self.n_eff], label = "ee: " + str(n) + "Fx")
+            ax_f[n].plot(t[:-1], self.F_opt[3*n+1::3*self.n_eff], label = "ee: " + str(n) + "Fy")
+            ax_f[n].plot(t[:-1], self.F_opt[3*n+2::3*self.n_eff], label = "ee: " + str(n) + "Fz")
 
             # ax_f[n].plot(self.F_opt_old[3*n::3*self.n_eff], label = "old_ee: " + str(n) + "Fx")
             # ax_f[n].plot(self.F_opt_old[3*n+1::3*self.n_eff], label = "old_ee: " + str(n) + "Fy")

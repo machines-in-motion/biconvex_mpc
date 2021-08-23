@@ -28,11 +28,11 @@ class Solo12Env:
         str_2 = str.replace("py_biconvex_mpc/bullet_utils", "")
         str_3 = str_2 + "robots/urdf/solo12/solo12.urdf"
 
-        urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-        model_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf"
+        # urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
+        # model_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf"
 
-        #urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-        #model_path = "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf"
+        urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
+        model_path = "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf"
         
         self.vis_ghost = vis_ghost
         self.bullet = loadBullet
@@ -52,7 +52,7 @@ class Solo12Env:
 
         self.f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
 
-        self.robot_tsid_ctrl = TSID_controller(urdf_path, model_path, self.f_arr, q0, v0)
+        # self.robot_tsid_ctrl = TSID_controller(urdf_path, model_path, self.f_arr, q0, v0)
 
         self.robot_id_ctrl = InverseDynamicsController(self.robot, self.f_arr)
         self.robot_id_ctrl.set_gains(kp, kd, [10.0, 10.0, 10.0], [1.0, 1.0, 1.0], [200.0, 200.0, 200.0], [50.0, 50.0, 50.0])
@@ -139,6 +139,6 @@ class Solo12Env:
         height_map = self.env.create_height_map_perlin(raisimTerrain)
         return height_map
 
-    def create_height_map_png(self, path_to_png, size, scale, z_offset):
-        height_map = self.env.create_height_map_png(path_to_png, size, scale, z_offset)
+    def create_height_map_png(self, x_center, y_center, path_to_png, size, scale, z_offset):
+        height_map = self.env.create_height_map_png(x_center, y_center, path_to_png, size, scale, z_offset)
         return height_map

@@ -91,7 +91,7 @@ class BiConvexCosts:
         if isinstance(self.ik_com_opt, np.ndarray):
             for i in range(len(self.ik_com_opt) - 1):
                 X_nom[9*i:9*i + 3] = self.ik_com_opt[i]
-            X_ter[0:3] = self.ik_mom_opt[-1]
+            X_ter[0:3] = self.ik_com_opt[-1]
 
 
         #Everything except the last 9 numbers

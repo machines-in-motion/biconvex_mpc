@@ -16,17 +16,12 @@ import os
 import raisimpy as raisim
 import subprocess
 
-# subprocess.Popen([r"/home/pshah/Applications/raisim/raisim_ws/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
-# subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnityOpengl/linux/raisimUnity.x86_64"])
-subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisimUnity.x86_64"])
-
 time.sleep(2)
 
 ## Motion
 gait_params = bound
 
 ## robot config and init
-
 pin_robot = Solo12Config.buildRobotWrapper()
 urdf_path = Solo12Config.urdf_path
 gait_time = gait_params.gait_period
@@ -34,7 +29,6 @@ dt = 5e-2
 
 n_eff = 4
 q0 = np.array(Solo12Config.initial_configuration)
-# q0[13:] = 2 * [0.0, 0.8, -1.6] #Invert legs
 
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
@@ -42,12 +36,9 @@ x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 v_des = np.array([0.4,0.0,0.0])
 step_height = gait_params.step_ht
 
-
-# plan_freq = 0.8*(gait_params.gait_horizon*gait_params.gait_period*0.5) - dt #0.05 # sec
 plan_freq = 0.05 # sec
 update_time = 0.0 # sec (time of lag)
 
-# while True:
 sim_t = 0.0
 step_t = 0.0
 sim_dt = .001
@@ -56,34 +47,6 @@ pln_ctr = 0
 robot = Solo12Env(gait_params.kp, gait_params.kd, q0, v0, False, False)
 
 lag = int(update_time/sim_dt)
-
-#Terrain Information --
-
-terrain_size = 20.0
-terrain_samples = 5
-terrain = np.zeros((terrain_samples, terrain_samples))
-terrain[1, 1] = 0.5
-#height_map = robot.create_height_map(terrain_size, terrain_samples, terrain)
-
-#Perlin Height Map
-
-# terrain = raisim.TerrainProperties()
-# terrain.frequency = 0.2
-# terrain.zScale = 0.02
-# terrain.xSize = 20.0
-# terrain.ySize = 20.0
-# terrain.xSamples = 50
-# terrain.ySamples = 50
-# terrain.fractalOctaves = 4
-# terrain.fractalLacunarity = 3.0
-# terrain.fractalGain = 0.1
-
-# robot.create_height_map_perlin(terrain)
-
-# mountain = os.path.dirname(os.path.realpath(__file__)) + "/terrain/Heightmap.png"
-# stairs = os.path.dirname(os.path.realpath(__file__)) + "/terrain/stairs_1.png"
-
-# height_map = robot.create_height_map_png(1.2, 0.0, stairs, 3, .00001, -0.325)
 
 gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, gait_params, x0, plan_freq, q0, None)
 
@@ -104,12 +67,8 @@ for o in range(int(500*(plan_freq/sim_dt))):
         contact_configuration = robot.get_current_contacts()
         pr_st = time.time()
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(step_t,3), v_des, gait_params.step_ht, contact_configuration)
-        # if o >= 2000:
-        #     gg.plot_plan()
         gg.reset()
         pr_et = time.time()
-        # print("time", pr_et - pr_st)
-        # assert False
 
     # update of plan
     # first loop assume that trajectory is planned
@@ -135,18 +94,6 @@ for o in range(int(500*(plan_freq/sim_dt))):
     #robot.send_joint_command_tsid(sim_t, q_des, dq_des, us[index], f[index], contact_configuration)
     sim_t += sim_dt
     step_t = (step_t + sim_dt)%gait_time
-    # if o == 4*(gait_time/sim_dt):
-    #     print("v_des updated")
-    #     v_des = np.array([-0.7,0.0, 0])
-
-    # if o == 8*(gait_time/sim_dt):
-    #     print("v_des updated")
-    #     v_des = np.array([-1.0,0.0, 0])
-
-    # if o == 12*(gait_time/sim_dt):
-    #     print("v_des updated")
-    #     v_des = np.array([-1.2,0.0, 0])
-
 
     time.sleep(0.001)
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
@@ -154,5 +101,4 @@ for o in range(int(500*(plan_freq/sim_dt))):
 
 print("done")
 
-# gg.plot(np.array(com_arr))
 

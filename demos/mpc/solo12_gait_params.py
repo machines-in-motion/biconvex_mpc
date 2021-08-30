@@ -42,6 +42,41 @@ still.gait_horizon = 2.0
 still.kp = 3.0
 still.kd = 0.1
 
+
+#### 2-Leg Balance #########################################
+balance = BiconvexMotionParams("solo12", "Balance")
+
+# Cnt
+balance.gait_period = 0.5
+balance.stance_percent = [1.0, 0.0, 0.0, 1.0]
+balance.gait_dt = 0.05
+balance.phase_offset = [0.0, 0.0, 0.0, 0.0]
+
+# IK
+balance.state_wt = np.array([0., 0, 10] + [1000] * 3 + [1.0, 2.0, 1.0] * 4
+                        \
+                         + [0.00] * 3 + [100] * 3 + [0.5] *(pin_robot.model.nv - 6))
+
+balance.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
+
+balance.swing_wt = [0e4, 0e4]
+balance.cent_wt = [1*5e+1, 5e+2]
+balance.step_ht = 0.11
+balance.nom_ht = 0.26
+balance.reg_wt = [5e-2, 1e-5]
+
+# Dyn
+balance.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+4, 1e4])
+balance.W_X_ter = 10*np.array([1e+5, 1e+5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+7, 1e+5, 1e+5])
+balance.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
+balance.rho = 5e+4
+balance.ori_correction = [0.4, 0.5, 0.4]
+balance.gait_horizon = 2.0
+
+# Gains
+balance.kp = 3.0
+balance.kd = 0.1
+
 #### Gallop Still #########################################
 gallop = BiconvexMotionParams("solo12", "Gallop")
 

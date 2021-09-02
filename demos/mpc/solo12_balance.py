@@ -1,4 +1,4 @@
-## This is a demo for trot motion in mpc
+## This is a demo for 2-leg balance in mpc
 ## Author : Avadesh Meduri
 ## Date : 21/04/2021
 
@@ -8,8 +8,8 @@ import copy
 import pinocchio as pin
 
 from robot_properties_solo.config import Solo12Config
-from abstract_mpc_gait_gen import SoloMpcGaitGen
-from solo12_gait_params import trot, walk, air_bound, bound, still, gallop, jump
+from abstract_balance_gen import SoloMpcGaitGen
+from solo12_gait_params import trot, walk, air_bound, bound, still, gallop, jump, balance
 
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 import os
@@ -19,7 +19,7 @@ import subprocess
 time.sleep(2)
 
 ## Motion
-gait_params = bound
+gait_params = balance
 
 ## robot config and init
 pin_robot = Solo12Config.buildRobotWrapper()
@@ -29,14 +29,21 @@ dt = 5e-2
 
 n_eff = 4
 q0 = np.array(Solo12Config.initial_configuration)
+q0[10] = -0.8
+q0[11] = 1.2
+q0[12] = -2.2
+
+q0[13] = 0.8
+q0[14] = -1.2
+q0[15] = 2.2
 
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.4,0.0,0.0])
+v_des = np.array([0.0,0.0,0.0])
 step_height = gait_params.step_ht
 
-plan_freq = 0.05 # sec
+plan_freq = 0.002 # sec
 update_time = 0.0 # sec (time of lag)
 
 sim_t = 0.0
@@ -47,6 +54,14 @@ pln_ctr = 0
 robot = Solo12Env(gait_params.kp, gait_params.kd, q0, v0, False, False)
 
 lag = int(update_time/sim_dt)
+
+x0[10] = -0.8
+x0[11] = 1.2
+x0[12] = -2.2
+
+x0[13] = 0.8
+x0[14] = -1.2
+x0[15] = 2.2
 
 gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, gait_params, x0, plan_freq, q0, None)
 
@@ -59,14 +74,16 @@ for o in range(int(500*(plan_freq/sim_dt))):
     com_arr.append(robot.get_com_location())
     # this bit has to be put in shared memory
     if pln_ctr == 0:
+        print("Time: ")
+        print(sim_t)
         q, v = robot.get_state()
-        print("Actual CoM X: ")
-        print(q[0])
         # reseting origin (causes scaling issues I think otherwise)
-        q[0:2] = 0
+
         contact_configuration = robot.get_current_contacts()
         pr_st = time.time()
-        xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(step_t,3), v_des, gait_params.step_ht, contact_configuration)
+        xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(step_t,3), v_des, 0.0, gait_params.step_ht, contact_configuration)
+        # if sim_t > 1.5:
+        #     gg.plot_plan()
         gg.reset()
         pr_et = time.time()
 

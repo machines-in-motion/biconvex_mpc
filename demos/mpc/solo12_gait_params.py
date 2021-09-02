@@ -47,7 +47,7 @@ still.kd = 0.1
 balance = BiconvexMotionParams("solo12", "Balance")
 
 # Cnt
-balance.gait_period = 0.2
+balance.gait_period = 0.15
 balance.stance_percent = [1.0, 0.0, 0.0, 1.0]
 balance.gait_dt = 0.05
 balance.phase_offset = [0.0, 0.0, 0.0, 0.0]
@@ -59,18 +59,18 @@ balance.state_wt = np.array([0., 0, 10] + [1000] * 3 + [1.0, 1.0, 1.0] + 3 * [0.
 
 balance.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
 
-balance.swing_wt = [0e4, 0e4]
+balance.swing_wt = [2e3, 2e3]
 balance.cent_wt = [3e+5, 5e+1]
-balance.step_ht = 0.11
+balance.step_ht = 0.13
 balance.nom_ht = 0.26
 balance.reg_wt = [5e-2, 1e-5]
 
 # Dyn
 balance.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+1, 2e+2, 1e+1, 1e+2, 1e+2, 1e2])
 balance.W_X_ter = 10*np.array([1e+5, 1e+5, 1e+5, 1e+1, 2e+2, 1e+1, 1e+2, 1e+2, 1e+2])
-balance.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
+balance.W_F = np.array(4*[1e-1, 1e-1, 1e-1])
 balance.rho = 5e+4
-balance.ori_correction = [0.1, 0.2, 0.2]
+balance.ori_correction = [0.4, 0.4, 0.4]
 balance.gait_horizon = 1.0
 
 # Gains

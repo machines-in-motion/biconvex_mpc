@@ -36,6 +36,8 @@ class CarthwheelGen:
         self.pin_robot = Solo12Config.buildRobotWrapper()
         self.urdf = Solo12Config.urdf_path
 
+        self.n = -1
+
         # move this outside
         self.dt = 5e-2
         self.T = 0.8
@@ -47,12 +49,12 @@ class CarthwheelGen:
         self.swing_wt = [1e4, 1e4]
         self.reg_wt = [1e-2, 7e-5]
 
-        self.state_wt = np.array([0., 0, 100] + [100, 0, 100] + 4*[1e3, 50.0, 20] \
+        self.state_wt = np.array([1e2, 0, 100] + [100, 0, 100] + 4*[1e3, 50.0, 20] \
                                 + [0.00] * 3 + [10, 10, 10] + [3.5] *(self.pin_robot.model.nv - 6))
 
         self.x_reg[2] = 0.3
 
-        self.state_wt2 = np.array([0., 0, 1000.0] + [100, 100, 100] + 4*[1e3, 1e2, 50] \
+        self.state_wt2 = np.array([1e2, 0, 1000.0] + [100, 100, 100] + 4*[1e3, 1e2, 50] \
                                 + [0.00] * 3 + [10, 10, 10] + [3.5] *(self.pin_robot.model.nv - 6))
 
         self.x_reg2 = self.x_reg.copy()
@@ -62,6 +64,9 @@ class CarthwheelGen:
         self.x_reg2[13:19] = 2 * [0.0, -np.pi - 0.8, 1.6]
 
         self.ctrl_wt = [0, 0, 10] + [1, 1, 1] + [50.0] *(self.pin_robot.model.nv - 6)
+
+        self.state_wt_arr = [self.state_wt, self.state_wt2]
+        self.xreg_arr = [self.x_reg, self.x_reg2]
 
 
         self.cnt_plan_ref = [[[ 1.,      0.3946,   0.14695,  0., 0.,  self.st    ],
@@ -89,14 +94,19 @@ class CarthwheelGen:
         sl = 2*np.array([0.4, 0])
 
         if t == 0:
+            self.n += 1
             self.prune = True
             self.cnt_plan = self.cnt_plan_ref.copy()
             for j in range(len(self.ee_frame_id)):
                 self.cnt_plan[0][j][1:3] = np.round(self.rdata.oMf[self.ee_frame_id[j]].translation, 3)[0:2]
-                if j >= 2:
+
+            for j in range(len(self.ee_frame_id)):
+                if j >= 2 and int(self.n%2) == 0:
                     self.cnt_plan[2][j][1:3] = self.cnt_plan[0][j][1:3] + sl
-                else:
-                    self.cnt_plan[2][j][1:3] = self.cnt_plan[0][j][1:3]
+                    self.cnt_plan[2][j-2][1:3] = self.cnt_plan[0][j-2][1:3] 
+                elif j < 2 and int(self.n%2) == 1:
+                    self.cnt_plan[2][j][1:3] = self.cnt_plan[0][j][1:3] + sl 
+                    self.cnt_plan[2][j+2][1:3] = self.cnt_plan[0][j+2][1:3]
 
         if t >= self.st and t < self.st + self.rt and self.prune:
             self.cnt_plan = self.cnt_plan[1:]
@@ -121,7 +131,6 @@ class CarthwheelGen:
             
         self.cnt_plan[-1][:,5] = self.T
 
-        print(self.cnt_plan)
         return self.cnt_plan
 
     def generate_plan(self, q, v, t):
@@ -193,7 +202,7 @@ class CarthwheelGen:
 
         com_opt, F_opt, mom_opt = mp.optimize(X_init, 150)
         t2 = time.time()
-        
+
         ik_hor = min(dyn_hor, self.T)
 
         t3 = time.time()
@@ -205,11 +214,10 @@ class CarthwheelGen:
 
         for i in range(int(ik_hor/self.dt)):
             lt = i*self.dt #local time
-
             if lt < self.st + self.rt and len(cnt_plan) > 2:
-                ik.add_state_regularization_cost_single(i, self.reg_wt[0], "xReg", self.state_wt, self.x_reg)
+                ik.add_state_regularization_cost_single(i, self.reg_wt[0], "xReg", self.state_wt_arr[int(self.n%2)], self.xreg_arr[int(self.n%2)])
             else:
-                ik.add_state_regularization_cost_single(i, 500*self.reg_wt[0], "xReg2", self.state_wt2, self.x_reg2)
+                ik.add_state_regularization_cost_single(i, 500*self.reg_wt[0], "xReg2", self.state_wt_arr[int((self.n+1)%2)], self.xreg_arr[int((self.n+1)%2)])
             
             for j in range(len(self.eff_names)):
                 for b in range(len(cnt_plan)):

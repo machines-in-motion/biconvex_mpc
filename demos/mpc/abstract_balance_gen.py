@@ -90,7 +90,7 @@ class SoloMpcGaitGen:
         self.horizon = int(round(self.gait_horizon*self.gait_period/self.gait_dt))
         
         # --- Set up Inverse Kinematics ---
-        self.ik_horizon = 0.5*self.gait_horizon*self.gait_period
+        self.ik_horizon = self.gait_horizon*self.gait_period
         self.ik = InverseKinematics(r_urdf, self.gait_dt, self.ik_horizon)
 
         # --- Set up Dynamics ---
@@ -222,7 +222,6 @@ class SoloMpcGaitGen:
                         else:
                             self.cnt_plan[i][j][3] = self.foot_size
 
-        #print(self.cnt_plan)
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, yaw_des, t):
@@ -373,7 +372,8 @@ class SoloMpcGaitGen:
         print("------------------------")
 
         n_eff = 3*len(self.eff_names)
-        ind = int(self.planning_time/self.dt) + 1 # 1 is to account for time lag
+        ind = int(np.round(self.planning_time/self.dt, 2)) + 1 # 1 is to account for time lag
+
         for i in range(ind):
             if i == 0:
                 self.f_int = np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i+1):n_eff*(i+2)], int(self.dt/0.001))

@@ -34,15 +34,16 @@ x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
 subprocess.Popen([r"/home/ameduri/devel/raisim/raisimLib/raisimUnity/linux/raisimUnity.x86_64"])
 
-robot = Solo12Env(7.5, 0.2, q0, v0, False, False)
+robot = Solo12Env(5.5, 0.2, q0, v0, False, False)
 time.sleep(2)
+T = 1.0
 sim_t = 0.0
 step_t = 0.0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-plan_freq = 0.5 #0.05 # sec
-update_time = 0.0 # sec (time of lag)
+plan_freq = 0.5 # sec
+update_time = 0.1 # sec (time of lag)
 lag = int(update_time/sim_dt)
 
 cartwheel = CarthwheelGen(q0, v0)
@@ -52,7 +53,7 @@ for o in range(int(500*(plan_freq/sim_dt))):
     contact_configuration = robot.get_current_contacts()
     q, v = robot.get_state()
 
-    if pln_ctr == 0:
+    if pln_ctr == 0 or sim_t == 0:
         xs, us, f = cartwheel.generate_plan(q, v, sim_t)
         xs = xs[lag:]
         us = us[lag:]
@@ -63,10 +64,13 @@ for o in range(int(500*(plan_freq/sim_dt))):
     dq_des = xs[index][pin_robot.model.nq:].copy()
     robot.send_joint_command(q_des, dq_des, us[index], f[index], contact_configuration)
 
-    time.sleep(0.01)
+    time.sleep(0.001)
 
     sim_t += sim_dt
+    # sim_t = np.round(sim_t%T, 3)
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
+    if sim_t == 0:
+        pln_ctr = 0
     index += 1
 
 

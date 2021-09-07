@@ -1,5 +1,5 @@
 ## This file creates the contact plan for different gaits in an MPC fashion
-## Author : Avadesh Meduri
+## Author : Avadesh Meduri & Paarth Shah
 ## Date : 6/05/2021
 
 import time
@@ -9,8 +9,8 @@ import pinocchio as pin
 from inverse_kinematics_cpp import InverseKinematics
 from py_biconvex_mpc.motion_planner.cpp_biconvex import BiConvexMP
 from gait_planner_cpp import GaitPlanner
-
-from matplotlib import pyplot as plt
+import math
+#from matplotlib import pyplot as plt
 
 class SoloMpcGaitGen:
 
@@ -34,6 +34,7 @@ class SoloMpcGaitGen:
         self.params = weight_abstract
         self.step_height = self.params.step_ht
 
+
         #TODO: DEPRECATE THIS...
         #Use for a fixed frequency planning time
         self.planning_time = planning_time
@@ -44,11 +45,17 @@ class SoloMpcGaitGen:
         pin.updateFramePlacements(self.rmodel, self.rdata)
         com_init = pin.centerOfMass(self.rmodel, self.rdata, q0, np.zeros(self.rmodel.nv))
 
-        self.offsets = np.zeros((len(self.eff_names), 2))
+        pin.framesForwardKinematics(self.rmodel, self.rdata, q0)
+        pin.crba(self.rmodel, self.rdata, q0)
+        self.I_composite_b = self.rdata.Ycrb[1].inertia
+
+        self.gravity = 9.81
+
+        self.offsets = np.zeros((len(self.eff_names), 3))
         self.ee_frame_id = []
         for i in range(len(self.eff_names)):
             self.ee_frame_id.append(self.rmodel.getFrameId(self.eff_names[i]))
-            self.offsets[i] = self.rdata.oMf[self.rmodel.getFrameId(self.hip_names[i])].translation[0:2] - com_init[0:2].copy()
+            self.offsets[i] = self.rdata.oMf[self.rmodel.getFrameId(self.hip_names[i])].translation - com_init.copy()
             self.offsets[i] = np.round(self.offsets[i], 3)
 
         # Contact-planning offsets
@@ -64,6 +71,15 @@ class SoloMpcGaitGen:
         self.offsets[3][0] += 0.00 #Hind Right X
         self.offsets[3][1] -= 0.04 #Hind Right Y
         self.apply_offset = True
+
+        #Rotate offsets to local frame
+        R = pin.Quaternion(np.array(q0[3:7])).toRotationMatrix()
+        for i in range(len(self.eff_names)):
+            #Rotate offsets to local frame
+            self.offsets[i] = np.matmul(R.T, self.offsets[i])
+
+        print("Offsets oriented in local frame: ")
+        print(self.offsets)
 
         #Current Contact
         self.current_contact = np.zeros(4)
@@ -109,9 +125,9 @@ class SoloMpcGaitGen:
         self.bx = 0.45
         self.by = 0.45
         self.bz = 0.45
-        self.fx_max = 16.5
-        self.fy_max = 16.5
-        self.fz_max = 75
+        self.fx_max = 15.0
+        self.fy_max = 15.0
+        self.fz_max = 15.0
 
         # --- Set up other variables ---
         # For interpolation (should be moved to the controller)
@@ -145,16 +161,23 @@ class SoloMpcGaitGen:
         if isinstance(X_nom, np.ndarray):
             self.X_nom = X_nom
     
-    def create_cnt_plan(self, q, v, t, v_des):
+    def create_cnt_plan(self, q, v, t, v_des, w_des):
         pin.forwardKinematics(self.rmodel, self.rdata, q, v)
         pin.updateFramePlacements(self.rmodel, self.rdata)
 
         com = np.round(pin.centerOfMass(self.rmodel, self.rdata, q, v)[0:2], 3)
-        vcom = np.round(v[0:2], 3)
+        z_height = pin.centerOfMass(self.rmodel, self.rdata, q, v)[2]
+        vcom = np.round(v[0:3], 3)
+
+        #Get current rotation
+        R = pin.Quaternion(np.array(q[3:7])).toRotationMatrix()
+        rpy_vector = pin.rpy.matrixToRpy(R)
+        print("Orientation (RPY) (In Degrees): ")
+        print(rpy_vector*180/math.pi)
 
         vtrack = v_des[0:2] # this effects the step location (if set to vcom it becomes raibert)
-        # vtrack[1] = vcom[1]
-        # vtrack = vcom[0:2]
+        #vtrack = vcom[0:2]
+        #vtrack = np.matmul(R, vtrack)[0:2]
 
         self.cnt_plan = np.zeros((self.horizon, len(self.eff_names), 4))
         # This array determines when the swing foot cost should be enforced in the ik
@@ -179,36 +202,42 @@ class SoloMpcGaitGen:
                 else:
                     #All other time steps
                     ft = np.round(t + i*self.gait_dt,3)
+
                     if self.gait_planner.get_phase(ft, j) == 1:
                         #If foot will be in contact
                         self.cnt_plan[i][j][0] = 1
+                        
                         if self.cnt_plan[i-1][j][0] == 1:
                             self.cnt_plan[i][j][1:4] = self.cnt_plan[i-1][j][1:4]
                         else:
-                            # self.curr_cnt[j] += 1/(1 - self.params.stance_percent[j])
-                            # self.cnt_plan[i][j][1:3] = com + self.offsets[j] + 1.0*v_des[0:2]*self.curr_cnt[j]*self.gait_dt
-                            hip_loc = com + self.offsets[j] + i*self.params.gait_dt*vtrack
-                            tmp = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
-                            self.cnt_plan[i][j][1:3] = tmp[0:2] + hip_loc
+                            hip_loc = com + np.matmul(R, self.offsets[j])[0:2] + i*self.params.gait_dt*vtrack
+                            raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
+                            ang_step = 0.5*np.sqrt(z_height/self.gravity)*vtrack
+                            ang_step = np.cross(ang_step, [0.0, 0.0, w_des])
+                        
+                            self.cnt_plan[i][j][1:3] = raibert_step[0:2] + hip_loc + ang_step[0:2]
 
                             if self.height_map != None:
                                 self.cnt_plan[i][j][3] = self.height_map.getHeight(self.cnt_plan[i][j][1], self.cnt_plan[i][j][2]) +\
-                                                                                   self.foot_size
+                                                                                self.foot_size
                             else:
                                 self.cnt_plan[i][j][3] = self.foot_size
 
                         self.prev_cnt[j] = self.cnt_plan[i][j][1:4]
 
-                    else:                            
+                    else:
+                        #If foot will not be in contact
                         self.cnt_plan[i][j][0] = 0
                         per_ph = np.round(self.gait_planner.get_percent_in_phase(ft, j), 3)
-                        hip_loc = com + self.offsets[j] + i*self.params.gait_dt*vtrack
+                        hip_loc = com + np.matmul(R,self.offsets[j])[0:2] + i*self.params.gait_dt*vtrack
+                        ang_step = 0.5*np.sqrt(z_height/self.gravity)*vtrack
+                        ang_step = np.cross(ang_step, [0.0, 0.0, w_des])
+                        
                         if per_ph < 0.5:
-                            self.cnt_plan[i][j][1:3] = (0.5 - per_ph)*(hip_loc - self.prev_cnt[j][0:2]) + hip_loc
+                            self.cnt_plan[i][j][1:3] = hip_loc + ang_step[0:2]
                         else:
-                            tmp = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.5*(vtrack - v_des[0:2])
-                            self.cnt_plan[i][j][1:3] = (per_ph - 0.5)*tmp[0:2] + hip_loc
-
+                            raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
+                            self.cnt_plan[i][j][1:3] = hip_loc + ang_step[0:2]
 
                         #What is this?
                         if per_ph - 0.5 < 0.02:
@@ -216,13 +245,14 @@ class SoloMpcGaitGen:
 
                         if self.height_map != None:
                             self.cnt_plan[i][j][3] = self.height_map.getHeight(self.cnt_plan[i][j][1], self.cnt_plan[i][j][2]) + \
-                                                     self.foot_size
+                                                    self.foot_size
                         else:
                             self.cnt_plan[i][j][3] = self.foot_size
 
+        #print(self.cnt_plan)
         return self.cnt_plan
 
-    def create_costs(self, q, v, v_des, t):
+    def create_costs(self, q, v, v_des, w_des, ori_des, t):
         """
         Input:
             q : joint positions at current time
@@ -257,16 +287,13 @@ class SoloMpcGaitGen:
         # --- Setup Dynamics --- #
         # initial and terminal state
         self.X_init = np.zeros(9)
+        X_ter = np.zeros_like(self.X_init)
         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
         self.X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
         print("CoM: ")
         print(self.X_init[0:3])
         self.X_init[3:] = np.array(self.rdata.hg)
         self.X_init[3:6] /= self.m
-
-        # if (np.any(abs(self.X_init[6:]) > 0.15)) :
-        #     np.savez("./dat_file/debug.npz", q = q, v = v, t = t)
-        #     assert False
 
         self.X_nom[0::9] = self.X_init[0]
         for i in range(1, self.horizon):
@@ -278,16 +305,31 @@ class SoloMpcGaitGen:
         self.X_nom[4::9] = v_des[1]
         self.X_nom[5::9] = v_des[2]
 
-        amom = self.compute_ori_correction(q, np.array([0,0,0,1])) #Changed to 0 for bounding
-        self.X_nom[6::9] = amom[0]*self.params.ori_correction[0] 
-        self.X_nom[7::9] = amom[1]*self.params.ori_correction[1]
-        self.X_nom[8::9] = amom[2]*self.params.ori_correction[2]
+        #Compute angular momentum / orientation correction
+        R = pin.Quaternion(np.array(ori_des)).toRotationMatrix()
+        rpy_vector = pin.rpy.matrixToRpy(R)
+        rpy_vector[0] = 0.0
+        rpy_vector[1] = 0.0
+        des_quat = pin.Quaternion(pin.rpy.rpyToMatrix(rpy_vector))
 
-        X_ter = np.zeros_like(self.X_init)
+        amom = self.compute_ori_correction(q, des_quat.coeffs())
+
+        #Set terminal references
         X_ter[0:2] = self.X_init[0:2] + (self.gait_horizon*self.gait_period*v_des)[0:2] #Changed this
         X_ter[2] = self.nom_ht
         X_ter[3:6] = v_des
         X_ter[6:] = amom
+
+        self.X_nom[6::9] = amom[0]*self.params.ori_correction[0]
+        self.X_nom[7::9] = amom[1]*self.params.ori_correction[1]
+
+        if w_des == 0:
+            self.X_nom[8::9] = amom[2]*self.params.ori_correction[2]
+        else:
+            yaw_momentum = np.matmul(self.I_composite_b,[0.0, 0.0, w_des])[2]
+            self.X_nom[8::9] = yaw_momentum
+            X_ter[8] = yaw_momentum
+            #print(yaw_momentum)
 
         # Setup dynamic optimization
         self.mp.create_contact_array_2(np.array(self.cnt_plan))
@@ -312,19 +354,21 @@ class SoloMpcGaitGen:
 
         return omega
 
-    def optimize(self, q, v, t, v_des, step_height, current_contact, X_wm = None, F_wm = None, P_wm = None):
+    def optimize(self, q, v, t, v_des, w_des, ori_des, step_height, current_contact, X_wm = None, F_wm = None, P_wm = None):
+        #Move to local frame
+        R = pin.Quaternion(np.array(q[3:7])).toRotationMatrix()
+        v_des = np.matmul(R, v_des)
 
         #TODO: Move to C++
         t1 = time.time()
         self.step_height = step_height
         self.current_contact = current_contact
-        self.create_cnt_plan(q, v, t, v_des)
+        self.create_cnt_plan(q, v, t, v_des, w_des)
 
         #Creates costs for IK and Dynamics
-        self.create_costs(q, v, v_des, t)
+        self.create_costs(q, v, v_des, w_des, ori_des, t)
         self.q_traj.append(q)
         self.v_traj.append(v)
-
 
         # --- Dynamics optimization ---
 
@@ -337,6 +381,7 @@ class SoloMpcGaitGen:
 
         # --- IK Optimization ---
         # Add tracking costs from Dynamic optimization
+
         self.ik.add_centroidal_momentum_tracking_task(0, self.ik_horizon, mom_opt[0:int(round(self.ik_horizon/self.gait_dt))], self.cent_wt[1], "mom_track", False)
         self.ik.add_centroidal_momentum_tracking_task(0, self.ik_horizon, mom_opt[int(round(self.ik_horizon/self.gait_dt))], self.cent_wt[1], "mom_track", True) #Final state
 

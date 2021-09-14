@@ -5,7 +5,7 @@ sim_dt = 0.0
 dt = 0.001
 
 #Initialize Classes
-robot_interface = RobotInterface(robot_model)
+robot_interface = RobotInterface()
 contact_planner.initialize(gait_params, height_map)
 kino_dyn.initialize(gait_params)
 
@@ -18,8 +18,11 @@ for i in range(0:steps):
 	#Get Contact Plan
 	contact_plan = contact_planner.create_contacts(q, v)
 
+	#Create costs
+	costs = kino_dyn.create_costs(sim_dt, q, v, contact_plan)
+
 	#Compute trajectory from kino-dyn
-	#Question: Should Lag be incorporated in the kino_dyn.compute_trajectory() class?
+	#Question: Should Lag be incorporated in the kino_dyn.compute_trajectory() function or outside?
 	q_des, qd_des, qdd_des = kino_dyn.compute_trajectory(sim_dt, q, v, contact_plan)
 
 	#Visualize Anything we might want

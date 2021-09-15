@@ -1,5 +1,5 @@
 ## This is a demo for trot motion in mpc
-## Author : Avadesh Meduri
+## Author : Avadesh Meduri & Paarth Shah
 ## Date : 21/04/2021
 
 import time

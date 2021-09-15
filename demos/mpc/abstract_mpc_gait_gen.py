@@ -406,18 +406,22 @@ class SoloMpcGaitGen:
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()
         F_opt = self.mp.return_opt_f()
-        P_opt = self.mp.return_opt_p()
-        X_opt = self.mp.return_opt_x()
 
         t3 = time.time()
 
+        P_opt = self.mp.return_opt_p()
+        X_opt = self.mp.return_opt_x()
+
         #Set up warm-start variables
-        self.F_k_wm[0:(self.horizon-1)*self.n_eff*3] = \
-            F_opt[3*self.n_eff:self.horizon*self.n_eff*3].reshape((self.horizon-1)*self.n_eff*3,1)
-        self.F_k_wm[-3*self.n_eff:] = 0.0
+        # self.F_k_wm[0:(self.horizon-1)*self.n_eff*3] = \
+        #     F_opt[3*self.n_eff:self.horizon*self.n_eff*3].reshape((self.horizon-1)*self.n_eff*3,1)
+        # self.F_k_wm[-3*self.n_eff:] = 0.0
         self.F_k_wm = F_opt.reshape(F_opt.size, 1)
         self.P_k_wm = P_opt.reshape(P_opt.size, 1)
+        #self.P_k_wm[0:9*self.horizon] = P_opt[9:].reshape((9*self.horizon),1)
+        #elf.P_k_wm[-9:] = 0.0
         self.X_k_wm = X_opt.reshape(X_opt.size, 1)
+        self.X_k_wm[0:9*self.horizon] = X_opt[9:].reshape((9*self.horizon,1))
 
         #t3 = time.time()
 

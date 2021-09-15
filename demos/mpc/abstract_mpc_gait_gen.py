@@ -123,6 +123,18 @@ class SoloMpcGaitGen:
         self.X_nom = np.zeros((9*self.horizon))
         self.nom_ht = self.params.nom_ht
 
+        # Set up vectors for warm-starting
+        self.X_k_wm = np.tile(np.zeros(9), ((self.horizon+1)))[:,None]
+        self.F_k_wm = np.zeros((3*self.horizon*self.n_eff,1))
+        self.P_k_wm = np.zeros((9*self.horizon + 9, 1))
+
+        #Set up logging for average optimization time
+        self.dyn_comp_ave = 0.0
+        self.dyn_comp_total = 0.0
+        self.ik_comp_ave = 0.0
+        self.ik_comp_total = 0.0
+        self.num_optimization_ctr = 0 #Counter
+
         # Set up constraints for Dynamics
         self.bx = 0.45
         self.by = 0.45
@@ -290,13 +302,12 @@ class SoloMpcGaitGen:
         self.ik.setup_costs()
 
         # --- Setup Dynamics --- #
+
         # initial and terminal state
         self.X_init = np.zeros(9)
         X_ter = np.zeros_like(self.X_init)
         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
         self.X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
-        # print("CoM: ")
-        # print(self.X_init[0:3])
         self.X_init[3:] = np.array(self.rdata.hg)
         self.X_init[3:6] /= self.m
 
@@ -336,7 +347,7 @@ class SoloMpcGaitGen:
             X_ter[8] = yaw_momentum
             #print(yaw_momentum)
 
-        # Setup dynamic optimization
+        # Setup dynamic optimization costs
         self.mp.create_bound_constraints(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(np.tile(self.W_X, self.horizon), self.W_X_ter, X_ter, self.X_nom)
         self.mp.create_cost_F(np.tile(self.W_F, self.horizon))
@@ -377,7 +388,6 @@ class SoloMpcGaitGen:
             X_k = X_wm
         else:
             X_k = np.tile(self.X_init, ((self.horizon+1)))[:,None]
-
         if isinstance(F_wm, np.ndarray):
             F_k = F_wm
         else:
@@ -389,13 +399,27 @@ class SoloMpcGaitGen:
         else:    
             P_k = 0.0*np.ones((9*self.horizon + 9, 1))
 
-        self.mp.set_warm_start_vars(X_k, F_k, P_k)
-        self.mp.optimize(self.X_init, 85)
+        # Optimize Dynamics
+        self.mp.set_warm_start_vars(self.X_k_wm, self.F_k_wm, self.P_k_wm)
+        self.mp.optimize(self.X_init, 50)
+
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()
         F_opt = self.mp.return_opt_f()
+        P_opt = self.mp.return_opt_p()
+        X_opt = self.mp.return_opt_x()
 
         t3 = time.time()
+
+        #Set up warm-start variables
+        self.F_k_wm[0:(self.horizon-1)*self.n_eff*3] = \
+            F_opt[3*self.n_eff:self.horizon*self.n_eff*3].reshape((self.horizon-1)*self.n_eff*3,1)
+        self.F_k_wm[-3*self.n_eff:] = 0.0
+        self.F_k_wm = F_opt.reshape(F_opt.size, 1)
+        self.P_k_wm = P_opt.reshape(P_opt.size, 1)
+        self.X_k_wm = X_opt.reshape(X_opt.size, 1)
+
+        #t3 = time.time()
 
         com_tmp = pin.centerOfMass(self.rmodel, self.rdata, self.q_traj[-1], self.v_traj[-1])
 
@@ -426,6 +450,13 @@ class SoloMpcGaitGen:
         print("ik", t5 - t4)
         print("total", t5 - t1)
         print("------------------------")
+
+        self.num_optimization_ctr += 1
+        self.dyn_comp_total += t3-t2
+        self.dyn_comp_ave = self.dyn_comp_total/self.num_optimization_ctr
+        print("Average cost of dynamics computation: ")
+        print(self.dyn_comp_ave)
+
 
         n_eff = 3*len(self.eff_names)
         ind = int(self.planning_time/self.dt) + 1 # 1 is to account for time lag

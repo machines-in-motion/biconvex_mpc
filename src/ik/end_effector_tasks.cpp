@@ -13,17 +13,16 @@ namespace ik{
         en = std::ceil(et/dt_*100)/100;
         // std::cout << "pos " << sn << " " << en << std::endl;
         if (et - st == 0){
-            crocoddyl::FrameTranslation Mref(fid, traj);
-            boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost = 
-                boost::make_shared<crocoddyl::CostModelFrameTranslation>(state_, Mref);
+            boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost =
+                    boost::make_shared<crocoddyl::CostModelResidual>(state_, 
+                    boost::make_shared<crocoddyl::ResidualModelFrameTranslation>(state_, fid, traj));
             rcost_arr_[sn].get()->addCost(cost_name, goal_tracking_cost, wt);
         }
         else{
             for (unsigned i = sn; i < en; ++i){
-                crocoddyl::FrameTranslation Mref(fid, traj.row(i - sn));
-                boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost = 
-                    boost::make_shared<crocoddyl::CostModelFrameTranslation>(state_, Mref);   
-
+                boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost =
+                    boost::make_shared<crocoddyl::CostModelResidual>(state_, 
+                    boost::make_shared<crocoddyl::ResidualModelFrameTranslation>(state_, fid, traj));
                 rcost_arr_[i].get()->addCost(cost_name + std::to_string(i), goal_tracking_cost, wt);
             }
         }
@@ -32,9 +31,9 @@ namespace ik{
     void InverseKinematics::add_position_tracking_task_single(pinocchio::FrameIndex fid, Eigen::MatrixXd traj,
         double wt, std::string cost_name, int time_step){
 
-            crocoddyl::FrameTranslation Mref(fid, traj);
             boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost =
-                    boost::make_shared<crocoddyl::CostModelFrameTranslation>(state_, Mref);
+                    boost::make_shared<crocoddyl::CostModelResidual>(state_, 
+                    boost::make_shared<crocoddyl::ResidualModelFrameTranslation>(state_, fid, traj));
             rcost_arr_[time_step].get()->addCost(cost_name, goal_tracking_cost, wt);
     };
 
@@ -42,9 +41,9 @@ namespace ik{
                     pinocchio::FrameIndex fid, Eigen::MatrixXd traj, 
                                 double wt, std::string cost_name){
 
-        crocoddyl::FrameTranslation Mref(fid, traj);
-        boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost = 
-            boost::make_shared<crocoddyl::CostModelFrameTranslation>(state_, Mref);   
+        boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost =
+                    boost::make_shared<crocoddyl::CostModelResidual>(state_, 
+                    boost::make_shared<crocoddyl::ResidualModelFrameTranslation>(state_, fid, traj));
         tcost_model_.get()->addCost(cost_name, goal_tracking_cost, wt);
     };
 
@@ -56,23 +55,20 @@ namespace ik{
 
         sn = std::ceil(st/dt_*100)/100; 
         en = std::ceil(et/dt_*100)/100;
+        std::cout << "function not implemented" << std::endl;
+        // for (unsigned i = sn; i < en; ++i){
+        //     crocoddyl::FrameMotion Mref(fid, pinocchio::Motion(traj.row(i - sn)));
+        //     boost::shared_ptr<crocoddyl::CostModelAbstract> vel_tracking_cost =
+        //         boost::make_shared<crocoddyl::CostModelResidual>(
+        //             state_,
+        //             boost::make_shared<crocoddyl::ResidualModelFrameVelocity>(
+        //                 state_, fid, pinocchio::Motion(traj.row(i - sn))));
 
-        // if (et - st == 0){
-        //     crocoddyl::FrameMotion Vref(fid, pinocchio::Motion (Eigen::Map<Eigen::VectorXd>(traj.data())));
-        //     boost::shared_ptr<crocoddyl::CostModelAbstract> vel_tracking_cost = 
-        //         boost::make_shared<crocoddyl::CostModelFrameVelocity>(state_, Vref);   
+        //     // boost::shared_ptr<crocoddyl::CostModelAbstract> vel_tracking_cost = 
+        //     //     boost::make_shared<crocoddyl::CostModelFrameVelocity>(state_, Mref);   
 
-        //     rcost_arr_[sn].get()->addCost(cost_name, vel_tracking_cost, wt);
-        // }
-        // else{
-            for (unsigned i = sn; i < en; ++i){
-                crocoddyl::FrameMotion Mref(fid, pinocchio::Motion(traj.row(i - sn)));
-                boost::shared_ptr<crocoddyl::CostModelAbstract> vel_tracking_cost = 
-                    boost::make_shared<crocoddyl::CostModelFrameVelocity>(state_, Mref);   
-
-                rcost_arr_[i].get()->addCost(cost_name, vel_tracking_cost, wt);
-            // }
-        };
+        //     rcost_arr_[i].get()->addCost(cost_name, vel_tracking_cost, wt);
+        // };
     };
 
 

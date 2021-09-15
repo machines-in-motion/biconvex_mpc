@@ -19,7 +19,7 @@ import subprocess
 time.sleep(2)
 
 ## Motion
-gait_params = trot_turn
+gait_params = bound
 
 ## robot config and init
 pin_robot = Solo12Config.buildRobotWrapper()
@@ -34,7 +34,7 @@ q0[0:2] = 0.0
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.0,0.0,0.0])
+v_des = np.array([0.5,0.0,0.0])
 w_des = 0.0
 step_height = gait_params.step_ht
 
@@ -105,7 +105,7 @@ for o in range(int(500*(plan_freq/sim_dt))):
     sim_t += sim_dt
     step_t = (step_t + sim_dt)%gait_time
 
-    #time.sleep(0.001)
+    time.sleep(0.001)
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
 

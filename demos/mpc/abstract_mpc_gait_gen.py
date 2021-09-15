@@ -341,10 +341,6 @@ class SoloMpcGaitGen:
         self.mp.create_cost_X(np.tile(self.W_X, self.horizon), self.W_X_ter, X_ter, self.X_nom)
         self.mp.create_cost_F(np.tile(self.W_F, self.horizon))
 
-        #Shift costs & constraints (Assumes shift of one knot point for now...)
-        # TODO: Make update_dynamics take in the time
-        # self.mp.update_dynamics()
-
     def compute_ori_correction(self, q, des_quat):
         """
         This function computes the AMOM required to correct for orientation
@@ -473,8 +469,6 @@ class SoloMpcGaitGen:
 
     def reset(self):
         self.ik = InverseKinematics(self.r_urdf, self.gait_dt, self.ik_horizon)
-        # self.mp = BiconvexMP(self.m, self.gait_dt, self.gait_horizon*self.gait_period, len(self.eff_names))
-        # self.mp.set_rho(self.rho)
     
     def plot(self, com_real=None):
         """

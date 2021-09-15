@@ -4,7 +4,7 @@
 namespace motion_planner{
 
     BiConvexMP::BiConvexMP(double m, double dt, double T, int n_eff):
-        m_(m), n_eff_(n_eff), centroidal_dynamics(m, dt, T, n_eff),
+        m_(m), n_eff_(n_eff), T_(T), centroidal_dynamics(m, dt, T, n_eff),
         prob_data_x(9, int(ceil(T/dt))+1), prob_data_f(3*n_eff, int(ceil(T/dt))),
         fista_x(), fista_f(){
             dt_ = dt;
@@ -114,7 +114,10 @@ namespace motion_planner{
                 break;
             };
         }
-        std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
+    
+        centroidal_dynamics.r_.clear();
+
+        // std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }
 
     Eigen::MatrixXd BiConvexMP::return_opt_com(){

@@ -41,7 +41,6 @@ namespace dynamics{
             Eigen::VectorXd b_f;
             Eigen::VectorXd x_init_;
         
-        // private:
             // location of the contact point array used to create constraints and for calculating forces/amom
             // Dimension: n_col_ x n_eff x 3
             std::vector<Eigen::MatrixXd> r_;
@@ -49,11 +48,6 @@ namespace dynamics{
             // contact array that is used to create the constraints (tells if end effector is in contact)
             // Dimension: n_col_ x n_eff
             Eigen::MatrixXd cnt_arr_;
-
-            // This array is used to create the cnt_arr_, r_arr_
-            Eigen::VectorXd t_arr;
-
-            double time_steps;
 
             // location of contact point at time t
             Eigen::MatrixXd r_t;

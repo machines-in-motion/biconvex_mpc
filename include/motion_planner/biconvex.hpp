@@ -149,6 +149,7 @@ class BiConvexMP{
         int horizon_ = 0;
         double dt_ = 0.0;
         int n_eff_ = 0;
+        double T_;
         
         // problem data for x optimization (Used in optimization for Forces)
         function::ProblemData prob_data_x;

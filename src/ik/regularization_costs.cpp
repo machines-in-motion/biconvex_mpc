@@ -17,16 +17,18 @@ namespace ik{
                 boost::shared_ptr<crocoddyl::ActivationModelAbstract> state_activation =
                     boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(stateWeights);
                 boost::shared_ptr<crocoddyl::CostModelAbstract> state_reg =
-                    boost::make_shared<crocoddyl::CostModelState>(state_, state_activation, x_reg);
-                
+                    boost::make_shared<crocoddyl::CostModelResidual>(state_, state_activation, 
+                        boost::make_shared<crocoddyl::ResidualModelState>(state_, x_reg));
+                        
                 rcost_arr_[i].get()->addCost(cost_name, state_reg, wt);
             }
         }
         else{
             boost::shared_ptr<crocoddyl::ActivationModelAbstract> state_activation =
-                    boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(stateWeights);
-                boost::shared_ptr<crocoddyl::CostModelAbstract> state_reg =
-                    boost::make_shared<crocoddyl::CostModelState>(state_, state_activation, x_reg);
+                boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(stateWeights);
+            boost::shared_ptr<crocoddyl::CostModelAbstract> state_reg =
+                boost::make_shared<crocoddyl::CostModelResidual>(state_, state_activation, 
+                    boost::make_shared<crocoddyl::ResidualModelState>(state_, x_reg));
             tcost_model_->addCost(cost_name, state_reg, wt);
         }
     };
@@ -39,7 +41,8 @@ namespace ik{
         boost::shared_ptr<crocoddyl::ActivationModelAbstract> state_activation =
             boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(stateWeights);
         boost::shared_ptr<crocoddyl::CostModelAbstract> state_reg =
-            boost::make_shared<crocoddyl::CostModelState>(state_, state_activation, x_reg);
+            boost::make_shared<crocoddyl::CostModelResidual>(state_, state_activation, 
+                boost::make_shared<crocoddyl::ResidualModelState>(state_, x_reg));
         
         rcost_arr_[time_step].get()->addCost(cost_name, state_reg, wt);  
     };
@@ -52,13 +55,17 @@ namespace ik{
             en = et/dt_;                            
             for (unsigned i = sn; i < en; ++i){
                 boost::shared_ptr<crocoddyl::CostModelAbstract> ctrl_reg =
-                    boost::make_shared<crocoddyl::CostModelControl>(state_);
+                     boost::make_shared<crocoddyl::CostModelResidual>(
+                            state_, 
+                            boost::make_shared<crocoddyl::ResidualModelControl>(state_));
                 rcost_arr_[i].get()->addCost(cost_name,ctrl_reg, wt);
             }
         }
         else{
             boost::shared_ptr<crocoddyl::CostModelAbstract> ctrl_reg =
-                    boost::make_shared<crocoddyl::CostModelControl>(state_);
+                     boost::make_shared<crocoddyl::CostModelResidual>(
+                            state_, 
+                            boost::make_shared<crocoddyl::ResidualModelControl>(state_));
                 tcost_model_->addCost(cost_name,ctrl_reg, wt);
         }
     };
@@ -71,19 +78,28 @@ namespace ik{
             sn = st/dt_; 
             en = et/dt_;                            
             for (unsigned i = sn; i < en; ++i){
+            
                 boost::shared_ptr<crocoddyl::ActivationModelAbstract> control_activation =
                     boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(controlWeights);
+                
                 boost::shared_ptr<crocoddyl::CostModelAbstract> ctrl_reg =
-                    boost::make_shared<crocoddyl::CostModelControl>(state_, control_activation, u_reg);
+                     boost::make_shared<crocoddyl::CostModelResidual>(
+                            state_, control_activation,
+                            boost::make_shared<crocoddyl::ResidualModelControl>(state_));
+
                 rcost_arr_[i].get()->addCost(cost_name,ctrl_reg, wt);
             }
         }
         else{
-                boost::shared_ptr<crocoddyl::ActivationModelAbstract> control_activation =
-                    boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(controlWeights);
-                boost::shared_ptr<crocoddyl::CostModelAbstract> ctrl_reg =
-                    boost::make_shared<crocoddyl::CostModelControl>(state_, control_activation, u_reg);
-                tcost_model_->addCost(cost_name,ctrl_reg, wt);
+            boost::shared_ptr<crocoddyl::ActivationModelAbstract> control_activation =
+                boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(controlWeights);
+            
+            boost::shared_ptr<crocoddyl::CostModelAbstract> ctrl_reg =
+                    boost::make_shared<crocoddyl::CostModelResidual>(
+                        state_, control_activation,
+                        boost::make_shared<crocoddyl::ResidualModelControl>(state_));
+                        
+            tcost_model_->addCost(cost_name,ctrl_reg, wt);
         }
     };
 

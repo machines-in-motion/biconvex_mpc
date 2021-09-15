@@ -30,6 +30,8 @@
 #include "crocoddyl/multibody/costs/state.hpp"
 #include "crocoddyl/core/costs/control.hpp"
 
+#include "crocoddyl/multibody/residuals/frame-translation.hpp"
+
 #include "ik/action_model.hpp"
 
 // to be removed

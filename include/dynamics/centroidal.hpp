@@ -26,21 +26,14 @@ namespace dynamics{
                 }; 
             };
 
-            void create_contact_array();
-
-            //Creates the contact-based arrays necessary based on the type-2 cnt_plan (cnt_plan_2_)
-            void create_contact_array_2();
+            void set_contact_arrays(Eigen::MatrixXd cnt_plan);
 
             //Update the binary contact array
             void update_contact_array();
 
-            // contact plan provided by the user (order: [1/0, x, y, z, start, end])
-            std::vector<Eigen::MatrixXd> cnt_plan_;
-
             // Contact plan type 2 provided by the user:
             // order: [1/0, x, y, z]
-            // Used for setting up infinite horizon gaits
-            std::vector<Eigen::MatrixXd> cnt_plan_2_;
+            std::vector<Eigen::MatrixXd> cnt_plan_;
 
             Eigen::SparseMatrix<double> A_x;
             Eigen::VectorXd b_x;

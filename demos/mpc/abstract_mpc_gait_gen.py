@@ -7,7 +7,7 @@ import numpy as np
 from numpy.lib.arraysetops import isin
 import pinocchio as pin
 from inverse_kinematics_cpp import InverseKinematics
-from py_biconvex_mpc.motion_planner.cpp_biconvex import BiConvexMP
+from biconvex_mpc_cpp import BiconvexMP
 from gait_planner_cpp import GaitPlanner
 
 from matplotlib import pyplot as plt
@@ -40,6 +40,7 @@ class SoloMpcGaitGen:
 
         self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
         self.hip_names = ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]
+        self.n_eff = 4
         pin.forwardKinematics(self.rmodel, self.rdata, q0, np.zeros(self.rmodel.nv))
         pin.updateFramePlacements(self.rmodel, self.rdata)
         com_init = pin.centerOfMass(self.rmodel, self.rdata, q0, np.zeros(self.rmodel.nv))
@@ -96,8 +97,9 @@ class SoloMpcGaitGen:
         # --- Set up Dynamics ---
         self.m = pin.computeTotalMass(self.rmodel)
         self.rho = self.params.rho # penalty on dynamic constraint violation
-        self.mp = BiConvexMP(self.m, self.gait_dt, self.gait_horizon*self.gait_period, len(self.eff_names), rho = self.rho)
 
+        self.mp = BiconvexMP(self.m, self.gait_dt, self.gait_horizon*self.gait_period, len(self.eff_names))
+        self.mp.set_rho(self.rho)
         # Set up Weights & Matrices for Dynamics
         self.W_X = self.params.W_X
         self.W_X_ter = self.params.W_X_ter
@@ -219,6 +221,9 @@ class SoloMpcGaitGen:
                                                      self.foot_size
                         else:
                             self.cnt_plan[i][j][3] = self.foot_size
+            
+            self.mp.set_contact_plan(self.cnt_plan[i])
+
 
         return self.cnt_plan
 
@@ -259,8 +264,8 @@ class SoloMpcGaitGen:
         self.X_init = np.zeros(9)
         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
         self.X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
-        print("CoM: ")
-        print(self.X_init[0:3])
+        # print("CoM: ")
+        # print(self.X_init[0:3])
         self.X_init[3:] = np.array(self.rdata.hg)
         self.X_init[3:6] /= self.m
 
@@ -290,10 +295,9 @@ class SoloMpcGaitGen:
         X_ter[6:] = amom
 
         # Setup dynamic optimization
-        self.mp.create_contact_array_2(np.array(self.cnt_plan))
-        self.mp.create_bound_constraints_2(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
-        self.mp.create_cost_X(self.W_X, self.W_X_ter, X_ter, self.X_nom)
-        self.mp.create_cost_F(self.W_F)
+        self.mp.create_bound_constraints(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
+        self.mp.create_cost_X(np.tile(self.W_X, self.horizon), self.W_X_ter, X_ter, self.X_nom)
+        self.mp.create_cost_F(np.tile(self.W_F, self.horizon))
 
         #Shift costs & constraints (Assumes shift of one knot point for now...)
         # TODO: Make update_dynamics take in the time
@@ -327,10 +331,32 @@ class SoloMpcGaitGen:
 
 
         # --- Dynamics optimization ---
-
         t2 = time.time()
-        com_opt, F_opt, mom_opt = self.mp.optimize(self.X_init, 85, X_wm, F_wm, P_wm)
+
+        if isinstance(X_wm, np.ndarray):
+            X_k = X_wm
+        else:
+            X_k = np.tile(self.X_init, ((self.horizon+1)))[:,None]
+
+        if isinstance(F_wm, np.ndarray):
+            F_k = F_wm
+        else:
+            F_k = np.zeros((3*self.horizon*self.n_eff,1))
+        
+        # penalty of dynamic constraint violation from ADMM
+        if isinstance(P_wm, np.ndarray):
+            P_k = P_wm
+        else:    
+            P_k = 0.0*np.ones((9*self.horizon + 9, 1))
+
+        self.mp.set_warm_start_vars(X_k, F_k, P_k)
+        self.mp.optimize(self.X_init, 85)
+        com_opt = self.mp.return_opt_com()
+        mom_opt = self.mp.return_opt_mom()
+        F_opt = self.mp.return_opt_f()
+
         t3 = time.time()
+
         com_tmp = pin.centerOfMass(self.rmodel, self.rdata, self.q_traj[-1], self.v_traj[-1])
 
         self.com_traj.append(com_opt)
@@ -402,8 +428,9 @@ class SoloMpcGaitGen:
 
     def reset(self):
         self.ik = InverseKinematics(self.r_urdf, self.gait_dt, self.ik_horizon)
-        self.mp = BiConvexMP(self.m, self.gait_dt, self.gait_horizon*self.gait_period, len(self.eff_names), rho = self.rho)
-
+        # self.mp = BiconvexMP(self.m, self.gait_dt, self.gait_horizon*self.gait_period, len(self.eff_names))
+        # self.mp.set_rho(self.rho)
+    
     def plot(self, com_real=None):
         """
         This function plots the iterative mpc plans for the COM and Forces

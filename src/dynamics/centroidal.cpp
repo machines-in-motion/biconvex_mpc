@@ -42,36 +42,16 @@ namespace dynamics{
             dt_adaptive_.setZero();
     };
 
-    void CentroidalDynamics::create_contact_array(){
-        for (unsigned i = 0; i < cnt_plan_.size(); ++i){
-            for (unsigned k = 0; k < n_eff_; ++k){
-                time_steps = (cnt_plan_[i](k,5) - cnt_plan_[i](k,4))/dt_;
-                for (unsigned l = 0; l < time_steps; ++l){
-                    cnt_arr_(t_arr(k)+l,k) = cnt_plan_[i](k,0);
-                    if (k == 0){
-                        r_.push_back(r_t);
-                    }
-                    r_[t_arr(k)+l](k,0) = cnt_plan_[i](k,1);
-                    r_[t_arr(k)+l](k,1) = cnt_plan_[i](k,2);
-                    r_[t_arr(k)+l](k,2) = cnt_plan_[i](k,3);
-                }
-                t_arr[k] += time_steps;
-            }
+    void CentroidalDynamics::set_contact_arrays(Eigen::MatrixXd cnt_plan){
+        r_.push_back(r_t);
+        int i = r_.size() -1 ;
+        for (unsigned j = 0; j < n_eff_; ++j) {
+            cnt_arr_(i, j) = cnt_plan(j, 0);
+            r_[i](j, 0) = cnt_plan(j, 1);
+            r_[i](j, 1) = cnt_plan(j, 2);
+            r_[i](j, 2) = cnt_plan(j, 3);
         }
     };
-
-    void CentroidalDynamics::create_contact_array_2(){
-        for (unsigned i = 0; i < cnt_plan_2_.size(); ++i) {
-            r_.push_back(r_t);
-            for (unsigned j = 0; j < n_eff_; ++j) {
-                cnt_arr_(i, j) = cnt_plan_2_[i](j, 0);
-                r_[i](j, 0) = cnt_plan_2_[i](j, 1);
-                r_[i](j, 1) = cnt_plan_2_[i](j, 2);
-                r_[i](j, 2) = cnt_plan_2_[i](j, 3);
-            }
-        }
-    };
-
 
     void CentroidalDynamics::update_contact_array(){
         for (unsigned int i = 0; i < n_col_; ++i) {

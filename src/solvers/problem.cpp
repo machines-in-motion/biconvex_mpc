@@ -24,9 +24,8 @@ namespace function
         lb_.resize(num_vars_); lb_.setZero();
         ub_.resize(num_vars_); ub_.setZero();
 
-        // Should we create memory for the sparse matrices as well?
-        //num_vars_ = num_vars; //Size of Q_, q_, and A
-        //horizon_ = horizon;
+        Q_.resize(num_vars_, num_vars_); q_.resize(num_vars_);
+        q_.setZero();
     }
 
     void ProblemData::set_data(Eigen::SparseMatrix<double> A, Eigen::VectorXd b, 
@@ -41,9 +40,6 @@ namespace function
 
     double ProblemData::compute_obj(Eigen::VectorXd x_k) {
         obj_ = x_k.transpose()*Q_*x_k + q_.dot(x_k) + (rho_)*((A_*x_k + bPk_).squaredNorm());
-        // for (unsigned i = 0 ; i < n_; ++i){
-        //     obj_ += Q_(i,i)*x(i)*x(i) + q_(i)*x(i);
-        // }
         return obj_;
     }
 

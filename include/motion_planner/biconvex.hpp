@@ -23,20 +23,9 @@ class BiConvexMP{
         BiConvexMP(double m, double dt, double T, int n_eff);
 
         void set_contact_plan(Eigen::MatrixXd cnt_plan){
-            centroidal_dynamics.cnt_plan_.push_back(cnt_plan);
+            centroidal_dynamics.set_contact_arrays(cnt_plan);
         };
 
-        void set_contact_plan_2(Eigen::MatrixXd cnt_plan_2){
-            centroidal_dynamics.cnt_plan_2_.push_back(cnt_plan_2);
-        };
-
-        void create_cnt_array(){
-            centroidal_dynamics.create_contact_array();  
-        }
-
-        void create_cnt_array_2(){
-            centroidal_dynamics.create_contact_array_2();
-        }
 
         Eigen::MatrixXd return_A_x(Eigen::VectorXd X){
             centroidal_dynamics.compute_x_mat(X);  
@@ -86,6 +75,12 @@ class BiConvexMP{
         void set_bounds_f(Eigen::VectorXd lb, Eigen::VectorXd ub) 
                 {prob_data_f.lb_ = lb; prob_data_f.ub_ = ub;}
 
+        // box constraints created on parameters and contact plan
+        void create_bound_constraints(double bx, double by, double bz, double fx_max, double fy_max, double fz_max);
+        // creates basic quadratic costs for optimizing X
+        void create_cost_X(Eigen::VectorXd W_X, Eigen::VectorXd W_X_ter, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom);
+        void create_cost_F(Eigen::VectorXd W_F);
+        
         void set_rotation_matrix_f(Eigen::MatrixXd rot_matrix)
         {
             prob_data_f.rotation_matrices.push_back(rot_matrix);
@@ -123,6 +118,9 @@ class BiConvexMP{
         Eigen::VectorXd return_opt_p(){
             return P_k_;
         }
+
+        Eigen::MatrixXd return_opt_com();
+        Eigen::MatrixXd return_opt_mom();
 
         std::vector<double> return_dyn_viol_hist(){
             return dyn_violation_hist_;
@@ -162,6 +160,10 @@ class BiConvexMP{
         // solver for f optimization
         solvers::FISTA fista_f;
 
+        // optimal CoM and Momentum trajectory (required for IK)
+        Eigen::MatrixXd com_opt_;
+        Eigen::MatrixXd mom_opt_;
+        
         #ifdef USE_OSQP
             OsqpEigen::Solver osqp_x;
             OsqpEigen::Solver osqp_f;

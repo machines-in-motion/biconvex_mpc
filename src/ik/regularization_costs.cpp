@@ -5,14 +5,12 @@
 
 namespace ik{
 
-    void InverseKinematics::add_state_regularization_cost(double st, double et, double wt, 
+    void InverseKinematics::add_state_regularization_cost(int sn, int en, double wt, 
                                         std::string cost_name, Eigen::VectorXd stateWeights,
                                         Eigen::VectorXd x_reg, bool isTerminal)
     {
 
         if (!isTerminal){
-            sn = st/dt_; 
-            en = et/dt_;                            
             for (unsigned i = sn; i < en; ++i){
                 boost::shared_ptr<crocoddyl::ActivationModelAbstract> state_activation =
                     boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(stateWeights);
@@ -47,12 +45,10 @@ namespace ik{
         rcost_arr_[time_step].get()->addCost(cost_name, state_reg, wt);  
     };
 
-    void InverseKinematics::add_ctrl_regularization_cost(double st, double et, double wt, 
+    void InverseKinematics::add_ctrl_regularization_cost(int sn, int en, double wt, 
                                             std::string cost_name, bool isTerminal)
     {
         if (!isTerminal){
-            sn = st/dt_; 
-            en = et/dt_;                            
             for (unsigned i = sn; i < en; ++i){
                 boost::shared_ptr<crocoddyl::CostModelAbstract> ctrl_reg =
                      boost::make_shared<crocoddyl::CostModelResidual>(
@@ -70,13 +66,11 @@ namespace ik{
         }
     };
 
-    void InverseKinematics::add_ctrl_regularization_cost_2(double st, double et, double wt, 
+    void InverseKinematics::add_ctrl_regularization_cost_2(int sn, int en, double wt, 
                                                         std::string cost_name,  Eigen::VectorXd controlWeights, 
                                                         Eigen::VectorXd u_reg, bool isTerminal)
     {
         if (!isTerminal){
-            sn = st/dt_; 
-            en = et/dt_;                            
             for (unsigned i = sn; i < en; ++i){
             
                 boost::shared_ptr<crocoddyl::ActivationModelAbstract> control_activation =

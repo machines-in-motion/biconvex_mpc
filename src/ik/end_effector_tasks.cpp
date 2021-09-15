@@ -6,25 +6,14 @@
 namespace ik{
 
     void InverseKinematics::add_position_tracking_task(
-                    pinocchio::FrameIndex fid, double st, double et, 
+                    pinocchio::FrameIndex fid, int sn, int en, 
                     Eigen::MatrixXd traj, double wt, std::string cost_name){
 
-        sn = std::ceil(st/dt_*100)/100; 
-        en = std::ceil(et/dt_*100)/100;
-        // std::cout << "pos " << sn << " " << en << std::endl;
-        if (et - st == 0){
+        for (unsigned i = sn; i < en; ++i){
             boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost =
-                    boost::make_shared<crocoddyl::CostModelResidual>(state_, 
-                    boost::make_shared<crocoddyl::ResidualModelFrameTranslation>(state_, fid, traj));
-            rcost_arr_[sn].get()->addCost(cost_name, goal_tracking_cost, wt);
-        }
-        else{
-            for (unsigned i = sn; i < en; ++i){
-                boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost =
-                    boost::make_shared<crocoddyl::CostModelResidual>(state_, 
-                    boost::make_shared<crocoddyl::ResidualModelFrameTranslation>(state_, fid, traj));
-                rcost_arr_[i].get()->addCost(cost_name + std::to_string(i), goal_tracking_cost, wt);
-            }
+                boost::make_shared<crocoddyl::CostModelResidual>(state_, 
+                boost::make_shared<crocoddyl::ResidualModelFrameTranslation>(state_, fid, traj));
+            rcost_arr_[i].get()->addCost(cost_name + std::to_string(i), goal_tracking_cost, wt);
         }
     };
 

@@ -281,11 +281,11 @@ class SoloMpcGaitGen:
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, self.swing_wt[1],
                                                               "via_" + str(0) + self.eff_names[j], i)
 
-        self.ik.add_state_regularization_cost(0, self.ik_horizon, self.reg_wt[0], "xReg", self.state_wt, self.x_reg, False)
-        self.ik.add_ctrl_regularization_cost_2(0, self.ik_horizon, self.reg_wt[1], "uReg", self.ctrl_wt, np.zeros(self.rmodel.nv), False)
+        self.ik.add_state_regularization_cost(0, int(self.ik_horizon/self.dt), self.reg_wt[0], "xReg", self.state_wt, self.x_reg, False)
+        self.ik.add_ctrl_regularization_cost_2(0, int(self.ik_horizon/self.dt), self.reg_wt[1], "uReg", self.ctrl_wt, np.zeros(self.rmodel.nv), False)
 
-        self.ik.add_state_regularization_cost(0, self.ik_horizon, self.reg_wt[0], "xReg", self.state_wt, self.x_reg, True)
-        self.ik.add_ctrl_regularization_cost_2(0, self.ik_horizon, self.reg_wt[1], "uReg", self.ctrl_wt, np.zeros(self.rmodel.nv), True)
+        self.ik.add_state_regularization_cost(0, int(self.ik_horizon/self.dt), self.reg_wt[0], "xReg", self.state_wt, self.x_reg, True)
+        self.ik.add_ctrl_regularization_cost_2(0, int(self.ik_horizon/self.dt), self.reg_wt[1], "uReg", self.ctrl_wt, np.zeros(self.rmodel.nv), True)
 
         self.ik.setup_costs()
 
@@ -404,11 +404,11 @@ class SoloMpcGaitGen:
         # --- IK Optimization ---
         # Add tracking costs from Dynamic optimization
 
-        self.ik.add_centroidal_momentum_tracking_task(0, self.ik_horizon, mom_opt[0:int(round(self.ik_horizon/self.gait_dt))], self.cent_wt[1], "mom_track", False)
-        self.ik.add_centroidal_momentum_tracking_task(0, self.ik_horizon, mom_opt[int(round(self.ik_horizon/self.gait_dt))], self.cent_wt[1], "mom_track", True) #Final state
+        self.ik.add_centroidal_momentum_tracking_task(0, int(self.ik_horizon/self.dt), mom_opt[0:int(round(self.ik_horizon/self.gait_dt))], self.cent_wt[1], "mom_track", False)
+        self.ik.add_centroidal_momentum_tracking_task(0, int(self.ik_horizon/self.dt), mom_opt[int(round(self.ik_horizon/self.gait_dt))], self.cent_wt[1], "mom_track", True) #Final state
 
-        self.ik.add_com_position_tracking_task(0, self.ik_horizon, com_opt[0:int(round(self.ik_horizon/self.gait_dt))], self.cent_wt[0], "com_track_cost", False)
-        self.ik.add_com_position_tracking_task(0, self.ik_horizon, com_opt[int(round(self.ik_horizon/self.gait_dt))], self.cent_wt[0], "com_track_cost", True) #Final State
+        self.ik.add_com_position_tracking_task(0, int(self.ik_horizon/self.dt), com_opt[0:int(round(self.ik_horizon/self.gait_dt))], self.cent_wt[0], "com_track_cost", False)
+        self.ik.add_com_position_tracking_task(0, int(self.ik_horizon/self.dt), com_opt[int(round(self.ik_horizon/self.gait_dt))], self.cent_wt[0], "com_track_cost", True) #Final State
 
         t4 = time.time()
         self.ik.optimize(np.hstack((q,v)))

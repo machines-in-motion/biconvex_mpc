@@ -5,12 +5,9 @@
 
 namespace ik{
 
-    void InverseKinematics::add_com_position_tracking_task(double st, double et, Eigen::MatrixXd traj, 
+    void InverseKinematics::add_com_position_tracking_task(int sn, int en, Eigen::MatrixXd traj, 
                                                 double wt, std::string cost_name, bool isTerminal)
         {
-            // wonder if this is slow?
-            sn = std::ceil(st/dt_*100)/100; 
-            en = std::ceil(et/dt_*100)/100;
 
             if (!isTerminal){
                 for (unsigned i = sn; i < en; ++i){
@@ -30,11 +27,9 @@ namespace ik{
             }
         };
 
-        void InverseKinematics::add_centroidal_momentum_tracking_task(double st, double et, Eigen::MatrixXd traj, 
+        void InverseKinematics::add_centroidal_momentum_tracking_task(int sn, int en, Eigen::MatrixXd traj, 
                                                 double wt, std::string cost_name, bool isTerminal)
         {
-            sn = std::ceil(st/dt_*100)/100;
-            en = std::ceil(et/dt_*100)/100;
 
             if (!isTerminal){
                 for (unsigned i = sn; i < en; ++i){

@@ -267,7 +267,7 @@ bound_turn.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 bound_turn.nom_ht = 0.25
 bound_turn.rho = 5e+4
 bound_turn.ori_correction = [0.2, 0.8, 0.8]
-bound_turn.gait_horizon = 2.0
+bound_turn.gait_horizon = 1.0
 # 
 # Gains
 bound_turn.kp = 3.0

@@ -25,7 +25,6 @@ gait_params = bound
 pin_robot = Solo12Config.buildRobotWrapper()
 urdf_path = Solo12Config.urdf_path
 gait_time = gait_params.gait_period
-dt = 5e-2
 
 n_eff = 4
 q0 = np.array(Solo12Config.initial_configuration)
@@ -49,7 +48,7 @@ pln_ctr = 0
 robot = Solo12Env(gait_params.kp, gait_params.kd, q0, v0, False, False)
 
 lag = int(update_time/sim_dt)
-gg = SoloMpcGaitGen(pin_robot, urdf_path, dt, gait_params, x0, plan_freq, q0, None)
+gg = SoloMpcGaitGen(pin_robot, urdf_path, gait_params, x0, plan_freq, q0, None)
 q, v = robot.get_state()
 
 plot_time = np.inf #Time to start plotting
@@ -67,22 +66,20 @@ for o in range(int(500*(plan_freq/sim_dt))):
         # reseting origin (causes scaling issues I think otherwise)
         q[0:2] = 0
         contact_configuration = robot.get_current_contacts()
-        pr_st = time.time()
-        print("Time: ")
-        print(sim_t)
-
+        
         if w_des != 0:
             ori_des = q[3:7]
-
+        
+        pr_st = time.time()
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(step_t,3), v_des, w_des, ori_des, gait_params.step_ht, contact_configuration)
 
         #Plot if necessary
         if sim_t > plot_time:
             gg.plot_plan()
 
-        gg.reset()
         pr_et = time.time()
-
+        print("Full Time : ", pr_et - pr_st)
+        print("=========================")
     # update of plan
     # first loop assume that trajectory is planned
     if o < int(plan_freq/sim_dt) - 1:
@@ -105,6 +102,9 @@ for o in range(int(500*(plan_freq/sim_dt))):
     sim_t += sim_dt
     step_t = (step_t + sim_dt)%gait_time
 
+    if o > int(100*(plan_freq/sim_dt)):
+        v_des[0] = 0.8
+        
     time.sleep(0.001)
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1

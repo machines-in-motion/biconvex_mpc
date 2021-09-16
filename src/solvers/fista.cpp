@@ -65,11 +65,6 @@ namespace solvers
                 //Apply second order cone projection
                 prob_data_.y_k_1.segment(i,2) *= ((mu * mu) * soc_norm + (mu * z)) / ( ((mu * mu) + 1) * soc_norm);
                 prob_data_.y_k_1[i + 2] = (mu * soc_norm + z) / ((mu * mu )+ 1);
-                //rotated_force.segment(0,2) *= ((mu * mu) * soc_norm + (mu * z)) / ( ((mu * mu) + 1) * soc_norm);
-                //rotated_force[2] = (mu * soc_norm + z) / ((mu * mu )+ 1);
-
-                //Rotate back into original frame
-                //prob_data_.y_k_1.segment(i,3) = prob_data_.rotation_matrices_trans[i]*rotated_force;
             }
         }
     }

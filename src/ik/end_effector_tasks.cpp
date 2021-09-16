@@ -37,13 +37,9 @@ namespace ik{
     };
 
     void InverseKinematics::add_velocity_tracking_task(
-                    pinocchio::FrameIndex fid, double st, double et, 
+                    pinocchio::FrameIndex fid, int st, int et, 
                     Eigen::MatrixXd traj, double wt, std::string cost_name){
 
-        // This function does not work properly yet
-
-        sn = std::ceil(st/dt_*100)/100; 
-        en = std::ceil(et/dt_*100)/100;
         std::cout << "function not implemented" << std::endl;
         // for (unsigned i = sn; i < en; ++i){
         //     crocoddyl::FrameMotion Mref(fid, pinocchio::Motion(traj.row(i - sn)));

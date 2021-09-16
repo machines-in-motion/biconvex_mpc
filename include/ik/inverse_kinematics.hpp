@@ -44,9 +44,9 @@ namespace ik{
     class InverseKinematics{
 
         public:
-            InverseKinematics(std::string rmodel_path, double dt, double T);
+            InverseKinematics(std::string rmodel_path, int n_col);
 
-            void setup_costs();
+            void setup_costs(Eigen::VectorXd dt);
 
             void optimize(const Eigen::VectorXd& x0);
 
@@ -64,7 +64,7 @@ namespace ik{
             void add_terminal_position_tracking_task(pinocchio::FrameIndex fid, Eigen::MatrixXd traj, double wt, 
                                                     std::string cost_name);
 
-            void add_velocity_tracking_task(pinocchio::FrameIndex fid, double st, double et, 
+            void add_velocity_tracking_task(pinocchio::FrameIndex fid, int sn, int en, 
                                                 Eigen::MatrixXd traj, double wt, std::string cost_name);
 
             void add_com_position_tracking_task(int sn, int en, Eigen::MatrixXd traj, 
@@ -80,11 +80,9 @@ namespace ik{
                                         std::string cost_name, Eigen::VectorXd stateWeights, 
                                         Eigen::VectorXd x_reg);
 
-            void add_ctrl_regularization_cost_2(int sn, int en, double wt, 
+            void add_ctrl_regularization_cost(int sn, int en, double wt, 
                                         std::string cost_name,  Eigen::VectorXd controlWeights, 
                                         Eigen::VectorXd u_reg, bool isTerminal);
-
-            void add_ctrl_regularization_cost(int sn, int en, double wt, std::string cost_name, bool isTerminal = false);
 
             void compute_optimal_com_and_mom();
 
@@ -95,10 +93,6 @@ namespace ik{
             pinocchio::Model rmodel_;
             // robot data
             pinocchio::Data rdata_;
-            // discretization
-            const double dt_;
-            // total horizon length
-            const double T_;
             // number of colocation points
             const int n_col_;
             // crocoddyl state 
@@ -123,9 +117,6 @@ namespace ik{
             // cost related variables
             int sn;
             int en;
-            // boost::shared_ptr<crocoddyl::FrameTranslation> Mref; 
-
-
 
     };
     

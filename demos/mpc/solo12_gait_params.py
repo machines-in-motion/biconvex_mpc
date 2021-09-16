@@ -234,7 +234,7 @@ bound.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 bound.nom_ht = 0.25
 bound.rho = 5e+4
 bound.ori_correction = [0.2, 0.8, 0.8]
-bound.gait_horizon = 2.0
+bound.gait_horizon = 1.5
 # 
 # Gains
 bound.kp = 3.0

@@ -3,8 +3,8 @@
 
 namespace ik{
 
-    InverseKinematics::InverseKinematics(std::string rmodel_path, double dt, double T):
-        T_(T), dt_(dt), n_col_(int(ceil((T/dt))))
+    InverseKinematics::InverseKinematics(std::string rmodel_path, int n_col):
+        n_col_(n_col) // wonder if this should come from the user?
     {
 
         pinocchio::urdf::buildModel(rmodel_path,pinocchio::JointModelFreeFlyer(), rmodel_) ;
@@ -27,12 +27,12 @@ namespace ik{
         rint_arr_ = std::vector< boost::shared_ptr<crocoddyl::ActionModelAbstract>>(n_col_);
     };
 
-    void InverseKinematics::setup_costs(){
+    void InverseKinematics::setup_costs(Eigen::VectorXd dt){
 
         for (unsigned i = 0; i < n_col_; i++){
             boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> running_DAM =
                         boost::make_shared<crocoddyl::DifferentialFwdKinematicsModelTpl<double>>(state_, actuation_, rcost_arr_[i]);
-            rint_arr_[i] = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(running_DAM, dt_);
+            rint_arr_[i] = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(running_DAM, dt[i]);
 
         }
 
@@ -49,9 +49,20 @@ namespace ik{
         ddp_ = boost::make_shared<crocoddyl::SolverDDP>(problem_);
         ddp_->solve();
 
+
+        // wonder how effecient this ?
+        for (unsigned i = 0; i < n_col_; i++){
+            boost::shared_ptr<crocoddyl::CostModelSum> rcost_model =
+                                        boost::make_shared<crocoddyl::CostModelSum>(state_);
+            rcost_arr_[i] = rcost_model;
+        }
+
+        // terminal cost model
+        tcost_model_ = boost::make_shared<crocoddyl::CostModelSum>(state_);  
+
     };
 
     void InverseKinematics::compute_optimal_com_and_mom(){
-        
+        // to be implemented. currently in python
     }
 }

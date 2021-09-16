@@ -3,19 +3,17 @@
 
 namespace motion_planner{
 
-    BiConvexMP::BiConvexMP(double m, double dt, double T, int n_eff):
-        m_(m), n_eff_(n_eff), T_(T), centroidal_dynamics(m, dt, T, n_eff),
-        prob_data_x(9, int(ceil(T/dt))+1), prob_data_f(3*n_eff, int(ceil(T/dt))),
+    BiConvexMP::BiConvexMP(double m, int n_col, int n_eff):
+        m_(m), n_eff_(n_eff), n_col_(n_col), centroidal_dynamics(m, n_col, n_eff),
+        prob_data_x(9, n_col+1), prob_data_f(3*n_eff, n_col),
         fista_x(), fista_f(){
-            dt_ = dt;
-            horizon_ = int(ceil(T/dt_));
-
-            com_opt_.resize(horizon_ + 1, 3); com_opt_.setZero();
-            mom_opt_.resize(horizon_ + 1, 6); mom_opt_.setZero();
+    
+            com_opt_.resize(n_col_ + 1, 3); com_opt_.setZero();
+            mom_opt_.resize(n_col_ + 1, 6); mom_opt_.setZero();
         
-            dyn_violation.resize(9*(int (ceil(T/dt))+1));
+            dyn_violation.resize(9*(n_col_+1));
             dyn_violation.setZero();
-            P_k_.resize(9*(int (ceil(T/dt))+1));
+            P_k_.resize(9*(n_col_+1));
             P_k_.setZero();
 
             // setting starting line search params
@@ -94,7 +92,7 @@ namespace motion_planner{
             centroidal_dynamics.compute_f_mat(prob_data_f.x_k);
             prob_data_x.set_data(centroidal_dynamics.A_f, centroidal_dynamics.b_f, P_k_, rho_);
             fista_x.optimize(prob_data_x, maxit, tol);
-
+            
             dyn_violation = centroidal_dynamics.A_f * prob_data_x.x_k - centroidal_dynamics.b_f;
             P_k_ += dyn_violation;
             // std::cout << dyn_violation.norm() << std::endl;
@@ -121,7 +119,7 @@ namespace motion_planner{
     }
 
     Eigen::MatrixXd BiConvexMP::return_opt_com(){
-        for (unsigned i = 0; i < horizon_+1 ; ++i){
+        for (unsigned i = 0; i < n_col_+1 ; ++i){
             com_opt_(i,0) = prob_data_x.x_k[9*i];
             com_opt_(i,1) = prob_data_x.x_k[9*i+1];
             com_opt_(i,2) = prob_data_x.x_k[9*i+2];
@@ -131,7 +129,7 @@ namespace motion_planner{
     };
 
     Eigen::MatrixXd BiConvexMP::return_opt_mom(){
-        for (unsigned i = 0; i < horizon_ +1; ++i){
+        for (unsigned i = 0; i < n_col_ +1; ++i){
             mom_opt_(i,0) =   m_*prob_data_x.x_k[9*i+3];
             mom_opt_(i,1) = m_*prob_data_x.x_k[9*i+4];
             mom_opt_(i,2) = m_*prob_data_x.x_k[9*i+5];

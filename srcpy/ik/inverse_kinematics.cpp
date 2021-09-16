@@ -18,7 +18,7 @@ PYBIND11_MODULE(inverse_kinematics_cpp, m)
     m.doc() = "Inverse Kinematics based on DDP";
 
     py::class_<ik::InverseKinematics> ik (m, "InverseKinematics");
-    ik.def(py::init<std::string, double, double>());
+    ik.def(py::init<std::string, int>());
     ik.def("setup_costs", &ik::InverseKinematics::setup_costs);
     ik.def("optimize", &ik::InverseKinematics::optimize);
     ik.def("get_xs", &ik::InverseKinematics::get_xs);
@@ -34,7 +34,6 @@ PYBIND11_MODULE(inverse_kinematics_cpp, m)
     ik.def("add_state_regularization_cost", &ik::InverseKinematics::add_state_regularization_cost);
     ik.def("add_state_regularization_cost_single", &ik::InverseKinematics::add_state_regularization_cost_single);
     ik.def("add_ctrl_regularization_cost", &ik::InverseKinematics::add_ctrl_regularization_cost);
-    ik.def("add_ctrl_regularization_cost_2", &ik::InverseKinematics::add_ctrl_regularization_cost_2);
 
 };
 

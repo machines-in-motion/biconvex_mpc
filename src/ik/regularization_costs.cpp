@@ -46,27 +46,6 @@ namespace ik{
     };
 
     void InverseKinematics::add_ctrl_regularization_cost(int sn, int en, double wt, 
-                                            std::string cost_name, bool isTerminal)
-    {
-        if (!isTerminal){
-            for (unsigned i = sn; i < en; ++i){
-                boost::shared_ptr<crocoddyl::CostModelAbstract> ctrl_reg =
-                     boost::make_shared<crocoddyl::CostModelResidual>(
-                            state_, 
-                            boost::make_shared<crocoddyl::ResidualModelControl>(state_));
-                rcost_arr_[i].get()->addCost(cost_name,ctrl_reg, wt);
-            }
-        }
-        else{
-            boost::shared_ptr<crocoddyl::CostModelAbstract> ctrl_reg =
-                     boost::make_shared<crocoddyl::CostModelResidual>(
-                            state_, 
-                            boost::make_shared<crocoddyl::ResidualModelControl>(state_));
-                tcost_model_->addCost(cost_name,ctrl_reg, wt);
-        }
-    };
-
-    void InverseKinematics::add_ctrl_regularization_cost_2(int sn, int en, double wt, 
                                                         std::string cost_name,  Eigen::VectorXd controlWeights, 
                                                         Eigen::VectorXd u_reg, bool isTerminal)
     {

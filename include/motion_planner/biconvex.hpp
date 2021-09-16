@@ -20,10 +20,10 @@ namespace motion_planner
 {
 class BiConvexMP{
     public:
-        BiConvexMP(double m, double dt, double T, int n_eff);
+        BiConvexMP(double m, int n_col, int n_eff);
 
-        void set_contact_plan(Eigen::MatrixXd cnt_plan){
-            centroidal_dynamics.set_contact_arrays(cnt_plan);
+        void set_contact_plan(Eigen::MatrixXd cnt_plan, double dt){
+            centroidal_dynamics.set_contact_arrays(cnt_plan, dt);
         };
 
 
@@ -146,8 +146,7 @@ class BiConvexMP{
         // tolerance for exiting biconvex
         double exit_tol = 1e-3;
 
-        int horizon_ = 0;
-        double dt_ = 0.0;
+        int n_col_ = 0;
         int n_eff_ = 0;
         double T_;
         

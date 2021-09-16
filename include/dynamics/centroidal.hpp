@@ -14,7 +14,7 @@ namespace dynamics{
     class CentroidalDynamics{
 
         public:
-            CentroidalDynamics(double m, double dt, double T, int n_eff);
+            CentroidalDynamics(double m, int n_col, int n_eff);
         
             void compute_x_mat(Eigen::VectorXd &X);
             void compute_f_mat(Eigen::VectorXd &F);
@@ -26,7 +26,7 @@ namespace dynamics{
                 }; 
             };
 
-            void set_contact_arrays(Eigen::MatrixXd cnt_plan);
+            void set_contact_arrays(Eigen::MatrixXd cnt_plan, double dt);
 
             //Update the binary contact array
             void update_contact_array();
@@ -53,15 +53,12 @@ namespace dynamics{
             Eigen::MatrixXd r_t;
 
             const double m_;
-            const double dt_;
-            const double T_;
+            int n_col_;
             const double n_eff_;
 
-            Eigen::VectorXd dt_adaptive_;
+            Eigen::VectorXd dt_;
 
             //TODO: 
-            //Change to horizon_ or knots_ (or something else)
-            const int n_col_;
     };
 
 }

@@ -74,7 +74,11 @@ class RobotInterface:
         return rq, rv
 
     def send_joint_command(self, tau):
+        """
+        Sends joint torques to robot and integrates
+        """
         if not isRealRobot:
             self.robot.setGeneralizedForce(tau)
+            self.server.integrateWorldThreadSafe()
 
     def visualize(self, contact_locations):

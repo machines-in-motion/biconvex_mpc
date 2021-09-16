@@ -1,0 +1,12 @@
+robot_name: "Solo12"
+num_eef: 4
+eef_names: ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
+hip_names: ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]
+#offset: [0.0, 0.2, 0.0], [0.0 0.2, 0.0]
+initial_configuration: [0.0, 0.0, 0.25,        #X, Y, Z
+                        0.0, 0.0, 0.0, 1.0,     #Orientation (quaternion) 
+                        0.0, 0.8, -1.6,     #FL
+                        0.0, 0.8, -1.6,     #FR
+                        0.0, -0.8, 1.6,     #HL
+                        0.0, -0.8, 1.6]      #HR
+foot_size: 0.018

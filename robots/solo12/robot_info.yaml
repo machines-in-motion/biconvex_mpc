@@ -10,3 +10,5 @@ initial_configuration: [0.0, 0.0, 0.25,        #X, Y, Z
                         0.0, -0.8, 1.6,     #HL
                         0.0, -0.8, 1.6]      #HR
 foot_size: 0.018
+dt: 0.001
+steps: 10000000

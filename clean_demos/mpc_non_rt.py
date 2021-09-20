@@ -1,15 +1,25 @@
 ## Demo file for running MPC
+import os
 
-simulation_steps = 1091234982374982
-sim_dt = 0.0
-dt = 0.001
+from robot_model.robot_model import RobotModel
+from robot_interface.robot_interface import RobotInterface
+from contact_planner.contact_planner import ContactPlanner
+from paths.path import Paths
+from controllers.robot_id_controller import InverseDynamicsController
+
+#Load robot
+paths = Paths("solo12")
 
 #Initialize Classes
-robot_interface = RobotInterface()
+robot_interface = RobotInterface(paths.URDF_PATH, 0.001, )
 contact_planner.initialize(gait_params, height_map)
-kino_dyn.initialize(gait_params)
+#kino_dyn.initialize(gait_params)
+controller = InverseDynamicsController()
 
-for i in range(0:steps):
+sim_dt = 0.0
+dt = paths.YAML["dt"]
+steps = paths.YAML["steps"]
+for i in range(steps):
 	sim_dt += dt
 
 	#Get State

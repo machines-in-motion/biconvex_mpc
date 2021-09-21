@@ -19,7 +19,7 @@ class RobotInterface:
         self.pin_data = self.pin_model.createData()
 
         if isRealRobot():
-            
+            print("Not supported yet")
         else:
             # Set up Raisim World
             self.world = raisim.World()
@@ -74,7 +74,15 @@ class RobotInterface:
         return rq, rv
 
     def send_joint_command(self, tau):
+        """
+        Sends joint torques to robot and integrates
+        """
         if not isRealRobot:
             self.robot.setGeneralizedForce(tau)
+            self.server.integrateWorldThreadSafe()
 
     def visualize(self, contact_locations):
+        """
+        Visualize contact locations
+        """
+        return None

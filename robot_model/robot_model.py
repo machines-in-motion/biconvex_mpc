@@ -1,26 +1,31 @@
 #This is a robot model class to get and set 
 import pinocchio as pin
+import numpy as np
 
 class RobotModel:
 
-    def __init__(self, urdf):
+    def __init__(self, urdf, robot_info):
         """
         Input:
             urdf : path of urdf of robot
         """
 
-        # Set up Pinocchio stuff (Is this necessary...?)
+        # Set up Pinocchio
         self.pin_model = pin.buildModelFromUrdf(urdf, 
                                                 pin.JointModelFreeFlyer())
         self.pin_data = self.pin_model.createData()
 
-        self.initial_configuration =  (
-            [0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 1.0]
-            + 2 * [0.0, 0.8, -1.6]
-            + 2 * [0.0, -0.8, 1.6]
-            )
-        self.offsets = 
-        self.I_comp_b = 
-        self.
+        #Offsets which are used in contact planner
+        self.offsets = robot_info.offsets
 
-    def get_ee_positions(self):
+        self.initial_configuration =  robot_info.initial_configuration
+
+        self.pin.forwardKinematics(self.pin_model, self.pin_data, self.initial_configuration)
+        self.pin.framesForwardKinematics(self.pin_model, self.pin_data, self.initial_configuration)
+        self.pin.computeJointJacobians(self.pin_model, self.pin_data, self.initial_configuration)
+        self.pin.computeCentroidalMomentum(self.pin_model, self.pin_data, \
+            self.initial_configuration, np.zeros_like(self.initial_configuration))
+
+        #Composite inertia of entire robot
+        self.pin.crba(self.rmodel, self.rdata, q0)
+        self.I_comp_b = self.pin_data.Ycrb[1].inertia

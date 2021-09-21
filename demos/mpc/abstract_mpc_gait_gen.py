@@ -188,10 +188,12 @@ class SoloMpcGaitGen:
         #Get current rotation
         R = pin.Quaternion(np.array(q[3:7])).toRotationMatrix()
         rpy_vector = pin.rpy.matrixToRpy(R)
+        rpy_vector[0] = 0.0
+        rpy_vector[1] = 0.0
+        R = pin.rpy.rpyToMatrix(rpy_vector)
 
         vtrack = v_des[0:2] # this effects the step location (if set to vcom it becomes raibert)
         #vtrack = vcom[0:2]
-        #vtrack = np.matmul(R, vtrack)[0:2]
 
         self.cnt_plan = np.zeros((self.horizon, len(self.eff_names), 4))
         # This array determines when the swing foot cost should be enforced in the ik

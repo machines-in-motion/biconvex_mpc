@@ -118,7 +118,7 @@ trot = BiconvexMotionParams("solo12", "Trot")
 trot.gait_period = 0.5
 trot.stance_percent = [0.6, 0.6, 0.6, 0.6]
 trot.gait_dt = 0.05
-trot.phase_offset = [0.0, 0.4, 0.4, 0.0]
+trot.phase_offset = [0.0, 0.5, 0.5, 0.0]
 
 # IK
 trot.state_wt = np.array([0., 0, 10] + [1000, 1000, 1000] + [1.0] * (pin_robot.model.nv - 6) \
@@ -137,7 +137,7 @@ trot.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+4, 1e4]
 trot.W_X_ter = 10*np.array([1e+5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e+5])
 trot.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 trot.rho = 5e+4
-trot.ori_correction = [0.0, 0.5, 0.4]
+trot.ori_correction = [0.3, 0.5, 0.4]
 trot.gait_horizon = 1.0
 trot.kp = 3.0
 trot.kd = 0.05

@@ -31,7 +31,6 @@ class SoloMpcGaitGen:
         self.r_urdf = r_urdf
         self.foot_size = 0.018
         self.params = weight_abstract
-        self.dt = self.params.gait_dt
         self.step_height = self.params.step_ht
 
 
@@ -145,9 +144,12 @@ class SoloMpcGaitGen:
 
         # --- Set up other variables ---
         # For interpolation (should be moved to the controller)
-        self.xs_int = np.zeros((len(self.x_reg), int(self.dt/0.001)))
-        self.us_int = np.zeros((self.rmodel.nv, int(self.dt/0.001)))
-        self.f_int = np.zeros((4*len(self.eff_names), int(self.dt/0.001)))
+        self.size = min(self.ik_horizon, int(self.planning_time/self.gait_dt) + 2)
+        if self.planning_time > self.gait_dt:
+            self.size -= 1
+        self.xs_int = np.zeros((len(self.x_reg), self.size))
+        self.us_int = np.zeros((self.rmodel.nv, self.size))
+        self.f_int = np.zeros((4*len(self.eff_names), self.size))
 
         # For plotting
         self.com_traj = []
@@ -261,13 +263,21 @@ class SoloMpcGaitGen:
                         else:
                             self.cnt_plan[i][j][3] = self.foot_size
             
-            self.mp.set_contact_plan(self.cnt_plan[i], self.gait_dt)
-            self.dt_arr[i] = self.gait_dt
+            if i == 0:
+                dt = self.gait_dt - np.round(np.remainder(t,self.gait_dt),2)
+                if dt == 0:
+                    dt = self.gait_dt
+            else:
+                dt = self.gait_dt
+            self.mp.set_contact_plan(self.cnt_plan[i], dt)
+            self.dt_arr[i] = dt
 
-        #print(self.cnt_plan)
+        print(t, self.dt_arr)
+        print("=============")
+        
         return self.cnt_plan
 
-    def create_costs(self, q, v, v_des, w_des, ori_des, t):
+    def create_costs(self, q, v, v_des, w_des, ori_des):
         """
         Input:
             q : joint positions at current time
@@ -375,7 +385,7 @@ class SoloMpcGaitGen:
         self.create_cnt_plan(q, v, t, v_des, w_des)
 
         #Creates costs for IK and Dynamics
-        self.create_costs(q, v, v_des, w_des, ori_des, t)
+        self.create_costs(q, v, v_des, w_des, ori_des)
         self.q_traj.append(q)
         self.v_traj.append(v)
 
@@ -446,22 +456,22 @@ class SoloMpcGaitGen:
         # opt_mom, opt_com = self.compute_optimal_com_and_mom(xs, us)
         # self.mp.add_ik_com_cost(opt_com)
         # self.mp.add_ik_momentum_cost(opt_mom)
-        print("cost", t2 - t1)
-        print("dyn", t3 - t2)
-        print("ik", t5 - t4)
-        print("total", t5 - t1)
-        print("------------------------")
+        # print("cost", t2 - t1)
+        # print("dyn", t3 - t2)
+        # print("ik", t5 - t4)
+        # print("total", t5 - t1)
+        # print("------------------------")
 
         self.num_optimization_ctr += 1
         self.dyn_comp_total += t3-t2
         self.dyn_comp_ave = self.dyn_comp_total/self.num_optimization_ctr
-        print("Average cost of dynamics computation: ")
-        print(self.dyn_comp_ave)
+        # print("Average cost of dynamics computation: ")
+        # print(self.dyn_comp_ave)
 
 
         n_eff = 3*len(self.eff_names)
-        ind = int(self.planning_time/self.dt) + 1 # 1 is to account for time lag
-        for i in range(ind):
+        print(len(us), self.size)
+        for i in range(self.size):
             if i == 0:
                 self.f_int = np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i+1):n_eff*(i+2)], int(self.dt_arr[i]/0.001))
                 self.xs_int = np.linspace(xs[i], xs[i+1], int(self.dt_arr[i]/0.001))

@@ -78,8 +78,8 @@ for o in range(int(500*(plan_freq/sim_dt))):
             gg.plot_plan()
 
         pr_et = time.time()
-        print("Full Time : ", pr_et - pr_st)
-        print("=========================")
+        # print("Full Time : ", pr_et - pr_st)
+        # print("=========================")
     # update of plan
     # first loop assume that trajectory is planned
     if o < int(plan_freq/sim_dt) - 1:
@@ -100,10 +100,12 @@ for o in range(int(500*(plan_freq/sim_dt))):
     robot.send_joint_command(q_des, dq_des, us[index], f[index], contact_configuration)
     #robot.send_joint_command_tsid(sim_t, q_des, dq_des, us[index], f[index], contact_configuration)
     sim_t += sim_dt
-    step_t = (step_t + sim_dt)%gait_time
+    # step_t = (step_t + sim_dt)%gait_time
+    step_t = (step_t + sim_dt)
 
-    if o > int(100*(plan_freq/sim_dt)):
-        v_des[0] = 0.8
+
+    # if o > int(100*(plan_freq/sim_dt)):
+    #     v_des[0] = 0.8
         
     time.sleep(0.001)
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))

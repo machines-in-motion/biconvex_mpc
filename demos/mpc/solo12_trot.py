@@ -33,7 +33,7 @@ q0[0:2] = 0.0
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.5,0.0,0.0])
+v_des = np.array([0.4,0.0,0.0])
 w_des = 0.0
 step_height = gait_params.step_ht
 

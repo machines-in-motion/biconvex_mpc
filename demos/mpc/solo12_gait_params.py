@@ -230,7 +230,7 @@ bound.reg_wt = [7e-3, 7e-5]
 # Dyn 
 bound.W_X =        np.array([1e-5, 1e-5, 5e+4, 1e1, 1e1, 1e+3, 5e+3, 1e+4, 5e+3])
 bound.W_X_ter = 10*np.array([1e-5, 1e-5, 5e+4, 1e1, 1e1, 1e+3, 1e+4, 1e+4, 1e+4])
-bound.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
+bound.W_F = np.array(4*[1e1, 1e+1, 1e+1])
 bound.nom_ht = 0.25
 bound.rho = 5e+4
 bound.ori_correction = [0.2, 0.8, 0.8]

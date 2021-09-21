@@ -273,9 +273,6 @@ class SoloMpcGaitGen:
                 dt = self.gait_dt
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
-
-        print(t, self.dt_arr)
-        print("=============")
         
         return self.cnt_plan
 
@@ -472,7 +469,6 @@ class SoloMpcGaitGen:
 
 
         n_eff = 3*len(self.eff_names)
-        print(len(us), self.size)
         for i in range(self.size):
             if i == 0:
                 self.f_int = np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i+1):n_eff*(i+2)], int(self.dt_arr[i]/0.001))

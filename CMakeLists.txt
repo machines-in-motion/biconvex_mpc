@@ -40,6 +40,8 @@ add_library(${PROJECT_NAME} SHARED
     src/ik/end_effector_tasks.cpp
     src/ik/com_tasks.cpp
     src/ik/regularization_costs.cpp
+
+    src/motion_planner/kino_dyn.cpp
     )
 
 target_link_libraries(biconvex_mpc Eigen3::Eigen)

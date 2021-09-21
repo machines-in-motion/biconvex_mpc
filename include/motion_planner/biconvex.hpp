@@ -126,9 +126,11 @@ class BiConvexMP{
             return dyn_violation_hist_;
         }
 
+        void set_robot_mass(double m){m_ = m;};
+
     private:
         // mass of the robot 
-        const double m_;
+        double m_;
         // centroidal dynamics class
         dynamics::CentroidalDynamics centroidal_dynamics;
         // penalty term on dynamic violation

@@ -84,11 +84,12 @@ namespace ik{
                                         std::string cost_name,  Eigen::VectorXd controlWeights, 
                                         Eigen::VectorXd u_reg, bool isTerminal);
 
-            void compute_optimal_com_and_mom();
+            void compute_optimal_com_and_mom(Eigen::MatrixXd &pt_com, Eigen::MatrixXd &opt_mom);
 
 
         protected:
-
+            //robot mass
+            double m_;
             // robot model
             pinocchio::Model rmodel_;
             // robot data
@@ -118,7 +119,10 @@ namespace ik{
             int sn;
             int en;
 
+            std::vector<Eigen::VectorXd> xs_;
+
     };
+
     
 
 }

@@ -11,6 +11,8 @@ namespace ik{
         // temporaryily created 
         pinocchio::Data rdata_tmp(rmodel_);
         rdata_ = rdata_tmp;
+        m_ = pinocchio::computeTotalMass(rmodel_);
+    
         state_ = boost::make_shared<crocoddyl::StateMultibody>(boost::make_shared<pinocchio::Model>(rmodel_));
 
         // actuation_ = boost::make_shared<crocoddyl::ActuationModelFloatingBase>(state_);
@@ -62,7 +64,16 @@ namespace ik{
 
     };
 
-    void InverseKinematics::compute_optimal_com_and_mom(){
-        // to be implemented. currently in python
+    void InverseKinematics::compute_optimal_com_and_mom(Eigen::MatrixXd &opt_com, Eigen::MatrixXd &opt_mom){
+        xs_ = ddp_->get_xs();
+        for(unsigned i = 0; i < n_col_+1; ++i){
+            pinocchio::computeCentroidalMomentum(rmodel_, rdata_, xs_[i].head(rmodel_.nq), xs_[i].tail(rmodel_.nv));
+            opt_com.row(i) = rdata_.com[0];
+            opt_mom.row(i) = rdata_.hg.toVector();
+            opt_mom(i,0) /= m_; 
+            opt_mom(i,1) /= m_;
+            opt_mom(i,2) /= m_;
+        }
+
     }
 }

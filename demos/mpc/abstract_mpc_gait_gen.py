@@ -7,7 +7,7 @@ import numpy as np
 from numpy.lib.arraysetops import isin
 import pinocchio as pin
 from inverse_kinematics_cpp import InverseKinematics
-from biconvex_mpc_cpp import BiconvexMP
+from biconvex_mpc_cpp import BiconvexMP, KinoDynMP
 from gait_planner_cpp import GaitPlanner
 import math
 #from matplotlib import pyplot as plt
@@ -107,15 +107,23 @@ class SoloMpcGaitGen:
         
         # --- Set up Inverse Kinematics ---
         self.ik_horizon = int(np.round(0.5*self.gait_horizon*self.gait_period/self.gait_dt, 2))
-        self.ik = InverseKinematics(r_urdf, self.ik_horizon)
+        # self.ik = InverseKinematics(r_urdf, self.ik_horizon)
         self.dt_arr = np.zeros(self.horizon)
         # --- Set up Dynamics ---
         self.m = pin.computeTotalMass(self.rmodel)
         self.rho = self.params.rho # penalty on dynamic constraint violation
 
-        self.mp = BiconvexMP(self.m, self.horizon, len(self.eff_names))
+        # kino dyn
+        self.kd = KinoDynMP(r_urdf, self.m, len(self.eff_names), self.horizon, self.ik_horizon)
+        self.kd.set_com_tracking_weight(self.cent_wt[0])
+        self.kd.set_mom_tracking_weight(self.cent_wt[1])
+        
+        self.ik = self.kd.return_ik()
+        self.mp = self.kd.return_dyn()
         self.mp.set_rho(self.rho)
+
         # Set up Weights & Matrices for Dynamics
+        
         self.W_X = self.params.W_X
         self.W_X_ter = self.params.W_X_ter
         self.W_F = self.params.W_F
@@ -388,85 +396,23 @@ class SoloMpcGaitGen:
         self.q_traj.append(q)
         self.v_traj.append(v)
 
-        # --- Dynamics optimization ---
         t2 = time.time()
 
-        if isinstance(X_wm, np.ndarray):
-            X_k = X_wm
-        else:
-            X_k = np.tile(self.X_init, ((self.horizon+1)))[:,None]
-        if isinstance(F_wm, np.ndarray):
-            F_k = F_wm
-        else:
-            F_k = np.zeros((3*self.horizon*self.n_eff,1))
-        
-        # penalty of dynamic constraint violation from ADMM
-        if isinstance(P_wm, np.ndarray):
-            P_k = P_wm
-        else:    
-            P_k = 0.0*np.ones((9*self.horizon + 9, 1))
-
-        self.mp.set_warm_start_vars(X_k, F_k, P_k)
-        self.mp.optimize(self.X_init, 50)
-        
-        com_opt = self.mp.return_opt_com()
-        mom_opt = self.mp.return_opt_mom()
-        F_opt = self.mp.return_opt_f()
+        self.kd.optimize(q, v, 50, 1)
 
         t3 = time.time()
 
-        P_opt = self.mp.return_opt_p()
-        X_opt = self.mp.return_opt_x()
+        print("Cost Time :", t2 - t1)
+        print("Solve Time : ", t3 - t2)
+        print(" ================== ")
 
-        #Set up warm-start variables
-        # self.F_k_wm[0:(self.horizon-1)*self.n_eff*3] = \
-        #     F_opt[3*self.n_eff:self.horizon*self.n_eff*3].reshape((self.horizon-1)*self.n_eff*3,1)
-        # self.F_k_wm[-3*self.n_eff:] = 0.0
-        self.F_k_wm = F_opt.reshape(F_opt.size, 1)
-        self.P_k_wm = P_opt.reshape(P_opt.size, 1)
-        #self.P_k_wm[0:9*self.horizon] = P_opt[9:].reshape((9*self.horizon),1)
-        #elf.P_k_wm[-9:] = 0.0
-        self.X_k_wm = X_opt.reshape(X_opt.size, 1)
-        self.X_k_wm[0:9*self.horizon] = X_opt[9:].reshape((9*self.horizon,1))
-
-        #t3 = time.time()
-
-        com_tmp = pin.centerOfMass(self.rmodel, self.rdata, self.q_traj[-1], self.v_traj[-1])
-
-        self.com_traj.append(com_opt)
-
-        # --- IK Optimization ---
-        # Add tracking costs from Dynamic optimization
-
-        self.ik.add_centroidal_momentum_tracking_task(0, self.ik_horizon, mom_opt[0:self.ik_horizon], self.cent_wt[1], "mom_track", False)
-        self.ik.add_centroidal_momentum_tracking_task(0, self.ik_horizon, mom_opt[self.ik_horizon], self.cent_wt[1], "mom_track", True) #Final state
-
-        self.ik.add_com_position_tracking_task(0, self.ik_horizon, com_opt[0:self.ik_horizon], self.cent_wt[0], "com_track_cost", False)
-        self.ik.add_com_position_tracking_task(0, self.ik_horizon, com_opt[self.ik_horizon], self.cent_wt[0], "com_track_cost", True) #Final State
-
-        t4 = time.time()
-        self.ik.optimize(np.hstack((q,v)))
-        t5 = time.time()
-
+        com_opt = self.mp.return_opt_com()
+        mom_opt = self.mp.return_opt_mom()
+        F_opt = self.mp.return_opt_f()
         xs = self.ik.get_xs()
         us = self.ik.get_us()
 
         self.xs_traj.append(xs)
-        # opt_mom, opt_com = self.compute_optimal_com_and_mom(xs, us)
-        # self.mp.add_ik_com_cost(opt_com)
-        # self.mp.add_ik_momentum_cost(opt_mom)
-        # print("cost", t2 - t1)
-        # print("dyn", t3 - t2)
-        # print("ik", t5 - t4)
-        # print("total", t5 - t1)
-        # print("------------------------")
-
-        self.num_optimization_ctr += 1
-        self.dyn_comp_total += t3-t2
-        self.dyn_comp_ave = self.dyn_comp_total/self.num_optimization_ctr
-        # print("Average cost of dynamics computation: ")
-        # print(self.dyn_comp_ave)
-
 
         n_eff = 3*len(self.eff_names)
         for i in range(self.size):
@@ -487,25 +433,6 @@ class SoloMpcGaitGen:
 
         return self.xs_int, self.us_int, self.f_int
 
-    def compute_optimal_com_and_mom(self, xs, us):
-        """
-        This function computes the optimal momentum based on the solution
-        """
-
-        opt_mom = np.zeros((len(xs), 6))
-        opt_com = np.zeros((len(xs), 3))
-        m = pin.computeTotalMass(self.rmodel)
-        for i in range(len(xs)):
-            q = xs[i][:self.rmodel.nq]
-            v = xs[i][self.rmodel.nq:]
-            pin.forwardKinematics(self.rmodel, self.rdata, q, v)
-            pin.computeCentroidalMomentum(self.rmodel, self.rdata)
-            opt_com[i] = pin.centerOfMass(self.rmodel, self.rdata, q, v)
-            opt_mom[i] = np.array(self.rdata.hg)
-            opt_mom[i][0:3] /= m
-
-        return opt_com, opt_mom
-    
     def plot(self, com_real=None):
         """
         This function plots the iterative mpc plans for the COM and Forces

@@ -6,6 +6,7 @@
 #include <pybind11/eigen.h>
 
 #include <motion_planner/biconvex.hpp>
+#include <motion_planner/kino_dyn.hpp>
 
 using namespace motion_planner;
 using namespace dynamics;
@@ -45,5 +46,16 @@ PYBIND11_MODULE(biconvex_mpc_cpp, m)
     py::class_<dynamics::CentroidalDynamics> dyn (m, "CentroidalDynamics");
     dyn.def(py::init<double, int, int>());
     // dyn.def("create_contact_array", &dynamics::CentroidalDynamics::create_contact_array);
+
+    py::class_<motion_planner::KinoDynMP> kd (m, "KinoDynMP");
+    kd.def(py::init<std::string, double, int, int, int>());
+    kd.def("return_dyn", &motion_planner::KinoDynMP::return_dyn, py::return_value_policy::reference);
+    kd.def("return_ik", &motion_planner::KinoDynMP::return_ik, py::return_value_policy::reference);
+    kd.def("optimize", &motion_planner::KinoDynMP::optimize);
+    kd.def("set_com_tracking_weight", &motion_planner::KinoDynMP::set_com_tracking_weight);
+    kd.def("set_mom_tracking_weight", &motion_planner::KinoDynMP::set_mom_tracking_weight);
+
+
+
 
 }

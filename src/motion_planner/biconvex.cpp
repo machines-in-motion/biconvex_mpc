@@ -108,7 +108,7 @@ namespace motion_planner{
             };
 
             if (dyn_violation.norm() < exit_tol){
-                std::cout << "breaking outer loop due to norm ..." << std::endl;
+                // std::cout << "breaking outer loop due to norm ..." << std::endl;
                 break;
             };
         }

@@ -139,4 +139,12 @@ namespace motion_planner{
         };
         return mom_opt_;
     };
+
+    void BiConvexMP::update_nomimal_com_mom(Eigen::MatrixXd opt_com, Eigen::MatrixXd opt_mom){
+
+        // Todo : set it up for kino dyn iterations
+        // for (unsigned i = 0; i < opt_mom.rows(); ++i){
+        //     prob_data_x.Q_(i,i) =         
+        // }
+    };
 };

@@ -49,7 +49,6 @@ namespace motion_planner{
         n++;
     }
 
-
     void KinoDynMP::set_warm_starts(){
 
         // if(n == 0){
@@ -65,25 +64,6 @@ namespace motion_planner{
             X_wm[9*i+7] = rdata_.hg.toVector()[4];
             X_wm[9*i+8] = rdata_.hg.toVector()[5];
         }
-        // }
-        // else{
-        //     std::cout << "yes" << std::endl;
-        //     X_wm = dyn.return_opt_x();
-
-        //     X_wm[0] = rdata_.com[0][0];
-        //     X_wm[1] = rdata_.com[0][1];
-        //     X_wm[2] = rdata_.com[0][2];
-        //     X_wm[3] = rdata_.vcom[0][0];
-        //     X_wm[4] = rdata_.vcom[0][1];
-        //     X_wm[5] = rdata_.vcom[0][2];
-        //     X_wm[6] = rdata_.hg.toVector()[3];
-        //     X_wm[7] = rdata_.hg.toVector()[4];
-        //     X_wm[8] = rdata_.hg.toVector()[5];
-
-        //     F_wm = dyn.return_opt_f();
-        //     P_wm = dyn.return_opt_p();
-
-        // }
         dyn.set_warm_start_vars(X_wm, F_wm, P_wm);
     }
 

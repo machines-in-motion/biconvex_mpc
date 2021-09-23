@@ -14,13 +14,12 @@ import math
 
 class SoloMpcGaitGen:
 
-    def __init__(self, robot, r_urdf, weight_abstract, x_reg, planning_time, q0, height_map = None):
+    def __init__(self, robot, r_urdf, x_reg, planning_time, q0, height_map = None):
         """
         Input:
             robot : robot model
             r_urdf : urdf of robot
             dt : discretization
-            weight_abstract : weight abstract class with params for desired motion
             x_reg : joint config about which regulation is done
             plan_freq : planning frequency in seconds
         """
@@ -30,10 +29,7 @@ class SoloMpcGaitGen:
         self.rdata = robot.data
         self.r_urdf = r_urdf
         self.foot_size = 0.018
-        self.params = weight_abstract
-        self.step_height = self.params.step_ht
-
-
+        
         #TODO: DEPRECATE THIS...
         #Use for a fixed frequency planning time
         self.planning_time = planning_time
@@ -41,6 +37,7 @@ class SoloMpcGaitGen:
         self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
         self.hip_names = ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]
         self.n_eff = 4
+
         pin.forwardKinematics(self.rmodel, self.rdata, q0, np.zeros(self.rmodel.nv))
         pin.updateFramePlacements(self.rmodel, self.rdata)
         com_init = pin.centerOfMass(self.rmodel, self.rdata, q0, np.zeros(self.rmodel.nv))
@@ -78,62 +75,11 @@ class SoloMpcGaitGen:
             #Rotate offsets to local frame
             self.offsets[i] = np.matmul(R.T, self.offsets[i])
 
-        print("Offsets oriented in local frame: ")
-        print(self.offsets)
-
         #Current Contact
-        self.current_contact = np.zeros(4)
-
-        self.swing_wt = self.params.swing_wt # swing foot cost
-        self.cent_wt = self.params.cent_wt # centeroidal cost
-        
-        self.state_wt = self.params.state_wt
-        self.ctrl_wt = self.params.ctrl_wt
-
         self.x_reg = x_reg
-        self.reg_wt = self.params.reg_wt
 
-        # --- Set up gait parameters ---
-        self.gait_period = self.params.gait_period
-        self.stance_percent = self.params.stance_percent
-        self.gait_dt = self.params.gait_dt
-        self.phase_offset = self.params.phase_offset
-        self.gait_planner = GaitPlanner(self.gait_period, np.array(self.stance_percent), \
-                                        np.array(self.phase_offset), self.step_height)
-
-        #Different horizon parameterizations; only self.gait_horizon works for now
-        self.gait_horizon = self.params.gait_horizon
-        self.horizon = int(np.round(self.gait_horizon*self.gait_period/self.gait_dt,2))
-        
-        # --- Set up Inverse Kinematics ---
-        self.ik_horizon = int(np.round(0.5*self.gait_horizon*self.gait_period/self.gait_dt, 2))
-        # self.ik = InverseKinematics(r_urdf, self.ik_horizon)
-        self.dt_arr = np.zeros(self.horizon)
         # --- Set up Dynamics ---
         self.m = pin.computeTotalMass(self.rmodel)
-        self.rho = self.params.rho # penalty on dynamic constraint violation
-
-        # kino dyn
-        self.kd = KinoDynMP(r_urdf, self.m, len(self.eff_names), self.horizon, self.ik_horizon)
-        self.kd.set_com_tracking_weight(self.cent_wt[0])
-        self.kd.set_mom_tracking_weight(self.cent_wt[1])
-        
-        self.ik = self.kd.return_ik()
-        self.mp = self.kd.return_dyn()
-        self.mp.set_rho(self.rho)
-
-        # Set up Weights & Matrices for Dynamics
-        
-        self.W_X = self.params.W_X
-        self.W_X_ter = self.params.W_X_ter
-        self.W_F = self.params.W_F
-        self.X_nom = np.zeros((9*self.horizon))
-        self.nom_ht = self.params.nom_ht
-
-        # Set up vectors for warm-starting
-        self.X_k_wm = np.tile(np.zeros(9), ((self.horizon+1)))[:,None]
-        self.F_k_wm = np.zeros((3*self.horizon*self.n_eff,1))
-        self.P_k_wm = np.zeros((9*self.horizon + 9, 1))
 
         #Set up logging for average optimization time
         self.dyn_comp_ave = 0.0
@@ -150,15 +96,6 @@ class SoloMpcGaitGen:
         self.fy_max = 15.0
         self.fz_max = 15.0
 
-        # --- Set up other variables ---
-        # For interpolation (should be moved to the controller)
-        self.size = min(self.ik_horizon, int(self.planning_time/self.gait_dt) + 2)
-        if self.planning_time > self.gait_dt:
-            self.size -= 1
-        self.xs_int = np.zeros((len(self.x_reg), self.size))
-        self.us_int = np.zeros((self.rmodel.nv, self.size))
-        self.f_int = np.zeros((4*len(self.eff_names), self.size))
-
         # For plotting
         self.com_traj = []
         self.xs_traj = []
@@ -168,23 +105,46 @@ class SoloMpcGaitGen:
         #Height Map (for contacts)
         self.height_map = height_map
 
-    def update_params(self, swing_wt = None, cent_wt = None, nom_ht = None, W_X = None, W_X_ter = None, X_nom = None):
+    def update_gait_params(self, weight_abstract, t):
         """
-        updates parameters
+        Updates the gaits
+        Input:
+            weight_abstract : the parameters of the gaits
+            t : time
         """
-        if not swing_wt == None:
-            self.swing_wt = swing_wt
-        if not cent_wt == None:
-            self.cent_wt = cent_wt
-        if not nom_ht == None:
-            self.nom_ht == None
-        if isinstance(W_X, np.ndarray):
-            self.W_X = W_X
-        if isinstance(W_X_ter, np.ndarray):
-            self.W_X_ter = W_X_ter
-        if isinstance(X_nom, np.ndarray):
-            self.X_nom = X_nom
-    
+        self.params = weight_abstract
+        # --- Set up gait parameters ---
+        self.gait_planner = GaitPlanner(self.params.gait_period, np.array(self.params.stance_percent), \
+                                        np.array(self.params.phase_offset), self.params.step_ht)
+
+        #Different horizon parameterizations; only self.params.gait_horizon works for now
+        self.gait_horizon = self.params.gait_horizon
+        self.horizon = int(np.round(self.params.gait_horizon*self.params.gait_period/self.params.gait_dt,2))
+        
+        # --- Set up Inverse Kinematics ---
+        self.ik_horizon = int(np.round(0.5*self.params.gait_horizon*self.params.gait_period/self.params.gait_dt, 2))
+        self.dt_arr = np.zeros(self.horizon)
+
+        # kino dyn
+        self.kd = KinoDynMP(self.r_urdf, self.m, len(self.eff_names), self.horizon, self.ik_horizon)
+        self.kd.set_com_tracking_weight(self.params.cent_wt[0])
+        self.kd.set_mom_tracking_weight(self.params.cent_wt[1])
+        
+        self.ik = self.kd.return_ik()
+        self.mp = self.kd.return_dyn()
+
+        self.mp.set_rho(self.params.rho)
+
+        # --- Set up other variables ---        
+        self.X_nom = np.zeros((9*self.horizon))
+        # For interpolation (should be moved to the controller)
+        self.size = min(self.ik_horizon, int(self.planning_time/self.params.gait_dt) + 2)
+        if self.planning_time > self.params.gait_dt:
+            self.size -= 1
+        self.xs_int = np.zeros((len(self.x_reg), self.size))
+        self.us_int = np.zeros((self.rmodel.nv, self.size))
+        self.f_int = np.zeros((4*len(self.eff_names), self.size))
+
     def create_cnt_plan(self, q, v, t, v_des, w_des):
         pin.forwardKinematics(self.rmodel, self.rdata, q, v)
         pin.updateFramePlacements(self.rmodel, self.rdata)
@@ -225,7 +185,7 @@ class SoloMpcGaitGen:
 
                 else:
                     #All other time steps
-                    ft = np.round(t + i*self.gait_dt,3)
+                    ft = np.round(t + i*self.params.gait_dt,3)
 
                     if self.gait_planner.get_phase(ft, j) == 1:
                         #If foot will be in contact
@@ -274,11 +234,11 @@ class SoloMpcGaitGen:
                             self.cnt_plan[i][j][3] = self.foot_size
             
             if i == 0:
-                dt = self.gait_dt - np.round(np.remainder(t,self.gait_dt),2)
+                dt = self.params.gait_dt - np.round(np.remainder(t,self.params.gait_dt),2)
                 if dt == 0:
-                    dt = self.gait_dt
+                    dt = self.params.gait_dt
             else:
-                dt = self.gait_dt
+                dt = self.params.gait_dt
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
         
@@ -300,19 +260,19 @@ class SoloMpcGaitGen:
         for i in range(self.ik_horizon):
             for j in range(len(self.eff_names)):
                 if self.cnt_plan[i][j][0] == 1:
-                    self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], self.swing_wt[0],
+                    self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], self.params.swing_wt[0],
                                                               "cnt_" + str(0) + self.eff_names[j], i)
                 elif self.swing_time[i][j] == 1:
                     pos = self.cnt_plan[i][j][1:4].copy()
-                    pos[2] = self.step_height
-                    self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, self.swing_wt[1],
+                    pos[2] = self.params.step_ht
+                    self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, self.params.swing_wt[1],
                                                               "via_" + str(0) + self.eff_names[j], i)
 
-        self.ik.add_state_regularization_cost(0, self.ik_horizon, self.reg_wt[0], "xReg", self.state_wt, self.x_reg, False)
-        self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.reg_wt[1], "uReg", self.ctrl_wt, np.zeros(self.rmodel.nv), False)
+        self.ik.add_state_regularization_cost(0, self.ik_horizon, self.params.reg_wt[0], "xReg", self.params.state_wt, self.x_reg, False)
+        self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.params.reg_wt[1], "uReg", self.params.ctrl_wt, np.zeros(self.rmodel.nv), False)
 
-        self.ik.add_state_regularization_cost(0, self.ik_horizon, self.reg_wt[0], "xReg", self.state_wt, self.x_reg, True)
-        self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.reg_wt[1], "uReg", self.ctrl_wt, np.zeros(self.rmodel.nv), True)
+        self.ik.add_state_regularization_cost(0, self.ik_horizon, self.params.reg_wt[0], "xReg", self.params.state_wt, self.x_reg, True)
+        self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.params.reg_wt[1], "uReg", self.params.ctrl_wt, np.zeros(self.rmodel.nv), True)
 
         self.ik.setup_costs(self.dt_arr[0:self.ik_horizon])
 
@@ -331,7 +291,7 @@ class SoloMpcGaitGen:
             self.X_nom[9*i+0] = self.X_nom[9*(i-1)+0] + v_des[0]*self.dt_arr[i]
             self.X_nom[9*i+1] = self.X_nom[9*(i-1)+1] + v_des[1]*self.dt_arr[i]
 
-        self.X_nom[2::9] = self.nom_ht
+        self.X_nom[2::9] = self.params.nom_ht
         self.X_nom[3::9] = v_des[0]
         self.X_nom[4::9] = v_des[1]
         self.X_nom[5::9] = v_des[2]
@@ -346,8 +306,8 @@ class SoloMpcGaitGen:
         amom = self.compute_ori_correction(q, des_quat.coeffs())
 
         #Set terminal references
-        X_ter[0:2] = self.X_init[0:2] + (self.gait_horizon*self.gait_period*v_des)[0:2] #Changed this
-        X_ter[2] = self.nom_ht
+        X_ter[0:2] = self.X_init[0:2] + (self.params.gait_horizon*self.params.gait_period*v_des)[0:2] #Changed this
+        X_ter[2] = self.params.nom_ht
         X_ter[3:6] = v_des
         X_ter[6:] = amom
 
@@ -364,8 +324,8 @@ class SoloMpcGaitGen:
 
         # Setup dynamic optimization costs
         self.mp.create_bound_constraints(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
-        self.mp.create_cost_X(np.tile(self.W_X, self.horizon), self.W_X_ter, X_ter, self.X_nom)
-        self.mp.create_cost_F(np.tile(self.W_F, self.horizon))
+        self.mp.create_cost_X(np.tile(self.params.W_X, self.horizon), self.params.W_X_ter, X_ter, self.X_nom)
+        self.mp.create_cost_F(np.tile(self.params.W_F, self.horizon))
 
     def compute_ori_correction(self, q, des_quat):
         """
@@ -380,21 +340,25 @@ class SoloMpcGaitGen:
 
         return omega
 
-    def optimize(self, q, v, t, v_des, w_des, ori_des, step_height, current_contact, X_wm = None, F_wm = None, P_wm = None):
+    def optimize(self, q, v, t, v_des, w_des, X_wm = None, F_wm = None, P_wm = None):
+        
+        # reseting origin (causes scaling issues I think otherwise)
+        q[0:2] = 0
+        ## TODO: Needs to be done properly so it is not in the demo file
+        if w_des != 0:
+            ori_des = q[3:7]
+        else:
+            ori_des = [0, 0, 0, 1]
+
         #Move to local frame
         R = pin.Quaternion(np.array(q[3:7])).toRotationMatrix()
         v_des = np.matmul(R, v_des)
 
         #TODO: Move to C++
         t1 = time.time()
-        self.step_height = step_height
-        self.current_contact = current_contact
         self.create_cnt_plan(q, v, t, v_des, w_des)
-
         #Creates costs for IK and Dynamics
         self.create_costs(q, v, v_des, w_des, ori_des)
-        self.q_traj.append(q)
-        self.v_traj.append(v)
 
         t2 = time.time()
 
@@ -404,15 +368,13 @@ class SoloMpcGaitGen:
 
         print("Cost Time :", t2 - t1)
         print("Solve Time : ", t3 - t2)
-        print(" ================== ")
+        print(" ================================== ")
 
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()
         F_opt = self.mp.return_opt_f()
         xs = self.ik.get_xs()
         us = self.ik.get_us()
-
-        self.xs_traj.append(xs)
 
         n_eff = 3*len(self.eff_names)
         for i in range(self.size):
@@ -430,6 +392,10 @@ class SoloMpcGaitGen:
 
                 self.com_int = np.vstack((self.com_int, np.linspace(com_opt[i], com_opt[i+1], int(self.dt_arr[i]/0.001))))
                 self.mom_int = np.vstack((self.mom_int, np.linspace(mom_opt[i], mom_opt[i+1], int(self.dt_arr[i]/0.001))))
+
+        self.q_traj.append(q)
+        self.v_traj.append(v)
+        self.xs_traj.append(xs)
 
         return self.xs_int, self.us_int, self.f_int
 

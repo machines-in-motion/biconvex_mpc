@@ -80,12 +80,14 @@ class BiConvexMP{
         // creates basic quadratic costs for optimizing X
         void create_cost_X(Eigen::VectorXd W_X, Eigen::VectorXd W_X_ter, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom);
         void create_cost_F(Eigen::VectorXd W_F);
-        
+        void update_nomimal_com_mom(Eigen::MatrixXd opt_com, Eigen::MatrixXd opt_mom);
+ 
         void set_rotation_matrix_f(Eigen::MatrixXd rot_matrix)
         {
             prob_data_f.rotation_matrices.push_back(rot_matrix);
             prob_data_f.rotation_matrices_trans.push_back(rot_matrix.transpose());
         }
+
 
         void optimize(Eigen::VectorXd x_init, int no_iters);
 

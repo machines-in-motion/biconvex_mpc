@@ -39,3 +39,40 @@ class BiconvexMotionParams:
         ## Controller Gains
         self.kp = None
         self.kd = None
+
+
+class ACyclicMotionParams:
+
+    def __init__(self, robot_name, motion_name):
+        self.robot_name = robot_name 
+        self.motion_name = motion_name
+
+        self.n_col = None #number of collocation points 
+        self.dt_arr = None # discretization in each collocation points
+
+        self.cnt_plan = None # contact plan
+
+        ## Dynamic values
+        self.W_X = None       #Running Cost State Weights
+        self.W_X_ter = None   #Terminal Cost State Weights
+        self.W_F = None       #Running Cost on Force Weights
+        self.X_nom = None     # Nominal trajectory (including terminal state)
+                                # [[9 element, start_time, end_time]]
+
+        self.rho = None       #ADMM Rho parameter
+
+
+        ## Inverse Kinematic valuess
+
+        self.swing_wt = np.zeros(2)
+        self.cent_wt = np.zeros(2)
+
+        self.state_wt = None #State Regularization weight
+        self.x_reg = None # configuration on which reguralization is done
+        self.wt_reg = None # scaling of state regularization wt
+        self.ctrl_wt = None #Control Regularization
+
+
+        ## Controller Gains
+        self.kp = None
+        self.kd = None

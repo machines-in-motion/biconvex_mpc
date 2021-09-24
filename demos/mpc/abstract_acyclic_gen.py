@@ -34,12 +34,12 @@ class SoloAcyclicGen:
             self.ee_frame_id.append(self.rmodel.getFrameId(self.eff_names[i]))
         
         # Set up constraints for Dynamics
-        self.bx = 0.45
-        self.by = 0.45
-        self.bz = 0.45
-        self.fx_max = 15.0
-        self.fy_max = 15.0
-        self.fz_max = 15.0
+        self.bx = 0.15
+        self.by = 0.15
+        self.bz = 0.25
+        self.fx_max = 25.0
+        self.fy_max = 25.0
+        self.fz_max = 25.0
 
     def update_motion_params(self, weight_abstract, t):
         """
@@ -258,7 +258,7 @@ class SoloAcyclicGen:
 
         t2 = time.time()
 
-        self.kd.optimize(q, v, 150, 1)
+        self.kd.optimize(q, v, 80, 1)
 
         t3 = time.time()
 

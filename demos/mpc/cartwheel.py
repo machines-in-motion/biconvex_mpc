@@ -31,7 +31,7 @@ sim_t = 0.0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-plan_freq = 0.5 # sec
+plan_freq = 0.6 # sec
 update_time = 0.0 # sec (time of lag)
 lag = int(update_time/sim_dt)
 

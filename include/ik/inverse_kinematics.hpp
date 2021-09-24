@@ -84,6 +84,10 @@ namespace ik{
                                         std::string cost_name,  Eigen::VectorXd controlWeights, 
                                         Eigen::VectorXd u_reg, bool isTerminal);
 
+            void add_ctrl_regularization_cost_single(int time_step, double wt, 
+                                                        std::string cost_name,  Eigen::VectorXd controlWeights, 
+                                                        Eigen::VectorXd u_reg);
+
             void compute_optimal_com_and_mom(Eigen::MatrixXd &pt_com, Eigen::MatrixXd &opt_mom);
 
 

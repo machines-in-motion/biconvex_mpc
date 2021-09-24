@@ -45,6 +45,22 @@ namespace ik{
         rcost_arr_[time_step].get()->addCost(cost_name, state_reg, wt);  
     };
 
+    void InverseKinematics::add_ctrl_regularization_cost_single(int time_step, double wt, 
+                                                        std::string cost_name,  Eigen::VectorXd controlWeights, 
+                                                        Eigen::VectorXd u_reg)
+    {
+        boost::shared_ptr<crocoddyl::ActivationModelAbstract> control_activation =
+                    boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(controlWeights);
+                
+                boost::shared_ptr<crocoddyl::CostModelAbstract> ctrl_reg =
+                     boost::make_shared<crocoddyl::CostModelResidual>(
+                            state_, control_activation,
+                            boost::make_shared<crocoddyl::ResidualModelControl>(state_));
+
+                rcost_arr_[time_step].get()->addCost(cost_name,ctrl_reg, wt);
+    
+    }
+
     void InverseKinematics::add_ctrl_regularization_cost(int sn, int en, double wt, 
                                                         std::string cost_name,  Eigen::VectorXd controlWeights, 
                                                         Eigen::VectorXd u_reg, bool isTerminal)

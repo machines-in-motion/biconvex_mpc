@@ -33,7 +33,6 @@ namespace motion_planner{
         set_warm_starts();
 
         dyn.optimize(X_wm.head(9), dyn_iters);
-
         dyn_com_opt = dyn.return_opt_com(); dyn_mom_opt = dyn.return_opt_mom();
 
         ik.add_centroidal_momentum_tracking_task(0, ik_col_, dyn_mom_opt.topRows(ik_col_), wt_mom_, "mom_track", false);

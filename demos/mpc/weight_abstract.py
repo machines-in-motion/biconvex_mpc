@@ -68,11 +68,12 @@ class ACyclicMotionParams:
         self.cent_wt = np.zeros(2)
 
         self.state_wt = None #State Regularization weight
-        self.x_reg = None # configuration on which reguralization is done
-        self.wt_reg = None # scaling of state regularization wt
+        self.state_reg = None # configuration on which reguralization is done
+        self.state_scale = None # scaling of state regularization wt
+        
         self.ctrl_wt = None #Control Regularization
-
-
+        self.ctrl_reg = None # control state around which regularization is to be done
+        self.ctrl_scale = None # scaling of ctrl regularization wt
         ## Controller Gains
         self.kp = None
         self.kd = None

@@ -55,7 +55,8 @@ plan.X_nom = [[0.5, 0, 0.5, 0, 0, 0, 0, 0.2, 0., 0, st],
 
 # ik optimization params
 
-plan.cnt_wt = [1e4]
+plan.cent_wt = [1, 1e2]
+plan.cnt_wt = 1e4
 plan.swing_wt = None # no via points in this motion
 
 x_reg1 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
@@ -72,10 +73,11 @@ state_wt_1 = np.array([1e2, 0, 100] + [100, 0, 100] + 4*[1e3, 50.0, 20] \
 state_wt_2 = np.array([1e2, 0, 1000.0] + [100, 100, 100] + 4*[1e3, 1e2, 50] \
                     + [0.00] * 3 + [10, 10, 10] + [3.5] *(rmodel.nv - 6))
 
-plan.x_reg = [np.hstack((x_reg1, [0, st+rt])), np.hstack((x_reg2, [st+rt, T]))]
+plan.state_reg = [np.hstack((x_reg1, [0, st+rt])), np.hstack((x_reg2, [st+rt, T]))]
 plan.state_wt = [np.hstack((state_wt_1, [0, st+rt])), np.hstack((state_wt_2, [st+rt, T]))]
-plan.wt_reg = [[1e-2, 0, st+rt], [500*1e-2, st+rt, T]]
+plan.state_scale = [[1e-2, 0, st+rt], [500*1e-2, st+rt, T]]
 
 ctrl_wt = [0, 0, 10] + [1, 1, 1] + [50.0] *(rmodel.nv - 6)
 plan.ctrl_wt = [np.hstack((ctrl_wt, [0, T]))]
-
+plan.ctrl_reg = [np.hstack((np.zeros(rmodel.nv), [0, T]))]
+plan.ctrl_scale = [[7e-5, 0, T]]

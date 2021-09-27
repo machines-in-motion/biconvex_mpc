@@ -34,8 +34,8 @@ class SoloAcyclicGen:
             self.ee_frame_id.append(self.rmodel.getFrameId(self.eff_names[i]))
         
         # Set up constraints for Dynamics
-        self.bx = 0.15
-        self.by = 0.15
+        self.bx = 0.25
+        self.by = 0.25
         self.bz = 0.25
         self.fx_max = 25.0
         self.fy_max = 25.0
@@ -141,9 +141,13 @@ class SoloAcyclicGen:
                     if ft >= self.params.X_nom[k][9] and ft < self.params.X_nom[k][10]:
                         X_nom[9*i:9*(i+1)] = self.params.X_nom[k][0:9]
                         break
+                if i == self.params.n_col - 1:
+                    X_ter = X_nom[-9:]
             else:
                 if not make_cyclic:
-                    X_nom[9*i:9*(i+1)]  = self.params.X_nom[-1][0:9]
+                    X_nom[9*i:9*(i+1)]  = self.params.X_ter
+                    if i == self.params.n_col - 1:
+                        X_ter = self.params.X_ter
                 else:
                     # make this cyclic later
                     pass
@@ -151,7 +155,6 @@ class SoloAcyclicGen:
             i += 1
 
         X_nom[0:9] = X_init
-        X_ter = self.params.X_nom[-1][0:9]
 
         self.mp.create_bound_constraints(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(np.tile(self.params.W_X, self.horizon), self.params.W_X_ter, X_ter, X_nom)
@@ -167,6 +170,24 @@ class SoloAcyclicGen:
                                                               "cnt_" + str(0) + self.eff_names[j], i)
         
         ## Adding swing costs
+        ft = t - self.params.dt_arr[0]
+        i = 0
+        while i < self.ik_horizon:    
+            ft += self.params.dt_arr[min(i,self.ik_horizon-1)]
+            self.dt_arr[min(i,self.ik_horizon-1)] = self.params.dt_arr[min(i,self.ik_horizon-1)]
+            ft = np.round(ft, 3)
+            if ft < self.params.swing_wt[-1][0][5]:
+                for k in range(len(self.params.swing_wt)):
+                    if ft >= self.params.swing_wt[k][0][4] and ft < self.params.swing_wt[k][0][5]:
+                        for j in range(len(self.eff_names)):
+                            if self.params.swing_wt[k][j][0] > 0:
+                                self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.params.swing_wt[k][j][1:4], self.params.swing_wt[k][j][0],
+                                                              "swing_" + str(0) + self.eff_names[j], i)
+                        break
+            else:
+                if not make_cyclic:
+                    pass
+            i += 1
 
         ## State regularization
         ft = t - self.params.dt_arr[0]

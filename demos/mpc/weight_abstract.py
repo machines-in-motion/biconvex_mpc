@@ -58,13 +58,13 @@ class ACyclicMotionParams:
         self.W_F = None       #Running Cost on Force Weights
         self.X_nom = None     # Nominal trajectory (including terminal state)
                                 # [[9 element, start_time, end_time]]
-
+        self.X_ter = None
         self.rho = None       #ADMM Rho parameter
 
 
         ## Inverse Kinematic valuess
 
-        self.swing_wt = np.zeros(2)
+        self.swing_wt = None # swing via points [wt, pos, time]*n_eff*n_via_points
         self.cent_wt = np.zeros(2)
 
         self.state_wt = None #State Regularization weight

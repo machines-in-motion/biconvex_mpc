@@ -13,7 +13,9 @@ find_package(Eigen3 REQUIRED)
 # robot packages
 find_package(pinocchio REQUIRED)
 find_package(crocoddyl REQUIRED)
-find_package(Python REQUIRED)
+
+#Only Required for Mac OSX (TODO: Find out why)
+#find_package(Python REQUIRED)
 
 # for benchmarking
 if ( OSQP )
@@ -38,6 +40,8 @@ add_library(${PROJECT_NAME} SHARED
     src/ik/end_effector_tasks.cpp
     src/ik/com_tasks.cpp
     src/ik/regularization_costs.cpp
+
+    src/motion_planner/kino_dyn.cpp
     )
 
 target_link_libraries(biconvex_mpc Eigen3::Eigen)

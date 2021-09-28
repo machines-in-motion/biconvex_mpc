@@ -20,23 +20,12 @@ namespace motion_planner
 {
 class BiConvexMP{
     public:
-        BiConvexMP(double m, double dt, double T, int n_eff);
+        BiConvexMP(double m, int n_col, int n_eff);
 
-        void set_contact_plan(Eigen::MatrixXd cnt_plan){
-            centroidal_dynamics.cnt_plan_.push_back(cnt_plan);
+        void set_contact_plan(Eigen::MatrixXd cnt_plan, double dt){
+            centroidal_dynamics.set_contact_arrays(cnt_plan, dt);
         };
 
-        void set_contact_plan_2(Eigen::MatrixXd cnt_plan_2){
-            centroidal_dynamics.cnt_plan_2_.push_back(cnt_plan_2);
-        };
-
-        void create_cnt_array(){
-            centroidal_dynamics.create_contact_array();  
-        }
-
-        void create_cnt_array_2(){
-            centroidal_dynamics.create_contact_array_2();
-        }
 
         Eigen::MatrixXd return_A_x(Eigen::VectorXd X){
             centroidal_dynamics.compute_x_mat(X);  
@@ -86,11 +75,19 @@ class BiConvexMP{
         void set_bounds_f(Eigen::VectorXd lb, Eigen::VectorXd ub) 
                 {prob_data_f.lb_ = lb; prob_data_f.ub_ = ub;}
 
+        // box constraints created on parameters and contact plan
+        void create_bound_constraints(double bx, double by, double bz, double fx_max, double fy_max, double fz_max);
+        // creates basic quadratic costs for optimizing X
+        void create_cost_X(Eigen::VectorXd W_X, Eigen::VectorXd W_X_ter, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom);
+        void create_cost_F(Eigen::VectorXd W_F);
+        void update_nomimal_com_mom(Eigen::MatrixXd opt_com, Eigen::MatrixXd opt_mom);
+ 
         void set_rotation_matrix_f(Eigen::MatrixXd rot_matrix)
         {
             prob_data_f.rotation_matrices.push_back(rot_matrix);
             prob_data_f.rotation_matrices_trans.push_back(rot_matrix.transpose());
         }
+
 
         void optimize(Eigen::VectorXd x_init, int no_iters);
 
@@ -124,13 +121,18 @@ class BiConvexMP{
             return P_k_;
         }
 
+        Eigen::MatrixXd return_opt_com();
+        Eigen::MatrixXd return_opt_mom();
+
         std::vector<double> return_dyn_viol_hist(){
             return dyn_violation_hist_;
         }
 
+        void set_robot_mass(double m){m_ = m;};
+
     private:
         // mass of the robot 
-        const double m_;
+        double m_;
         // centroidal dynamics class
         dynamics::CentroidalDynamics centroidal_dynamics;
         // penalty term on dynamic violation
@@ -148,9 +150,9 @@ class BiConvexMP{
         // tolerance for exiting biconvex
         double exit_tol = 1e-3;
 
-        int horizon_ = 0;
-        double dt_ = 0.0;
+        int n_col_ = 0;
         int n_eff_ = 0;
+        double T_;
         
         // problem data for x optimization (Used in optimization for Forces)
         function::ProblemData prob_data_x;
@@ -162,6 +164,10 @@ class BiConvexMP{
         // solver for f optimization
         solvers::FISTA fista_f;
 
+        // optimal CoM and Momentum trajectory (required for IK)
+        Eigen::MatrixXd com_opt_;
+        Eigen::MatrixXd mom_opt_;
+        
         #ifdef USE_OSQP
             OsqpEigen::Solver osqp_x;
             OsqpEigen::Solver osqp_f;

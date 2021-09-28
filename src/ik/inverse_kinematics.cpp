@@ -3,14 +3,16 @@
 
 namespace ik{
 
-    InverseKinematics::InverseKinematics(std::string rmodel_path, double dt, double T):
-        T_(T), dt_(dt), n_col_(int(ceil((T/dt))))
+    InverseKinematics::InverseKinematics(std::string rmodel_path, int n_col):
+        n_col_(n_col) // wonder if this should come from the user?
     {
 
         pinocchio::urdf::buildModel(rmodel_path,pinocchio::JointModelFreeFlyer(), rmodel_) ;
         // temporaryily created 
         pinocchio::Data rdata_tmp(rmodel_);
         rdata_ = rdata_tmp;
+        m_ = pinocchio::computeTotalMass(rmodel_);
+    
         state_ = boost::make_shared<crocoddyl::StateMultibody>(boost::make_shared<pinocchio::Model>(rmodel_));
 
         // actuation_ = boost::make_shared<crocoddyl::ActuationModelFloatingBase>(state_);
@@ -27,12 +29,12 @@ namespace ik{
         rint_arr_ = std::vector< boost::shared_ptr<crocoddyl::ActionModelAbstract>>(n_col_);
     };
 
-    void InverseKinematics::setup_costs(){
+    void InverseKinematics::setup_costs(Eigen::VectorXd dt){
 
         for (unsigned i = 0; i < n_col_; i++){
             boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> running_DAM =
                         boost::make_shared<crocoddyl::DifferentialFwdKinematicsModelTpl<double>>(state_, actuation_, rcost_arr_[i]);
-            rint_arr_[i] = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(running_DAM, dt_);
+            rint_arr_[i] = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(running_DAM, dt[i]);
 
         }
 
@@ -49,9 +51,29 @@ namespace ik{
         ddp_ = boost::make_shared<crocoddyl::SolverDDP>(problem_);
         ddp_->solve();
 
+
+        // wonder how effecient this ?
+        for (unsigned i = 0; i < n_col_; i++){
+            boost::shared_ptr<crocoddyl::CostModelSum> rcost_model =
+                                        boost::make_shared<crocoddyl::CostModelSum>(state_);
+            rcost_arr_[i] = rcost_model;
+        }
+
+        // terminal cost model
+        tcost_model_ = boost::make_shared<crocoddyl::CostModelSum>(state_);  
+
     };
 
-    void InverseKinematics::compute_optimal_com_and_mom(){
-        
+    void InverseKinematics::compute_optimal_com_and_mom(Eigen::MatrixXd &opt_com, Eigen::MatrixXd &opt_mom){
+        xs_ = ddp_->get_xs();
+        for(unsigned i = 0; i < n_col_+1; ++i){
+            pinocchio::computeCentroidalMomentum(rmodel_, rdata_, xs_[i].head(rmodel_.nq), xs_[i].tail(rmodel_.nv));
+            opt_com.row(i) = rdata_.com[0];
+            opt_mom.row(i) = rdata_.hg.toVector();
+            opt_mom(i,0) /= m_; 
+            opt_mom(i,1) /= m_;
+            opt_mom(i,2) /= m_;
+        }
+
     }
 }

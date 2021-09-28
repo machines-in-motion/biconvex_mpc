@@ -30,6 +30,8 @@
 #include "crocoddyl/multibody/costs/state.hpp"
 #include "crocoddyl/core/costs/control.hpp"
 
+#include "crocoddyl/multibody/residuals/frame-translation.hpp"
+
 #include "ik/action_model.hpp"
 
 // to be removed
@@ -42,9 +44,9 @@ namespace ik{
     class InverseKinematics{
 
         public:
-            InverseKinematics(std::string rmodel_path, double dt, double T);
+            InverseKinematics(std::string rmodel_path, int n_col);
 
-            void setup_costs();
+            void setup_costs(Eigen::VectorXd dt);
 
             void optimize(const Eigen::VectorXd& x0);
 
@@ -53,7 +55,7 @@ namespace ik{
 
 
             // cost related functions
-            void add_position_tracking_task(pinocchio::FrameIndex fid, double st, double et, 
+            void add_position_tracking_task(pinocchio::FrameIndex fid, int sn, int en, 
                                                 Eigen::MatrixXd traj, double wt, std::string cost_name);
 
             void add_position_tracking_task_single(pinocchio::FrameIndex fid, Eigen::MatrixXd traj,
@@ -62,15 +64,15 @@ namespace ik{
             void add_terminal_position_tracking_task(pinocchio::FrameIndex fid, Eigen::MatrixXd traj, double wt, 
                                                     std::string cost_name);
 
-            void add_velocity_tracking_task(pinocchio::FrameIndex fid, double st, double et, 
+            void add_velocity_tracking_task(pinocchio::FrameIndex fid, int sn, int en, 
                                                 Eigen::MatrixXd traj, double wt, std::string cost_name);
 
-            void add_com_position_tracking_task(double st, double et, Eigen::MatrixXd traj, 
+            void add_com_position_tracking_task(int sn, int en, Eigen::MatrixXd traj, 
                                                 double wt, std::string cost_name, bool isTerminal = false);
-            void add_centroidal_momentum_tracking_task(double st, double et, Eigen::MatrixXd traj, 
+            void add_centroidal_momentum_tracking_task(int sn, int en, Eigen::MatrixXd traj, 
                                                 double wt, std::string cost_name, bool isTerminal = false);
 
-            void add_state_regularization_cost(double st, double et, double wt, 
+            void add_state_regularization_cost(int sn, int en, double wt, 
                                         std::string cost_name, Eigen::VectorXd stateWeights, 
                                         Eigen::VectorXd x_reg, bool isTerminal = false);
 
@@ -78,25 +80,24 @@ namespace ik{
                                         std::string cost_name, Eigen::VectorXd stateWeights, 
                                         Eigen::VectorXd x_reg);
 
-            void add_ctrl_regularization_cost_2(double st, double et, double wt, 
+            void add_ctrl_regularization_cost(int sn, int en, double wt, 
                                         std::string cost_name,  Eigen::VectorXd controlWeights, 
                                         Eigen::VectorXd u_reg, bool isTerminal);
 
-            void add_ctrl_regularization_cost(double st, double et, double wt, std::string cost_name, bool isTerminal = false);
+            void add_ctrl_regularization_cost_single(int time_step, double wt, 
+                                                        std::string cost_name,  Eigen::VectorXd controlWeights, 
+                                                        Eigen::VectorXd u_reg);
 
-            void compute_optimal_com_and_mom();
+            void compute_optimal_com_and_mom(Eigen::MatrixXd &pt_com, Eigen::MatrixXd &opt_mom);
 
 
         protected:
-
+            //robot mass
+            double m_;
             // robot model
             pinocchio::Model rmodel_;
             // robot data
             pinocchio::Data rdata_;
-            // discretization
-            const double dt_;
-            // total horizon length
-            const double T_;
             // number of colocation points
             const int n_col_;
             // crocoddyl state 
@@ -121,11 +122,11 @@ namespace ik{
             // cost related variables
             int sn;
             int en;
-            // boost::shared_ptr<crocoddyl::FrameTranslation> Mref; 
 
-
+            std::vector<Eigen::VectorXd> xs_;
 
     };
+
     
 
 }

@@ -14,7 +14,7 @@ namespace dynamics{
     class CentroidalDynamics{
 
         public:
-            CentroidalDynamics(double m, double dt, double T, int n_eff);
+            CentroidalDynamics(double m, int n_col, int n_eff);
         
             void compute_x_mat(Eigen::VectorXd &X);
             void compute_f_mat(Eigen::VectorXd &F);
@@ -26,21 +26,14 @@ namespace dynamics{
                 }; 
             };
 
-            void create_contact_array();
-
-            //Creates the contact-based arrays necessary based on the type-2 cnt_plan (cnt_plan_2_)
-            void create_contact_array_2();
+            void set_contact_arrays(Eigen::MatrixXd cnt_plan, double dt);
 
             //Update the binary contact array
             void update_contact_array();
 
-            // contact plan provided by the user (order: [1/0, x, y, z, start, end])
-            std::vector<Eigen::MatrixXd> cnt_plan_;
-
             // Contact plan type 2 provided by the user:
             // order: [1/0, x, y, z]
-            // Used for setting up infinite horizon gaits
-            std::vector<Eigen::MatrixXd> cnt_plan_2_;
+            std::vector<Eigen::MatrixXd> cnt_plan_;
 
             Eigen::SparseMatrix<double> A_x;
             Eigen::VectorXd b_x;
@@ -48,7 +41,6 @@ namespace dynamics{
             Eigen::VectorXd b_f;
             Eigen::VectorXd x_init_;
         
-        // private:
             // location of the contact point array used to create constraints and for calculating forces/amom
             // Dimension: n_col_ x n_eff x 3
             std::vector<Eigen::MatrixXd> r_;
@@ -57,24 +49,16 @@ namespace dynamics{
             // Dimension: n_col_ x n_eff
             Eigen::MatrixXd cnt_arr_;
 
-            // This array is used to create the cnt_arr_, r_arr_
-            Eigen::VectorXd t_arr;
-
-            double time_steps;
-
             // location of contact point at time t
             Eigen::MatrixXd r_t;
 
             const double m_;
-            const double dt_;
-            const double T_;
+            int n_col_;
             const double n_eff_;
 
-            Eigen::VectorXd dt_adaptive_;
+            Eigen::VectorXd dt_;
 
             //TODO: 
-            //Change to horizon_ or knots_ (or something else)
-            const int n_col_;
     };
 
 }

@@ -20,20 +20,15 @@ namespace robot_model
               rh_name_(rhFootName)
     {
         robot_ = std::make_shared<pinocchio::Model>();
+
         // Support for URDF from file and URDF from string:
-        std::ifstream check_if_urdf_is_a_valid_file_path(urdf);
-        if (!check_if_urdf_is_a_valid_file_path)
-        {
-            std::cout << "URDF is not not a file path - building model from XML string" << std::endl;
-            pinocchio::urdf::buildModelFromXML(urdf, pinocchio::JointModelFreeFlyer(), *robot_.get());
-        }
-        else
-        {
-            std::cout << "URDF is a file path - building model from file" << std::endl;
-            pinocchio::urdf::buildModel(urdf, pinocchio::JointModelFreeFlyer(), *robot_.get());
-        }
+        std::cout << "URDF is a file path - building model from file" << std::endl;
+        pinocchio::urdf::buildModel(urdf, pinocchio::JointModelFreeFlyer(), *robot_.get());
+
+        //Create data object
         data_ = std::make_shared<pinocchio::Data>(*robot_.get());
 
+        //Initialize
         initialize();
     }
 
@@ -58,9 +53,10 @@ namespace robot_model
 
     void RobotModel::initialize()
     {
+        //Assuming floating base Robot
         nq_ = robot_->nq;
         nv_ = robot_->nv;
-        nu_ = robot_->nv - 6;  //robot_->njoints - 2;  // 0 = universe, 1 = root_joint - technically correct would be nv - 6
+        nu_ = robot_->nv - 6;
 
         q_.setZero(nq_);
         v_.setZero(nv_);
@@ -140,11 +136,6 @@ namespace robot_model
         pinocchio::centerOfMass(*robot_.get(), *data_.get(), q, v);
         pinocchio::computeJointJacobians(*robot_.get(), *data_.get(), q);
         pinocchio::updateFramePlacements(*robot_.get(), *data_.get());
-        // for (int i = 0; i < 4; i++)
-        // {
-        //     Eigen::Matrix<double, 6, -1> J(6, nv_);
-        //     pinocchio::computeFrameJacobian(*robot_.get(), *data_.get(), q, eef_frame_idx_[i], J);
-        // }
         pinocchio::centroidalMomentum(*robot_.get(), *data_.get(), q, v)
     }
 

@@ -31,10 +31,6 @@ namespace dynamics{
             //Update the binary contact array
             void update_contact_array();
 
-            // Contact plan type 2 provided by the user:
-            // order: [1/0, x, y, z]
-            std::vector<Eigen::MatrixXd> cnt_plan_;
-
             Eigen::SparseMatrix<double> A_x;
             Eigen::VectorXd b_x;
             Eigen::SparseMatrix<double> A_f;

@@ -21,7 +21,7 @@ namespace motion_planner{
             fista_f.set_l0(506.25);
 
             //Use Second Order Cone Projection
-            fista_f.set_soc_true();
+            // fista_f.set_soc_true();
 
     };
 
@@ -30,7 +30,7 @@ namespace motion_planner{
         prob_data_x.lb_ = -1*std::numeric_limits<double>::infinity()*Eigen::VectorXd::Ones(prob_data_x.lb_.size());        
         prob_data_x.ub_ = std::numeric_limits<double>::infinity()*Eigen::VectorXd::Ones(prob_data_x.lb_.size());        
 
-        for (unsigned i = 0; i < centroidal_dynamics.cnt_plan_.size(); ++i){
+        for (unsigned i = 0; i < centroidal_dynamics.cnt_arr_.rows(); ++i){
             // this can be done once and never done again
             for(unsigned j = 0; j < n_eff_; ++j){
                 prob_data_f.lb_[3*n_eff_*i + j*3] = -fx_max;
@@ -41,18 +41,18 @@ namespace motion_planner{
                 prob_data_f.ub_[3*n_eff_*i+ j*3 + 1] = fy_max;
                 prob_data_f.ub_[3*n_eff_*i+ j*3 + 2] = fz_max;                    
             }
-        
-            if (centroidal_dynamics.cnt_plan_[i].col(0).sum() > 0){
-            prob_data_x.lb_[9*i] = centroidal_dynamics.cnt_plan_[i].col(1).maxCoeff() - bx;                 
-                prob_data_x.lb_[9*i+1] = centroidal_dynamics.cnt_plan_[i].col(2).maxCoeff() - by;                 
-                prob_data_x.lb_[9*i+2] = centroidal_dynamics.cnt_plan_[i].col(3).maxCoeff() - 0;
+            if (centroidal_dynamics.cnt_arr_.row(i).sum() > 0){
+                prob_data_x.lb_[9*i] = centroidal_dynamics.r_[i].col(0).maxCoeff() - bx;                 
+                prob_data_x.lb_[9*i+1] = centroidal_dynamics.r_[i].col(1).maxCoeff() - by;                 
+                prob_data_x.lb_[9*i+2] = centroidal_dynamics.r_[i].col(2).maxCoeff() - 0;
 
-                prob_data_x.ub_[9*i] = centroidal_dynamics.cnt_plan_[i].col(1).minCoeff() + bx;                 
-                prob_data_x.ub_[9*i+1] = centroidal_dynamics.cnt_plan_[i].col(2).minCoeff() + by;                 
-                prob_data_x.ub_[9*i+2] = centroidal_dynamics.cnt_plan_[i].col(3).minCoeff() + bz;
+                prob_data_x.ub_[9*i] = centroidal_dynamics.r_[i].col(0).minCoeff() + bx;                 
+                prob_data_x.ub_[9*i+1] = centroidal_dynamics.r_[i].col(1).minCoeff() + by;                 
+                prob_data_x.ub_[9*i+2] = centroidal_dynamics.r_[i].col(2).minCoeff() + bz;
                                  
             }
         };
+            
     };
 
     void BiConvexMP::create_cost_X(Eigen::VectorXd W_X, Eigen::VectorXd W_X_ter, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom){
@@ -115,7 +115,7 @@ namespace motion_planner{
     
         centroidal_dynamics.r_.clear();
 
-        // std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
+        std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }
 
     Eigen::MatrixXd BiConvexMP::return_opt_com(){

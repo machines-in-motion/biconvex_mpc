@@ -9,6 +9,7 @@ import pinocchio as pin
 from inverse_kinematics_cpp import InverseKinematics
 from biconvex_mpc_cpp import KinoDynMP
 import math
+from matplotlib import pyplot as plt
 
 class SoloAcyclicGen:
 
@@ -34,9 +35,9 @@ class SoloAcyclicGen:
             self.ee_frame_id.append(self.rmodel.getFrameId(self.eff_names[i]))
         
         # Set up constraints for Dynamics
-        self.bx = 0.25
-        self.by = 0.25
-        self.bz = 0.25
+        self.bx = 0.45
+        self.by = 0.45
+        self.bz = 0.20
         self.fx_max = 25.0
         self.fy_max = 25.0
         self.fz_max = 25.0
@@ -311,3 +312,31 @@ class SoloAcyclicGen:
                 self.mom_int = np.vstack((self.mom_int, np.linspace(mom_opt[i], mom_opt[i+1], int(self.dt_arr[i]/0.001))))
 
         return self.xs_int, self.us_int, self.f_int
+
+    def plot(self):
+        com_opt = self.mp.return_opt_com()
+        F_opt = self.mp.return_opt_f()
+
+        fig, ax = plt.subplots(3,1)
+        ax[0].plot(com_opt[:,0] ,label = "com x")
+        ax[1].plot(com_opt[:,1] ,label = "com y")
+        ax[2].plot(com_opt[:,2] ,label = "com z")
+        ax[0].grid()
+        ax[0].legend()
+
+        ax[1].grid()
+        ax[1].legend()
+
+        ax[2].grid()
+        ax[2].legend()
+
+        fig, ax_f = plt.subplots(self.n_eff,1)
+        for n in range(self.n_eff):
+            ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = "ee: " + str(n) + "Fx")
+            ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = "ee: " + str(n) + "Fy")
+            ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = "ee: " + str(n) + "Fz")
+
+            ax_f[n].grid()
+            ax_f[n].legend()
+
+        plt.show()

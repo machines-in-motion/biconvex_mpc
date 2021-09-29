@@ -6,11 +6,10 @@ import time
 import numpy as np
 import pinocchio as pin
 
-# from py_biconvex_mpc.motion_planner.biconvex import BiConvexMP
-from py_biconvex_mpc.motion_planner.cpp_biconvex import BiConvexMP
+from inverse_kinematics_cpp import InverseKinematics
+from biconvex_mpc_cpp import BiconvexMP, KinoDynMP
 
 from robot_properties_solo.config import Solo12Config
-from py_biconvex_mpc.ik.inverse_kinematics import InverseKinematics
 
 from cnt_plan_utils import SoloCntGen
 from py_biconvex_mpc.bullet_utils.solo_env import Solo12Env
@@ -76,7 +75,8 @@ if optimize :
     mom_opt_ik = None
     com_opt_ik = None
     for k in range(1):
-        mp = BiConvexMP(m, dt, T, n_eff, rho = rho)
+        mp = BiconvexMP(m, dt, int(T/dt), n_eff)
+        mp.set_rho(rho)
         mp.create_contact_array(cnt_plan)
         mp.create_bound_constraints(bx, by, bz, fx_max, fy_max, fz_max)
 

@@ -89,12 +89,12 @@ class SoloMpcGaitGen:
         self.num_optimization_ctr = 0 #Counter
 
         # Set up constraints for Dynamics
-        self.bx = 0.45
-        self.by = 0.45
-        self.bz = 0.45
-        self.fx_max = 15.0
-        self.fy_max = 15.0
-        self.fz_max = 15.0
+        self.bx = 0.25
+        self.by = 0.25
+        self.bz = 0.25
+        self.fx_max = 25.0
+        self.fy_max = 25.0
+        self.fz_max = 45.0
 
         # For plotting
         self.com_traj = []
@@ -362,7 +362,7 @@ class SoloMpcGaitGen:
 
         t2 = time.time()
 
-        self.kd.optimize(q, v, 50, 1)
+        self.kd.optimize(q, v, 150, 1)
 
         t3 = time.time()
 

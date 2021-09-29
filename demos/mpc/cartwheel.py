@@ -12,8 +12,8 @@ from robot_properties_solo.config import Solo12Config
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 
 from abstract_acyclic_gen import SoloAcyclicGen
-# from plan_cartwheel import plan
-from plan_hifive import plan
+from plan_cartwheel import plan
+# from plan_hifive import plan
 
 
 pin_robot = Solo12Config.buildRobotWrapper()
@@ -25,13 +25,13 @@ q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-robot = Solo12Env(5.5, 0.1, q0, v0, False, False)
+robot = Solo12Env(5.5, 0.2, q0, v0, False, False)
 
 sim_t = 0.0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-plan_freq = 1.5 # sec
+plan_freq = 0.5 # sec
 update_time = 0.0 # sec (time of lag)
 lag = int(update_time/sim_dt)
 

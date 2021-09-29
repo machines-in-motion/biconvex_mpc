@@ -21,7 +21,7 @@ namespace motion_planner{
             fista_f.set_l0(506.25);
 
             //Use Second Order Cone Projection
-            // fista_f.set_soc_true();
+            fista_f.set_soc_true();
 
     };
 

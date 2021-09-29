@@ -40,7 +40,7 @@ plan.cnt_plan = [[[ 1.,      0.3946,   0.14695,  0., 0.,  st    ],
                 [ 1.,      0.8054,   0.14695,  0., st + rt, T ],
                 [ 1.,      0.8054,  -0.14695,  0., st + rt, T ]]]
 
-plan.n_col = int(np.round(T/dt, 2))
+plan.n_col = int(np.round(T/dt))
 plan.dt_arr = plan.n_col*[dt,]
 
 #  dynamic optimization params
@@ -52,6 +52,8 @@ plan.rho = 5e+4
 plan.X_nom = [[0.5, 0, 0.2, 0, 0, 0, 0, 0.2, 0., 0, st],
               [0.5, 0, 0.5, 0, 0, 0, 0, 0.8, 0., st, st+rt],
               [0.5, 0, 0.2, 0, 0, 0, 0, 0.0, 0., st+rt, T]]
+
+plan.X_ter = [0.5, 0, 0.2, 0, 0, 0, 0, 0.0, 0.0]
 
 # ik optimization params
 

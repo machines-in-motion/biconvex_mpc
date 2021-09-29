@@ -46,11 +46,23 @@ robot = Solo12Env(gait_params.kp, gait_params.kd, q0, v0, False, False)
 plot_time = np.inf #Time to start plotting
 
 for o in range(int(500*(plan_freq/sim_dt))):
+
+    if o == int(50*(plan_freq/sim_dt)):
+        gg.update_gait_params(jump, sim_t)
+
+    if o == int(70*(plan_freq/sim_dt)):
+        gg.update_gait_params(bound, sim_t)
+        v_des = np.array([0.5,0.0,0.0])
+
+    if o == int(100*(plan_freq/sim_dt)):
+        gg.update_gait_params(trot, sim_t)
+        v_des = np.array([0.5,0.0,0.0])
+
     # this bit has to be put in shared memory
     if pln_ctr == 0:
         q, v = robot.get_state()
         contact_configuration = robot.get_current_contacts()
-        
+
         pr_st = time.time()
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(sim_t,3), v_des, w_des)
 
@@ -59,7 +71,7 @@ for o in range(int(500*(plan_freq/sim_dt))):
             gg.plot_plan()
 
         pr_et = time.time()
-    
+
     # first loop assume that trajectory is planned
     if o < int(plan_freq/sim_dt) - 1:
         xs = xs_plan
@@ -78,8 +90,8 @@ for o in range(int(500*(plan_freq/sim_dt))):
     # control loop
     ### TODO: Update the gains also during gait transition and add ID controller outside
     robot.send_joint_command(xs[index][:pin_robot.model.nq].copy(), xs[index][pin_robot.model.nq:].copy() \
-                                , us[index], f[index], contact_configuration)
-        
+                             , us[index], f[index], contact_configuration)
+
     time.sleep(0.001)
     sim_t += sim_dt
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))

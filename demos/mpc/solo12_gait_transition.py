@@ -11,6 +11,7 @@ from abstract_mpc_gait_gen import SoloMpcGaitGen
 from solo12_gait_params import trot, walk, air_bound, bound, still, gallop, jump, balance, bound_turn, trot_turn
 
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
+from blmc_controllers.robot_id_controller import InverseDynamicsController
 
 ## robot config and init
 pin_robot = Solo12Config.buildRobotWrapper()
@@ -22,6 +23,7 @@ q0[0:2] = 0.0
 
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
+f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
 
 v_des = np.array([0.3,0.0,0.0])
 w_des = 0.0
@@ -41,11 +43,13 @@ gg = SoloMpcGaitGen(pin_robot, urdf_path, x0, plan_freq, q0, None)
 
 gg.update_gait_params(gait_params, sim_t)
 
-robot = Solo12Env(gait_params.kp, gait_params.kd, q0, v0, False, False)
+robot = Solo12Env(q0, v0, False, False)
+robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
 
 plot_time = np.inf #Time to start plotting
 
 for o in range(int(500*(plan_freq/sim_dt))):
+    q, v = robot.get_state()
 
     if o == int(50*(plan_freq/sim_dt)):
         gg.update_gait_params(jump, sim_t)
@@ -60,7 +64,6 @@ for o in range(int(500*(plan_freq/sim_dt))):
 
     # this bit has to be put in shared memory
     if pln_ctr == 0:
-        q, v = robot.get_state()
         contact_configuration = robot.get_current_contacts()
 
         pr_st = time.time()
@@ -89,8 +92,10 @@ for o in range(int(500*(plan_freq/sim_dt))):
 
     # control loop
     ### TODO: Update the gains also during gait transition and add ID controller outside
-    robot.send_joint_command(xs[index][:pin_robot.model.nq].copy(), xs[index][pin_robot.model.nq:].copy() \
-                             , us[index], f[index], contact_configuration)
+    robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
+    tau = robot_id_ctrl.id_joint_torques(q, v, xs[index][:pin_robot.model.nq].copy(), xs[index][pin_robot.model.nq:].copy()\
+                                , us[index], f[index], contact_configuration)
+    robot.send_joint_command(tau)
 
     time.sleep(0.001)
     sim_t += sim_dt

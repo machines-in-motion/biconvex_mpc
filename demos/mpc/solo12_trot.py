@@ -25,7 +25,7 @@ v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
 
-v_des = np.array([0.0,0.0,0.0])
+v_des = np.array([0.3,0.0,0.0])
 w_des = 0.0
 
 plan_freq = 0.05 # sec
@@ -51,13 +51,14 @@ plot_time = np.inf #Time to start plotting
 
 for o in range(int(500*(plan_freq/sim_dt))):
     # this bit has to be put in shared memory
+    q, v = robot.get_state()
+    
     if o == int(50*(plan_freq/sim_dt)):
         gait_params = trot
         gg.update_gait_params(gait_params, sim_t)
         robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
     if pln_ctr == 0:
-        q, v = robot.get_state()
         contact_configuration = robot.get_current_contacts()
         
         pr_st = time.time()

@@ -74,6 +74,7 @@ class ACyclicMotionParams:
         self.ctrl_wt = None #Control Regularization
         self.ctrl_reg = None # control state around which regularization is to be done
         self.ctrl_scale = None # scaling of ctrl regularization wt
+        
         ## Controller Gains
         self.kp = None
         self.kd = None

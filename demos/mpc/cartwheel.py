@@ -8,6 +8,7 @@ import pinocchio as pin
 from matplotlib import pyplot as plt
 
 from robot_properties_solo.config import Solo12Config
+from blmc_controllers.robot_id_controller import InverseDynamicsController
 
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
 
@@ -24,14 +25,16 @@ urdf = Solo12Config.urdf_path
 q0 = np.array(Solo12Config.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
+f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
 
-robot = Solo12Env(5.5, 0.2, q0, v0, False, False)
+robot = Solo12Env(q0, v0, False, False)
+robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
 
 sim_t = 0.0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-plan_freq = 0.5 # sec
+plan_freq = 0.6 # sec
 update_time = 0.0 # sec (time of lag)
 lag = int(update_time/sim_dt)
 
@@ -42,6 +45,7 @@ for o in range(int(500*(plan_freq/sim_dt))):
 
     contact_configuration = robot.get_current_contacts()
     q, v = robot.get_state()
+    robot_id_ctrl.set_gains(plan.kp, plan.kd)
 
     if pln_ctr == 0 or sim_t == 0:
         xs, us, f = mg.optimize(q, v, sim_t)
@@ -52,9 +56,10 @@ for o in range(int(500*(plan_freq/sim_dt))):
 
     q_des = xs[index][:pin_robot.model.nq].copy()
     dq_des = xs[index][pin_robot.model.nq:].copy()
-    robot.send_joint_command(q_des, dq_des, us[index], f[index], contact_configuration)
+    tau = robot_id_ctrl.id_joint_torques(q, v, q_des, dq_des, us[index], f[index], contact_configuration)
+    robot.send_joint_command(tau)
 
-    time.sleep(0.001)
+    time.sleep(0.005)
 
     sim_t += sim_dt
     sim_t = np.round(sim_t, 3)

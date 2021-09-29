@@ -5,7 +5,6 @@
 
 import numpy as np
 
-from blmc_controllers.robot_id_controller import InverseDynamicsController
 from bullet_utils.env import BulletEnvWithGround
 from robot_properties_solo.solo12wrapper import Solo12Robot, Solo12Config
 
@@ -17,7 +16,7 @@ import time
 
 class Solo12Env:
 
-    def __init__(self, kp, kd, q0, v0, vis_ghost = False, loadBullet = False):
+    def __init__(self, q0, v0, vis_ghost = False, loadBullet = False):
 
         #Change the urdf_path to load from raisim_utils
         str = os.path.dirname(os.path.abspath(__file__))
@@ -45,11 +44,6 @@ class Solo12Env:
             self.robot = self.env.add_robot(Solo12Config, urdf_path, vis_ghost = self.vis_ghost)
             self.robot.reset_state(q0, v0)
             self.env.launch_server()
-
-        self.f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
-
-        self.robot_id_ctrl = InverseDynamicsController(self.robot, self.f_arr)
-        self.robot_id_ctrl.set_gains(kp, kd)
 
         # state estimator
         self.sse = SoloStateEstimator(self.robot.pin_robot)
@@ -82,20 +76,13 @@ class Solo12Env:
 
         return hip_loc
 
-    def send_joint_command(self, q_des, v_des, a_des, F_des, contact_configuration):
+    def send_joint_command(self, tau):
         """
         computes the torques using the ID controller and plugs the torques
         Input:
-            q_des : desired joint configuration at current time step
-            v_des : desired joint velocity at current time step
-            F_des : desired feed forward forces at current time step
+            tau : input torque
         """
-        q, v = self.robot.get_state()
-        self.robot.forward_robot(q,v)
-        tau = self.robot_id_ctrl.id_joint_torques(q, v, q_des, v_des, a_des, F_des, contact_configuration)
         self.robot.send_joint_command(tau)
-        if self.vis_ghost:
-            self.robot.set_state_ghost(q_des, v_des)
         self.env.step() # You can sleep here if you want to slow down the replay
 
     def get_current_contacts(self):

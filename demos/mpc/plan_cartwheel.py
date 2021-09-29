@@ -83,3 +83,7 @@ ctrl_wt = [0, 0, 10] + [1, 1, 1] + [50.0] *(rmodel.nv - 6)
 plan.ctrl_wt = [np.hstack((ctrl_wt, [0, T]))]
 plan.ctrl_reg = [np.hstack((np.zeros(rmodel.nv), [0, T]))]
 plan.ctrl_scale = [[7e-5, 0, T]]
+
+# controller details 
+plan.kp = 7.5
+plan.kd = 0.1

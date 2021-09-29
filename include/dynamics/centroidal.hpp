@@ -1,5 +1,5 @@
 // Containst the centroidal dynamics class
-// Author : Avadesh Meduri
+// Author : Avadesh Meduri & Paarth Shah
 // Date : 15/04/2021
 
 

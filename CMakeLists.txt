@@ -15,7 +15,7 @@ find_package(pinocchio REQUIRED)
 find_package(crocoddyl REQUIRED)
 
 #Only Required for Mac OSX (TODO: Find out why)
-#find_package(Python REQUIRED)
+find_package(Python REQUIRED COMPONENTS Interpreter Development)
 
 # for benchmarking
 if ( OSQP )

@@ -4,11 +4,9 @@
 
 import time
 import numpy as np
-from numpy.lib.arraysetops import isin
 import pinocchio as pin
 from inverse_kinematics_cpp import InverseKinematics
 from biconvex_mpc_cpp import KinoDynMP
-import math
 
 class SoloAcyclicGen:
 

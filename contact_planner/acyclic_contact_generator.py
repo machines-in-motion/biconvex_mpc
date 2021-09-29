@@ -52,9 +52,10 @@ class AcyclicContactPlanner:
 
                             if cnt_plan[i][j][0] == 0:
                                 prev_current_eef_used[j] = 0
+
                         if evaluated_time >= self.acyclic_contact_plan[-1][j][5]:
                             cnt_plan[i][j][0] = 1
-                            cnt_plan[i][j][1:4] = self.acyclic_contact_plan[k][j][1:4]
+                            cnt_plan[i][j][1:4] = self.acyclic_contact_plan[-1][j][1:4]
                             cnt_plan[i][j][4:8] = temp_quat
                             cnt_plan[i][j][8] = self.dt_arr[i]
 

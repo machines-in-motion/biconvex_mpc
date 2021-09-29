@@ -1,7 +1,8 @@
 // This file handles the kino dynamic iterations
 // Author : Avadesh Meduri
 // Date : 21/09/2021
-
+#include "Eigen/Dense"
+#include "Eigen/Sparse"
 #include "motion_planner/biconvex.hpp"
 #include "ik/inverse_kinematics.hpp"
 
@@ -22,7 +23,6 @@ namespace motion_planner{
 
             void set_com_tracking_weight(double wt_com){wt_com_ = wt_com;};
             void set_mom_tracking_weight(double wt_mom){wt_mom_ = wt_mom;};
-            
 
             BiConvexMP dyn;
             ik::InverseKinematics ik;
@@ -50,7 +50,6 @@ namespace motion_planner{
 
             Eigen::MatrixXd ik_com_opt;
             Eigen::MatrixXd ik_mom_opt;
-
 
             double wt_com_ = 0; // com tracking weight
             double wt_mom_ = 0; // momentum tracking weight

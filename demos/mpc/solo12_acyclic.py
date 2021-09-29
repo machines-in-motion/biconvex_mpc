@@ -10,5 +10,10 @@ from contact_planner.acyclic_contact_generator import AcyclicContactPlanner
 
 contact_planner = AcyclicContactPlanner(plan)
 
-plan = contact_planner.create_cnt_plan(0, 0, 0, np.zeros(4), np.zeros(4))
-print(plan)
+plan1 = contact_planner.create_cnt_plan(0, 0, 0, np.zeros(4), np.zeros(4))
+print("Plan 1")
+print(plan1)
+
+plan2 = contact_planner.create_cnt_plan(0, 0, 1.75, np.zeros(4), np.zeros(4))
+print("Plan 2")
+print(plan2)

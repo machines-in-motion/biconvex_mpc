@@ -281,7 +281,7 @@ class SoloAcyclicGen:
 
         t2 = time.time()
 
-        self.kd.optimize(q, v, 80, 1)
+        self.kd.optimize(q, v, 150, 1)
 
         t3 = time.time()
 
@@ -317,7 +317,9 @@ class SoloAcyclicGen:
     def plot(self):
         com_opt = self.mp.return_opt_com()
         F_opt = self.mp.return_opt_f()
+        momentum_opt = self.mp.return_opt_mom()
 
+        #Plot Center of Mass
         fig, ax = plt.subplots(3,1)
         ax[0].plot(com_opt[:,0] ,label = "com x")
         ax[1].plot(com_opt[:,1] ,label = "com y")
@@ -331,6 +333,7 @@ class SoloAcyclicGen:
         ax[2].grid()
         ax[2].legend()
 
+        #Plot End-Effector Forces
         fig, ax_f = plt.subplots(self.n_eff,1)
         for n in range(self.n_eff):
             ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = "ee: " + str(n) + "Fx")
@@ -339,5 +342,20 @@ class SoloAcyclicGen:
 
             ax_f[n].grid()
             ax_f[n].legend()
+
+        #Plot Momentum
+        fig, ax_m = plt.subplots(3,1)
+        ax_m[0].plot(momentum_opt[:,0] ,label = "roll")
+        ax_m[1].plot(momentum_opt[:,1] ,label = "pitch")
+        ax_m[2].plot(momentum_opt[:,2] ,label = "yaw")
+        ax_m[0].grid()
+        ax_m[0].legend()
+
+        ax_m[1].grid()
+        ax_m[1].legend()
+
+        ax_m[2].grid()
+        ax_m[2].legend()
+
 
         plt.show()

@@ -8,7 +8,6 @@ import pinocchio as pin
 from inverse_kinematics_cpp import InverseKinematics
 from biconvex_mpc_cpp import KinoDynMP
 
-import math
 from matplotlib import pyplot as plt
 
 class SoloAcyclicGen:
@@ -109,6 +108,7 @@ class SoloAcyclicGen:
                     dt = self.params.dt_arr[i]
             else:
                 dt = self.params.dt_arr[i]
+
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             i += 1
         
@@ -281,7 +281,7 @@ class SoloAcyclicGen:
 
         t2 = time.time()
 
-        self.kd.optimize(q, v, 150, 1)
+        self.kd.optimize(q, v, 80, 1)
 
         t3 = time.time()
 

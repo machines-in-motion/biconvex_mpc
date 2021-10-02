@@ -169,7 +169,7 @@ class SoloAcyclicGen:
                 if self.cnt_plan[i][j][0] == 1:
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], self.params.cnt_wt,
                                                               "cnt_" + str(0) + self.eff_names[j], i)
-        
+
         ## Adding swing costs
         if isinstance(self.params.swing_wt, np.ndarray): 
             ft = t - self.params.dt_arr[0]
@@ -194,9 +194,9 @@ class SoloAcyclicGen:
         ## State regularization
         ft = t - self.params.dt_arr[0]
         i = 0
-        while i < self.ik_horizon + 1:    
+        while i < self.ik_horizon + 1:
             ## is there a more effecient way to handle terminal states?
-            ## TODO: have to make sure that dt is picked from the right index. 
+            ## TODO: have to make sure that dt is picked from the right index.
             ft += self.params.dt_arr[min(i,self.ik_horizon-1)]
             self.dt_arr[min(i,self.ik_horizon-1)] = self.params.dt_arr[min(i,self.ik_horizon-1)]
             ft = np.round(ft, 3)
@@ -208,7 +208,7 @@ class SoloAcyclicGen:
                                         "xReg", self.params.state_wt[k][0:2*self.rmodel.nv],\
                                                     self.params.state_reg[k][0:self.rmodel.nq + self.rmodel.nv])
                         else:
-                            # account for terminal here. 
+                            # account for terminal here.
                             self.ik.add_state_regularization_cost(0, i, self.params.state_scale[k][0], \
                                                                 "xReg", self.params.state_wt[k][0:2*self.rmodel.nv],\
                                                                             self.params.state_reg[k][0:self.rmodel.nq + self.rmodel.nv], True)
@@ -230,39 +230,39 @@ class SoloAcyclicGen:
             i += 1
 
         ## control regularization
-        ft = t - self.params.dt_arr[0]
-        i = 0
-        while i < self.params.n_col + 1:    
-            ft += self.params.dt_arr[min(i,self.params.n_col-1)]
-            ft = np.round(ft, 3)
-            if ft < self.params.ctrl_scale[-1][-1]:
-                for k in range(len(self.params.ctrl_scale)):
-                    if ft >= self.params.ctrl_scale[k][1] and ft < self.params.ctrl_scale[k][2]:
-                        if i < self.params.n_col:
-                            self.ik.add_ctrl_regularization_cost_single(i, self.params.ctrl_wt[k][0], \
-                                        "ctrlReg", self.params.ctrl_wt[k][0:self.rmodel.nv],\
-                                                    self.params.ctrl_reg[k][0:self.rmodel.nv])
-                        else:
-                            # account for terminal here. 
-                            self.ik.add_ctrl_regularization_cost(0, i, self.params.ctrl_scale[k][0], \
-                                                                "ctrlReg", self.params.ctrl_wt[k][0:self.rmodel.nv],\
-                                                                            self.params.ctrl_reg[k][0:self.rmodel.nv], True)
-                        break
-            else:
-                if not make_cyclic:
-                    if i < self.params.n_col:
-                        self.ik.add_ctrl_regularization_cost_single(i, self.params.ctrl_wt[-1][0], \
-                                        "ctrlReg", self.params.ctrl_wt[-1][0:self.rmodel.nv],\
-                                                    self.params.ctrl_reg[-1][0:self.rmodel.nv])
-                    else:
-                        self.ik.add_ctrl_regularization_cost(0, i, self.params.ctrl_scale[-1][0], \
-                                                                "ctrlReg", self.params.ctrl_wt[-1][0:self.rmodel.nv],\
-                                                                            self.params.ctrl_reg[-1][0:self.rmodel.nv], True)
-                else:
-                    # make this cyclic later
-                    pass
-
-            i += 1
+        # ft = t - self.params.dt_arr[0]
+        # i = 0
+        # while i < self.params.n_col + 1:
+        #     ft += self.params.dt_arr[min(i,self.params.n_col-1)]
+        #     ft = np.round(ft, 3)
+        #     if ft < self.params.ctrl_scale[-1][-1]:
+        #         for k in range(len(self.params.ctrl_scale)):
+        #             if ft >= self.params.ctrl_scale[k][1] and ft < self.params.ctrl_scale[k][2]:
+        #                 if i < self.params.n_col:
+        #                     self.ik.add_ctrl_regularization_cost_single(i, self.params.ctrl_wt[k][0], \
+        #                                 "ctrlReg", self.params.ctrl_wt[k][0:self.rmodel.nv],\
+        #                                             self.params.ctrl_reg[k][0:self.rmodel.nv])
+        #                 else:
+        #                     # account for terminal here.
+        #                     self.ik.add_ctrl_regularization_cost(0, i, self.params.ctrl_scale[k][0], \
+        #                                                         "ctrlReg", self.params.ctrl_wt[k][0:self.rmodel.nv],\
+        #                                                                     self.params.ctrl_reg[k][0:self.rmodel.nv], True)
+        #                 break
+        #     else:
+        #         if not make_cyclic:
+        #             if i < self.params.n_col:
+        #                 self.ik.add_ctrl_regularization_cost_single(i, self.params.ctrl_wt[-1][0], \
+        #                                 "ctrlReg", self.params.ctrl_wt[-1][0:self.rmodel.nv],\
+        #                                             self.params.ctrl_reg[-1][0:self.rmodel.nv])
+        #             else:
+        #                 self.ik.add_ctrl_regularization_cost(0, i, self.params.ctrl_scale[-1][0], \
+        #                                                         "ctrlReg", self.params.ctrl_wt[-1][0:self.rmodel.nv],\
+        #                                                                     self.params.ctrl_reg[-1][0:self.rmodel.nv], True)
+        #         else:
+        #             # make this cyclic later
+        #             pass
+        #
+        #     i += 1
 
         self.ik.setup_costs(self.dt_arr)
 

@@ -12,6 +12,7 @@ from abstract_acyclic_gen import SoloAcyclicGen
 
 from motions.plan_cartwheel import plan
 from motions.rearing import plan
+#from motions.plan_hifive import plan
 #from motions.stand import plan
 #from motions.plan_jump import plan
 
@@ -40,7 +41,7 @@ mg.update_motion_params(plan, sim_t)
 
 time.sleep(2)
 
-plot_time = 0
+plot_time = np.inf
 
 for o in range(int(500*(plan_freq/sim_dt))):
 

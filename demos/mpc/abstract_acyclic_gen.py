@@ -121,12 +121,13 @@ class SoloAcyclicGen:
             t : current time into the plan
         """
         # initial and terminal state
-        
         self.x0 = np.hstack((q,v))
         
         X_init = np.zeros(9)
         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
         X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
+        print("Center of mass: ")
+        print(X_init[0:3])
         X_init[3:] = np.array(self.rdata.hg)
         X_init[3:6] /= self.m
 
@@ -274,6 +275,10 @@ class SoloAcyclicGen:
             v : current joint velocity
             t : current time into the plan
         """
+        pin.forwardKinematics(self.rmodel, self.rdata, q, np.zeros(self.rmodel.nv))
+        pin.updateFramePlacements(self.rmodel, self.rdata)
+        pin.framesForwardKinematics(self.rmodel, self.rdata, q)
+
         t1 = time.time()
         self.create_contact_plan(q, v, t)
         #Creates costs for IK and Dynamics

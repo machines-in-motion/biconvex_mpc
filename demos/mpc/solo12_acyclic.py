@@ -1,87 +1,71 @@
-## This is a demo for trot motion in mpc
+## Demo for robot doing a cartwheel 
 ## Author : Avadesh Meduri & Paarth Shah
-## Date : 21/04/2021
+## Date : 04/08/2021
 
 import time
 import numpy as np
 import pinocchio as pin
-
 from robot_properties_solo.config import Solo12Config
-from plan_hifive import plan
+from blmc_controllers.robot_id_controller import InverseDynamicsController
+from py_biconvex_mpc.bullet_utils.solo_mpc_env import AbstractEnv
 from abstract_acyclic_gen import SoloAcyclicGen
 
-from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
+from motions.plan_cartwheel import plan
+from motions.rearing import plan
+#from motions.stand import plan
+#from motions.plan_jump import plan
 
-## robot config and init
 pin_robot = Solo12Config.buildRobotWrapper()
-urdf_path = Solo12Config.urdf_path
+rmodel = pin_robot.model
+urdf = Solo12Config.urdf_path
 
-n_eff = 4
 q0 = np.array(Solo12Config.initial_configuration)
-q0[0:2] = 0.0
-
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
+f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
 
-
-plan_freq = 0.05 # sec
-update_time = 0.0 # sec (time of lag)
+robot = AbstractEnv(q0, v0, False, False)
+robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
 
 sim_t = 0.0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-
-## Motion
+plan_freq = 0.05 # sec
+update_time = 0.0 # sec (time of lag)
 lag = int(update_time/sim_dt)
-gg = SoloAcyclicGen(pin_robot, urdf_path, plan_freq)
 
-gg.update_gait_params(plan, sim_t)
+mg = SoloAcyclicGen(pin_robot, urdf, plan_freq)
+mg.update_motion_params(plan, sim_t)
 
-robot = Solo12Env(plan.kp, plan.kd, q0, v0, False, False)
+time.sleep(2)
 
-plot_time = np.inf #Time to start plotting
+plot_time = 0
 
 for o in range(int(500*(plan_freq/sim_dt))):
-    # this bit has to be put in shared memory
-    if pln_ctr == 0:
-        q, v = robot.get_state()
-        contact_configuration = robot.get_current_contacts()
 
-        pr_st = time.time()
-        xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(sim_t,3))
+    contact_configuration = robot.get_current_contacts()
+    q, v = robot.get_state()
+    robot_id_ctrl.set_gains(plan.kp, plan.kd)
 
-        #Plot if necessary
-        if sim_t > plot_time:
-            gg.plot_plan()
-
-        pr_et = time.time()
-
-    # first loop assume that trajectory is planned
-    if o < int(plan_freq/sim_dt) - 1:
-        xs = xs_plan
-        us = us_plan
-        f = f_plan
-
-    # second loop onwards lag is taken into account
-    elif pln_ctr == lag and o > int(plan_freq/sim_dt)-1:
-        # Not the correct logic
-        lag = int((1/sim_dt)*(pr_et - pr_st))
-        xs = xs_plan[lag:]
-        us = us_plan[lag:]
-        f = f_plan[lag:]
+    if pln_ctr == 0 or sim_t == 0:
+        xs, us, f = mg.optimize(q, v, sim_t)
+        xs = xs[lag:]
+        us = us[lag:]
+        f = f[lag:]
         index = 0
 
-    # control loop
-    ### TODO: Update the gains also during gait transition and add ID controller outside
-    robot.send_joint_command(xs[index][:pin_robot.model.nq].copy(), xs[index][pin_robot.model.nq:].copy() \
-                             , us[index], f[index], contact_configuration)
+        if sim_t > plot_time:
+            mg.plot(q,v)
 
-    time.sleep(0.001)
+    q_des = xs[index][:pin_robot.model.nq].copy()
+    dq_des = xs[index][pin_robot.model.nq:].copy()
+    tau = robot_id_ctrl.id_joint_torques(q, v, q_des, dq_des, us[index], f[index], contact_configuration)
+    robot.send_joint_command(tau)
+
+    #time.sleep(0.001)
+
     sim_t += sim_dt
+    sim_t = np.round(sim_t, 3)
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
-
-print("done")
-
-

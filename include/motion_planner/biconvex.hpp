@@ -128,7 +128,13 @@ class BiConvexMP{
             return dyn_violation_hist_;
         }
 
-        void set_robot_mass(double m){m_ = m;};
+        void set_friction_coefficient(double mu) {
+            fista_f.set_friction_coefficient(mu);
+        }
+
+        void set_robot_mass(double m) {
+            m_ = m;
+        };
 
     private:
         // mass of the robot 

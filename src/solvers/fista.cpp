@@ -59,12 +59,12 @@ namespace solvers
             soc_norm = prob_data_.y_k_1.segment(i,2).squaredNorm();
             //auto z = rotated_force[2]
             auto z = prob_data_.y_k_1[i + 2];
-            if (soc_norm*mu < -z || z < 0) {
+            if (soc_norm*mu_ < -z || z < 0) {
                 prob_data_.y_k_1.segment(i,3) = Eigen::VectorXd::Zero(3);
-            } else if (soc_norm > mu * z) {
+            } else if (soc_norm > mu_ * z) {
                 //Apply second order cone projection
-                prob_data_.y_k_1.segment(i,2) *= ((mu * mu) * soc_norm + (mu * z)) / ( ((mu * mu) + 1) * soc_norm);
-                prob_data_.y_k_1[i + 2] = (mu * soc_norm + z) / ((mu * mu )+ 1);
+                prob_data_.y_k_1.segment(i,2) *= ((mu_ * mu_) * soc_norm + (mu_ * z)) / ( ((mu_ * mu_) + 1) * soc_norm);
+                prob_data_.y_k_1[i + 2] = (mu_ * soc_norm + z) / ((mu_ * mu_ )+ 1);
             }
         }
     }

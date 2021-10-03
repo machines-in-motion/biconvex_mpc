@@ -229,40 +229,40 @@ class SoloAcyclicGen:
 
             i += 1
 
-        ## control regularization
-        # ft = t - self.params.dt_arr[0]
-        # i = 0
-        # while i < self.params.n_col + 1:
-        #     ft += self.params.dt_arr[min(i,self.params.n_col-1)]
-        #     ft = np.round(ft, 3)
-        #     if ft < self.params.ctrl_scale[-1][-1]:
-        #         for k in range(len(self.params.ctrl_scale)):
-        #             if ft >= self.params.ctrl_scale[k][1] and ft < self.params.ctrl_scale[k][2]:
-        #                 if i < self.params.n_col:
-        #                     self.ik.add_ctrl_regularization_cost_single(i, self.params.ctrl_wt[k][0], \
-        #                                 "ctrlReg", self.params.ctrl_wt[k][0:self.rmodel.nv],\
-        #                                             self.params.ctrl_reg[k][0:self.rmodel.nv])
-        #                 else:
-        #                     # account for terminal here.
-        #                     self.ik.add_ctrl_regularization_cost(0, i, self.params.ctrl_scale[k][0], \
-        #                                                         "ctrlReg", self.params.ctrl_wt[k][0:self.rmodel.nv],\
-        #                                                                     self.params.ctrl_reg[k][0:self.rmodel.nv], True)
-        #                 break
-        #     else:
-        #         if not make_cyclic:
-        #             if i < self.params.n_col:
-        #                 self.ik.add_ctrl_regularization_cost_single(i, self.params.ctrl_wt[-1][0], \
-        #                                 "ctrlReg", self.params.ctrl_wt[-1][0:self.rmodel.nv],\
-        #                                             self.params.ctrl_reg[-1][0:self.rmodel.nv])
-        #             else:
-        #                 self.ik.add_ctrl_regularization_cost(0, i, self.params.ctrl_scale[-1][0], \
-        #                                                         "ctrlReg", self.params.ctrl_wt[-1][0:self.rmodel.nv],\
-        #                                                                     self.params.ctrl_reg[-1][0:self.rmodel.nv], True)
-        #         else:
-        #             # make this cyclic later
-        #             pass
-        #
-        #     i += 1
+        # control regularization
+        ft = t - self.params.dt_arr[0]
+        i = 0
+        while i < self.params.n_col + 1:
+            ft += self.params.dt_arr[min(i,self.params.n_col-1)]
+            ft = np.round(ft, 3)
+            if ft < self.params.ctrl_scale[-1][-1]:
+                for k in range(len(self.params.ctrl_scale)):
+                    if ft >= self.params.ctrl_scale[k][1] and ft < self.params.ctrl_scale[k][2]:
+                        if i < self.params.n_col:
+                            self.ik.add_ctrl_regularization_cost_single(i, self.params.ctrl_wt[k][0], \
+                                        "ctrlReg", self.params.ctrl_wt[k][0:self.rmodel.nv],\
+                                                    self.params.ctrl_reg[k][0:self.rmodel.nv])
+                        else:
+                            # account for terminal here.
+                            self.ik.add_ctrl_regularization_cost(0, i, self.params.ctrl_scale[k][0], \
+                                                                "ctrlReg", self.params.ctrl_wt[k][0:self.rmodel.nv],\
+                                                                            self.params.ctrl_reg[k][0:self.rmodel.nv], True)
+                        break
+            else:
+                if not make_cyclic:
+                    if i < self.params.n_col:
+                        self.ik.add_ctrl_regularization_cost_single(i, self.params.ctrl_wt[-1][0], \
+                                        "ctrlReg", self.params.ctrl_wt[-1][0:self.rmodel.nv],\
+                                                    self.params.ctrl_reg[-1][0:self.rmodel.nv])
+                    else:
+                        self.ik.add_ctrl_regularization_cost(0, i, self.params.ctrl_scale[-1][0], \
+                                                                "ctrlReg", self.params.ctrl_wt[-1][0:self.rmodel.nv],\
+                                                                            self.params.ctrl_reg[-1][0:self.rmodel.nv], True)
+                else:
+                    # make this cyclic later
+                    pass
+
+            i += 1
 
         self.ik.setup_costs(self.dt_arr)
 
@@ -322,7 +322,9 @@ class SoloAcyclicGen:
         # Plot Center of Mass
         fig, ax = plt.subplots(3,1)
         ax[0].plot(com_opt[:, 0], label="com x")
+        ax[0].plot(q[0], 'o', label="Currente Center of Mass x")
         ax[1].plot(com_opt[:, 1], label="com y")
+        ax[1].plot(q[1], 'o', label="Currente Center of Mass y")
         ax[2].plot(com_opt[:, 2], label="com z")
         ax[2].plot(q[2], 'o', label="Current Center of Mass z")
 

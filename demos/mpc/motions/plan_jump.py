@@ -45,8 +45,8 @@ plan.cnt_plan = [[[ 1.,      0.3946,   0.14695,  0., 0.,  st    ],
 
 
 #  dynamic optimization params
-plan.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e-4, 1e-4, 2e2, 3e+4, 3e+4, 3e+4])
-plan.W_X_ter = 10*np.array([1e-5, 1e-5, 1e+5, 1e-1, 1e-1, 2e2, 1e+5, 1e+5, 1e+5])
+plan.W_X = np.array([1e-5, 1e-5, 1e+5, 1e-4, 1e-4, 1e0, 3e+4, 3e+4, 3e+4])
+plan.W_X_ter = 10*np.array([1e-5, 1e-5, 1e+5, 1e-1, 1e-1, 1e1, 1e+5, 1e+5, 1e+5])
 plan.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 plan.rho = 5e+4
 
@@ -59,7 +59,7 @@ plan.X_ter = [0.2, 0, 0.22, 0, 0, 0, 0, 0.0, 0.0]
 # ik optimization params
 
 plan.cent_wt = [1e1, 1e4]
-plan.cnt_wt = 1e2
+plan.cnt_wt = 1e3
 
 # plan.swing_wt = [[[1e2, 0.3946,   0.14695,  0.0, st + 0.25*flight_time, st + 0.5*flight_time],
 #                   [1e2, 0.3946,   -0.14695,  0.0, st + 0.25*flight_time, st + 0.5*flight_time],
@@ -76,12 +76,11 @@ plan.state_reg = [np.hstack((x_reg1, [0, T]))]
 plan.state_wt = [np.hstack((state_wt_1, [0, T]))]
 plan.state_scale = [[1e-2, 0, T]]
 
-ctrl_wt = [0, 0, 1] + [1, 1, 1] + [2.0]*(rmodel.nv - 6)
 ctrl_wt = [0, 0, 0] + [0, 0, 0] + [0.0]*(rmodel.nv-6)
 plan.ctrl_wt = [np.hstack((ctrl_wt, [0, T]))]
 plan.ctrl_reg = [np.hstack((np.zeros(rmodel.nv), [0, T]))]
 plan.ctrl_scale = [[1e-4, 0, T]]
 
 # controller details
-plan.kp = 2.5
-plan.kd = 0.2
+plan.kp = 0.0
+plan.kd = 0.0

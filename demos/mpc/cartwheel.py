@@ -13,7 +13,7 @@ from abstract_acyclic_gen import SoloAcyclicGen
 from motions.plan_cartwheel import plan
 from motions.plan_hifive import plan
 from motions.stand import plan
-from motions.plan_jump_fwd import plan
+from motions.plan_jump import plan
 
 pin_robot = Solo12Config.buildRobotWrapper()
 rmodel = pin_robot.model
@@ -40,7 +40,7 @@ mg.update_motion_params(plan, sim_t)
 
 time.sleep(2)
 
-plot_time = 2.0
+plot_time = np.inf
 
 for o in range(int(500*(plan_freq/sim_dt))):
 
@@ -56,7 +56,7 @@ for o in range(int(500*(plan_freq/sim_dt))):
         index = 0
 
         if sim_t > plot_time:
-            mg.plot()
+            mg.plot(q,v)
 
     q_des = xs[index][:pin_robot.model.nq].copy()
     dq_des = xs[index][pin_robot.model.nq:].copy()

@@ -314,40 +314,43 @@ class SoloAcyclicGen:
 
         return self.xs_int, self.us_int, self.f_int
 
-    def plot(self):
+    def plot(self, q, v):
         com_opt = self.mp.return_opt_com()
         F_opt = self.mp.return_opt_f()
         momentum_opt = self.mp.return_opt_mom()
 
-        #Plot Center of Mass
+        # Plot Center of Mass
         fig, ax = plt.subplots(3,1)
-        ax[0].plot(com_opt[:,0] ,label = "com x")
-        ax[1].plot(com_opt[:,1] ,label = "com y")
-        ax[2].plot(com_opt[:,2] ,label = "com z")
+        ax[0].plot(com_opt[:, 0], label="com x")
+        ax[1].plot(com_opt[:, 1], label="com y")
+        ax[2].plot(com_opt[:, 2], label="com z")
+        ax[2].plot(q[2], 'o', label="Current Center of Mass z")
+
+        print("Z_error: ")
+        print(abs(q[2]-com_opt[:, 2][0]))
+
         ax[0].grid()
         ax[0].legend()
-
         ax[1].grid()
         ax[1].legend()
-
         ax[2].grid()
         ax[2].legend()
 
-        #Plot End-Effector Forces
-        fig, ax_f = plt.subplots(self.n_eff,1)
+        # Plot End-Effector Forces
+        fig, ax_f = plt.subplots(self.n_eff, 1)
         for n in range(self.n_eff):
-            ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = "ee: " + str(n) + "Fx")
-            ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = "ee: " + str(n) + "Fy")
-            ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = "ee: " + str(n) + "Fz")
+            ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
+            ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
+            ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
 
             ax_f[n].grid()
             ax_f[n].legend()
 
-        #Plot Momentum
+        # Plot Momentum
         fig, ax_m = plt.subplots(3,1)
-        ax_m[0].plot(momentum_opt[:,0] ,label = "roll")
-        ax_m[1].plot(momentum_opt[:,1] ,label = "pitch")
-        ax_m[2].plot(momentum_opt[:,2] ,label = "yaw")
+        ax_m[0].plot(momentum_opt[:, 0], label = "linear_momentum x")
+        ax_m[1].plot(momentum_opt[:, 1], label = "linear_momentum y")
+        ax_m[2].plot(momentum_opt[:, 2], label = "linear_momentum z")
         ax_m[0].grid()
         ax_m[0].legend()
 

@@ -29,7 +29,12 @@ namespace motion_planner{
         
         prob_data_x.lb_ = -1*std::numeric_limits<double>::infinity()*Eigen::VectorXd::Ones(prob_data_x.lb_.size());        
         prob_data_x.ub_ = std::numeric_limits<double>::infinity()*Eigen::VectorXd::Ones(prob_data_x.lb_.size());        
-
+        
+        // TODO: Throw errors here
+        if (b.cols() != 6){
+            std::cout << "bound constraints wrong size. Expected 6 ..." << std::endl;
+        }
+                
         for (unsigned i = 0; i < centroidal_dynamics.cnt_arr_.rows(); ++i){
             // this can be done once and never done again
             for(unsigned j = 0; j < n_eff_; ++j){
@@ -42,14 +47,13 @@ namespace motion_planner{
                 prob_data_f.ub_[3*n_eff_*i+ j*3 + 2] = fz_max;                    
             }
             if (centroidal_dynamics.cnt_arr_.row(i).sum() > 0){
-                prob_data_x.lb_[9*i] = centroidal_dynamics.r_[i].col(0).maxCoeff() - b(i,0);                 
-                prob_data_x.lb_[9*i+1] = centroidal_dynamics.r_[i].col(1).maxCoeff() - b(i,1);                 
-                prob_data_x.lb_[9*i+2] = centroidal_dynamics.r_[i].col(2).maxCoeff() - 0;
+                prob_data_x.lb_[9*i] = centroidal_dynamics.r_[i].col(0).maxCoeff() + b(i,0);                 
+                prob_data_x.lb_[9*i+1] = centroidal_dynamics.r_[i].col(1).maxCoeff() + b(i,1);                 
+                prob_data_x.lb_[9*i+2] = centroidal_dynamics.r_[i].col(2).maxCoeff() + b(i,2);
 
-                prob_data_x.ub_[9*i] = centroidal_dynamics.r_[i].col(0).minCoeff() + b(i,0);                 
-                prob_data_x.ub_[9*i+1] = centroidal_dynamics.r_[i].col(1).minCoeff() + b(i,1);                 
-                prob_data_x.ub_[9*i+2] = centroidal_dynamics.r_[i].col(2).minCoeff() + b(i,2);
-                                 
+                prob_data_x.ub_[9*i] = centroidal_dynamics.r_[i].col(0).minCoeff() + b(i,3);                 
+                prob_data_x.ub_[9*i+1] = centroidal_dynamics.r_[i].col(1).minCoeff() + b(i,4);                 
+                prob_data_x.ub_[9*i+2] = centroidal_dynamics.r_[i].col(2).minCoeff() + b(i,5);
             }
         };
     };

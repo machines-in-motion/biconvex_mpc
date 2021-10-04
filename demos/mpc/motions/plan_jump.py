@@ -21,7 +21,7 @@ x0 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
 plan = ACyclicMotionParams("solo12", "jump_fwd")
 
 st = 0.4
-flight_time = 0.3
+flight_time = 0.4
 T = 1.2
 dt = 5e-2
 plan.n_col = 30
@@ -56,11 +56,12 @@ plan.X_nom = [[0.2, 0, 0.22, 0, 0, 0, 0, 0.00, 0.0, 0.0, st],
 
 plan.X_ter = [0.2, 0, 0.22, 0, 0, 0, 0, 0.0, 0.0]
 
-plan.bounds = [[0.25, 0.25, 0.25, 0, T]]
+plan.bounds = [[-0.25, -0.25, 0.1, 0.25, 0.25, 0.25, 0, st],
+               [-0.25, -0.25, 0.15, 0.25, 0.25, 0.25, st, T]]
 
 # ik optimization params
 
-plan.cent_wt = [1e1, 1e4]
+plan.cent_wt = [1e0, 1e4]
 plan.cnt_wt = 1e3
 
 plan.swing_wt = [[[1e2, 0.3946,   0.14695,  0.0, st + 0.25*flight_time, st + 0.5*flight_time],

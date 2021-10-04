@@ -151,7 +151,7 @@ class SoloAcyclicGen:
 
             i += 1
 
-        self.bounds = np.zeros((self.horizon, 3))
+        self.bounds = np.zeros((self.horizon, 6))
         ft = t - self.params.dt_arr[0]
         i = 0
         while i < self.params.n_col:    
@@ -159,12 +159,12 @@ class SoloAcyclicGen:
             ft = np.round(ft, 3)
             if ft < self.params.bounds[-1][-1]:
                 for k in range(len(self.params.bounds)):
-                    if ft >= self.params.bounds[k][3] and ft < self.params.bounds[k][4]:
-                        self.bounds[i] = self.params.bounds[k][0:3]
+                    if ft >= self.params.bounds[k][-2] and ft < self.params.bounds[k][-1]:
+                        self.bounds[i] = self.params.bounds[k][0:6]
                         break
             else:
                 if not make_cyclic:
-                    self.bounds[i] = self.params.bounds[-1][0:3]
+                    self.bounds[i] = self.params.bounds[-1][0:6]
                 else:
                     # make this cyclic later
                     pass

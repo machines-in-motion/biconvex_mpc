@@ -41,7 +41,7 @@ mg.update_motion_params(plan, sim_t)
 
 time.sleep(2)
 
-plot_time = 0.001
+plot_time = -0.001
 
 for o in range(int(500*(plan_freq/sim_dt))):
 
@@ -56,9 +56,9 @@ for o in range(int(500*(plan_freq/sim_dt))):
         f = f[lag:]
         index = 0
 
-        if sim_t > plot_time:
-            mg.plot(q,v, plot_force=False)
-            assert False
+        # if sim_t > plot_time:
+        #     mg.plot(q,v, plot_force=False)
+        #     assert False
     q_des = xs[index][:pin_robot.model.nq].copy()
     dq_des = xs[index][pin_robot.model.nq:].copy()
     tau = robot_id_ctrl.id_joint_torques(q, v, q_des, dq_des, us[index], f[index], contact_configuration)

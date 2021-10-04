@@ -27,6 +27,12 @@ namespace ik{
         // terminal cost model
         tcost_model_ = boost::make_shared<crocoddyl::CostModelSum>(state_);  
         rint_arr_ = std::vector< boost::shared_ptr<crocoddyl::ActionModelAbstract>>(n_col_);
+
+        // 
+        ik_com_opt_.resize(n_col+1, 3);
+        ik_com_opt_.setZero();
+        ik_mom_opt_.resize(n_col+1, 6);
+        ik_mom_opt_.setZero();
     };
 
     void InverseKinematics::setup_costs(Eigen::VectorXd dt){
@@ -74,6 +80,26 @@ namespace ik{
             opt_mom(i,1) /= m_;
             opt_mom(i,2) /= m_;
         }
-
     }
-}
+
+    Eigen::MatrixXd InverseKinematics::return_opt_com(){
+        xs_ = ddp_->get_xs();
+        for(unsigned i = 0; i < n_col_+1; ++i){
+            pinocchio::computeCentroidalMomentum(rmodel_, rdata_, xs_[i].head(rmodel_.nq), xs_[i].tail(rmodel_.nv));
+            ik_com_opt_.row(i) = rdata_.com[0];
+        }
+        return ik_com_opt_;
+    }
+
+    Eigen::MatrixXd InverseKinematics::return_opt_mom(){
+        xs_ = ddp_->get_xs();
+        for(unsigned i = 0; i < n_col_+1; ++i){
+            pinocchio::computeCentroidalMomentum(rmodel_, rdata_, xs_[i].head(rmodel_.nq), xs_[i].tail(rmodel_.nv));
+            ik_mom_opt_.row(i) = rdata_.hg.toVector();
+            ik_mom_opt_(i,0) /= m_; 
+            ik_mom_opt_(i,1) /= m_;
+            ik_mom_opt_(i,2) /= m_;
+        }
+        return ik_mom_opt_;
+    }
+};

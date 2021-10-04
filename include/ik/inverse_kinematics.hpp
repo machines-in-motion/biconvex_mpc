@@ -52,6 +52,8 @@ namespace ik{
 
             std::vector<Eigen::VectorXd> get_xs() {return ddp_->get_xs();};
             std::vector<Eigen::VectorXd> get_us() {return ddp_->get_us();};
+            Eigen::MatrixXd return_opt_com();
+            Eigen::MatrixXd return_opt_mom();
 
 
             // cost related functions
@@ -90,7 +92,6 @@ namespace ik{
 
             void compute_optimal_com_and_mom(Eigen::MatrixXd &pt_com, Eigen::MatrixXd &opt_mom);
 
-
         protected:
             //robot mass
             double m_;
@@ -125,6 +126,10 @@ namespace ik{
 
             std::vector<Eigen::VectorXd> xs_;
 
+            // for plotting and kino-dyn
+            Eigen::MatrixXd ik_com_opt_;
+            Eigen::MatrixXd ik_mom_opt_;
+            
     };
 
     

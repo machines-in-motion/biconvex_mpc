@@ -55,6 +55,7 @@ plan.X_nom = [[0.2, 0, 0.22, 0, 0, 0, 0, 0.00, 0.0, 0.0, st],
               [0.2, 0, 0.22, 0, 0, 0, 0, 0.0, 0., st+flight_time, T]]
 
 plan.X_ter = [0.2, 0, 0.22, 0, 0, 0, 0, 0.0, 0.0]
+plan.bounds = [[0.25, 0.25, 0.25, 0, T]]
 
 # ik optimization params
 

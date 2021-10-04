@@ -23,6 +23,8 @@ PYBIND11_MODULE(inverse_kinematics_cpp, m)
     ik.def("optimize", &ik::InverseKinematics::optimize);
     ik.def("get_xs", &ik::InverseKinematics::get_xs);
     ik.def("get_us", &ik::InverseKinematics::get_us);
+    ik.def("return_opt_com", &ik::InverseKinematics::return_opt_com);
+    ik.def("return_opt_mom", &ik::InverseKinematics::return_opt_mom);
 
     // cost
     ik.def("add_position_tracking_task", &ik::InverseKinematics::add_position_tracking_task);

@@ -10,11 +10,11 @@ from blmc_controllers.robot_id_controller import InverseDynamicsController
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import AbstractEnv
 from abstract_acyclic_gen import SoloAcyclicGen
 
-from motions.plan_cartwheel import plan
+# from motions.plan_cartwheel import plan
 # from motions.rearing import plan
-#from motions.plan_hifive import plan
-#from motions.stand import plan
-#from motions.plan_jump import plan
+# from motions.plan_hifive import plan
+# from motions.stand import plan
+from motions.plan_jump import plan
 
 pin_robot = Solo12Config.buildRobotWrapper()
 rmodel = pin_robot.model
@@ -32,7 +32,7 @@ sim_t = 0.0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-plan_freq = 0.6 # sec
+plan_freq = 0.05 # sec
 update_time = 0.0 # sec (time of lag)
 lag = int(update_time/sim_dt)
 
@@ -41,7 +41,7 @@ mg.update_motion_params(plan, sim_t)
 
 time.sleep(2)
 
-plot_time = np.inf
+plot_time = 0.001
 
 for o in range(int(500*(plan_freq/sim_dt))):
 
@@ -57,8 +57,8 @@ for o in range(int(500*(plan_freq/sim_dt))):
         index = 0
 
         if sim_t > plot_time:
-            mg.plot(q,v)
-
+            mg.plot(q,v, plot_force=False)
+            assert False
     q_des = xs[index][:pin_robot.model.nq].copy()
     dq_des = xs[index][pin_robot.model.nq:].copy()
     tau = robot_id_ctrl.id_joint_torques(q, v, q_des, dq_des, us[index], f[index], contact_configuration)

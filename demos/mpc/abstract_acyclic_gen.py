@@ -309,8 +309,6 @@ class SoloAcyclicGen:
         print("Solve Time : ", t3 - t2)
         print(" ================================== ")
 
-        com_opt = self.mp.return_opt_com()
-        mom_opt = self.mp.return_opt_mom()
         F_opt = self.mp.return_opt_f()
         xs = self.ik.get_xs()
         us = self.ik.get_us()
@@ -322,32 +320,33 @@ class SoloAcyclicGen:
                 self.xs_int = np.linspace(xs[i], xs[i+1], int(self.dt_arr[i]/0.001))
                 self.us_int = np.linspace(us[i], us[i+1], int(self.dt_arr[i]/0.001))
 
-                self.com_int = np.linspace(com_opt[i], com_opt[i+1], int(self.dt_arr[i]/0.001))
-                self.mom_int = np.linspace(mom_opt[i], mom_opt[i+1], int(self.dt_arr[i]/0.001))
             else:
                 self.f_int =  np.vstack((self.f_int, np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i+1):n_eff*(i+2)], int(self.dt_arr[i]/0.001))))
                 self.xs_int = np.vstack((self.xs_int, np.linspace(xs[i], xs[i+1], int(self.dt_arr[i]/0.001))))
                 self.us_int = np.vstack((self.us_int, np.linspace(us[i], us[i+1], int(self.dt_arr[i]/0.001))))
 
-                self.com_int = np.vstack((self.com_int, np.linspace(com_opt[i], com_opt[i+1], int(self.dt_arr[i]/0.001))))
-                self.mom_int = np.vstack((self.mom_int, np.linspace(mom_opt[i], mom_opt[i+1], int(self.dt_arr[i]/0.001))))
-
         return self.xs_int, self.us_int, self.f_int
 
-    def plot(self, q, v):
+    def plot(self, q, v, plot_force = True):
         com_opt = self.mp.return_opt_com()
+        mom_opt = self.mp.return_opt_mom()
         F_opt = self.mp.return_opt_f()
-        momentum_opt = self.mp.return_opt_mom()
+        ik_com_opt = self.ik.return_opt_com()
+        ik_mom_opt = self.ik.return_opt_mom()
+                
 
         com = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
 
         # Plot Center of Mass
         fig, ax = plt.subplots(3,1)
-        ax[0].plot(com_opt[:, 0], label="com x")
+        ax[0].plot(com_opt[:, 0], label="Dyn com x")
+        ax[0].plot(ik_com_opt[:, 0], label="IK com x")
         ax[0].plot(com[0], 'o', label="Current Center of Mass x")
-        ax[1].plot(com_opt[:, 1], label="com y")
+        ax[1].plot(com_opt[:, 1], label="Dyn com y")
+        ax[1].plot(ik_com_opt[:, 1], label="IK com y")
         ax[1].plot(com[1], 'o', label="Current Center of Mass y")
-        ax[2].plot(com_opt[:, 2], label="com z")
+        ax[2].plot(com_opt[:, 2], label="Dyn com z")
+        ax[2].plot(ik_com_opt[:, 2], label="IK com z")
         ax[2].plot(com[2], 'o', label="Current Center of Mass z")
 
         ax[0].grid()
@@ -358,20 +357,24 @@ class SoloAcyclicGen:
         ax[2].legend()
 
         # Plot End-Effector Forces
-        fig, ax_f = plt.subplots(self.n_eff, 1)
-        for n in range(self.n_eff):
-            ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
-            ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
-            ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
+        if plot_force:
+            fig, ax_f = plt.subplots(self.n_eff, 1)
+            for n in range(self.n_eff):
+                ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
+                ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
+                ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
 
-            ax_f[n].grid()
-            ax_f[n].legend()
+                ax_f[n].grid()
+                ax_f[n].legend()
 
         # Plot Momentum
         fig, ax_m = plt.subplots(3,1)
-        ax_m[0].plot(momentum_opt[:, 0], label = "linear_momentum x")
-        ax_m[1].plot(momentum_opt[:, 1], label = "linear_momentum y")
-        ax_m[2].plot(momentum_opt[:, 2], label = "linear_momentum z")
+        ax_m[0].plot(mom_opt[:, 0], label = "Dyn linear_momentum x")
+        ax_m[0].plot(ik_mom_opt[:, 0], label="IK linear_momentum x")
+        ax_m[1].plot(mom_opt[:, 1], label = "linear_momentum y")
+        ax_m[1].plot(ik_mom_opt[:, 1], label="IK linear_momentum y")
+        ax_m[2].plot(mom_opt[:, 2], label = "linear_momentum z")
+        ax_m[2].plot(ik_mom_opt[:, 2], label="IK linear_momentum z")
         ax_m[0].grid()
         ax_m[0].legend()
 
@@ -380,6 +383,5 @@ class SoloAcyclicGen:
 
         ax_m[2].grid()
         ax_m[2].legend()
-
 
         plt.show()

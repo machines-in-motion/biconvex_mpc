@@ -41,30 +41,43 @@ mg.update_motion_params(plan, sim_t)
 
 time.sleep(2)
 
-plot_time = -0.001
+plot_time = 0.005
+
+## Data plotting (must be moved into a class)
+q_arr = []
+v_arr = []
+F_arr = []
 
 for o in range(int(500*(plan_freq/sim_dt))):
 
     contact_configuration = robot.get_current_contacts()
     q, v = robot.get_state()
     robot_id_ctrl.set_gains(plan.kp, plan.kd)
+    q_arr.append(q)
+    v_arr.append(v)
+    F_arr.append(robot.get_ground_reaction_forces())
 
     if pln_ctr == 0 or sim_t == 0:
+        # if sim_t > max(plot_time, 0.001):
+            # mg.plot(q_arr, v_arr, F_arr, plot_force=True)
+            # assert False
+
         xs, us, f = mg.optimize(q, v, sim_t)
         xs = xs[lag:]
         us = us[lag:]
         f = f[lag:]
         index = 0
+    
+        q_arr = []
+        v_arr = []
+        F_arr = []
 
-        # if sim_t > plot_time:
-        #     mg.plot(q,v, plot_force=False)
-        #     assert False
     q_des = xs[index][:pin_robot.model.nq].copy()
     dq_des = xs[index][pin_robot.model.nq:].copy()
     tau = robot_id_ctrl.id_joint_torques(q, v, q_des, dq_des, us[index], f[index], contact_configuration)
     robot.send_joint_command(tau)
 
-    time.sleep(0.005)
+    # time.sleep(0.005)
 
     sim_t += sim_dt
     sim_t = np.round(sim_t, 3)

@@ -71,12 +71,16 @@ plan.swing_wt = [[[1e2, 0.3946,   0.14695,  0.0, st + 0.25*flight_time, st + 0.5
 
 x_reg1 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
 
-state_wt_1 = np.array([1e-2, 1e-2, 1e2] + [5.0, 5.0, 5.0] + 4*[1e1, 1e1, 1e1] +
+state_wt_1 = np.array([1e-2, 1e-2, 1e-2] + [5.0, 5.0, 5.0] + 4*[1e1, 1e-1, 1e-1] +
+                      [0.00, 0.00, 1e-5] + [5.0, 5.0, 5.0] + 4*[3.5, 3.5, 3.5]
+                      )
+
+state_wt_2 = np.array([1e-2, 1e-2, 1e2] + [5.0, 5.0, 5.0] + 4*[1e1, 1e1, 1e1] +
                       [0.00, 0.00, 0.00] + [5.0, 5.0, 5.0] + 4*[3.5, 3.5, 3.5]
                       )
 
 plan.state_reg = [np.hstack((x_reg1, [0, T]))]
-plan.state_wt = [np.hstack((state_wt_1, [0, T]))]
+plan.state_wt = [np.hstack((state_wt_1, [0, st])), np.hstack((state_wt_2, [st, T]))]
 plan.state_scale = [[1e-2, 0, T]]
 
 ctrl_wt = [0, 0, 0] + [0, 0, 0] + [0.0]*(rmodel.nv-6)
@@ -86,4 +90,4 @@ plan.ctrl_scale = [[1e-4, 0, T]]
 
 # controller details
 plan.kp = 0.0
-plan.kd = 0.0
+plan.kd = 0.00

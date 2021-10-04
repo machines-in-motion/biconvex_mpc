@@ -32,6 +32,10 @@ class AbstractEnv:
             self.robot.reset_state(q0, v0)
             self.env.launch_server()
 
+        ## For data recording
+        self.q_arr = []
+        self.v_arr = []
+
     def get_state(self):
         """
         returns the current state of the robot
@@ -70,3 +74,11 @@ class AbstractEnv:
     def create_height_map_png(self, x_center, y_center, path_to_png, size, scale, z_offset):
         height_map = self.env.create_height_map_png(x_center, y_center, path_to_png, size, scale, z_offset)
         return height_map
+
+    def get_ground_reaction_forces(self):
+        """
+        returns ground reaction forces from the simulator
+        """
+        forces = self.robot.get_contact_forces()
+        return forces
+

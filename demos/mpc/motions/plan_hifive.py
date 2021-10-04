@@ -22,6 +22,7 @@ plan = ACyclicMotionParams("solo12", "hifive")
 
 st = 0.4
 rt = 0.3
+jt = 0.3
 T = 1.2
 dt = 5e-2
 

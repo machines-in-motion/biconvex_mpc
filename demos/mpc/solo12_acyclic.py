@@ -11,7 +11,7 @@ from py_biconvex_mpc.bullet_utils.solo_mpc_env import AbstractEnv
 from abstract_acyclic_gen import SoloAcyclicGen
 
 from motions.plan_cartwheel import plan
-from motions.rearing import plan
+# from motions.rearing import plan
 #from motions.plan_hifive import plan
 #from motions.stand import plan
 #from motions.plan_jump import plan
@@ -32,7 +32,7 @@ sim_t = 0.0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-plan_freq = 0.05 # sec
+plan_freq = 0.6 # sec
 update_time = 0.0 # sec (time of lag)
 lag = int(update_time/sim_dt)
 
@@ -64,7 +64,7 @@ for o in range(int(500*(plan_freq/sim_dt))):
     tau = robot_id_ctrl.id_joint_torques(q, v, q_des, dq_des, us[index], f[index], contact_configuration)
     robot.send_joint_command(tau)
 
-    #time.sleep(0.001)
+    time.sleep(0.005)
 
     sim_t += sim_dt
     sim_t = np.round(sim_t, 3)

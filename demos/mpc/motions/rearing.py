@@ -56,6 +56,8 @@ plan.X_nom = [[0.2, 0, 0.22, 0, 0, 0, 0, -0.05, 0.0, 0.0, st],
 
 plan.X_ter = [0.2, 0, 0.22, 0, 0, 0, 0, 0.0, 0.0]
 
+plan.bounds = [[0.25, 0.25, 0.25, 0, T]]
+
 # ik optimization params
 
 plan.cent_wt = [1e2, 1e2]  # CoM, Momentum

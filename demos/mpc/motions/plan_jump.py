@@ -21,7 +21,7 @@ x0 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
 plan = ACyclicMotionParams("solo12", "jump_fwd")
 
 st = 0.4
-flight_time = 0.4
+flight_time = 0.3
 T = 1.2
 dt = 5e-2
 plan.n_col = 30
@@ -89,5 +89,5 @@ plan.ctrl_reg = [np.hstack((np.zeros(rmodel.nv), [0, T]))]
 plan.ctrl_scale = [[1e-4, 0, T]]
 
 # controller details
-plan.kp = 0.0
-plan.kd = 0.00
+plan.kp = 0.05
+plan.kd = 0.01

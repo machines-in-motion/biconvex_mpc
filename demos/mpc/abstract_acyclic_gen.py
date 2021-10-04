@@ -316,14 +316,14 @@ class SoloAcyclicGen:
         n_eff = 3*len(self.eff_names)
         for i in range(len(xs)-2):
             if i == 0:
-                self.f_int = np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i+1):n_eff*(i+2)], int(self.dt_arr[i]/0.001))
-                self.xs_int = np.linspace(xs[i], xs[i+1], int(self.dt_arr[i]/0.001))
-                self.us_int = np.linspace(us[i], us[i+1], int(self.dt_arr[i]/0.001))
+                self.f_int = np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i):n_eff*(i+1)], int(self.dt_arr[i]/0.001))
+                self.xs_int = np.linspace(xs[i], xs[i], int(self.dt_arr[i]/0.001))
+                self.us_int = np.linspace(us[i], us[i], int(self.dt_arr[i]/0.001))
 
             else:
-                self.f_int =  np.vstack((self.f_int, np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i+1):n_eff*(i+2)], int(self.dt_arr[i]/0.001))))
-                self.xs_int = np.vstack((self.xs_int, np.linspace(xs[i], xs[i+1], int(self.dt_arr[i]/0.001))))
-                self.us_int = np.vstack((self.us_int, np.linspace(us[i], us[i+1], int(self.dt_arr[i]/0.001))))
+                self.f_int =  np.vstack((self.f_int, np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i):n_eff*(i+1)], int(self.dt_arr[i]/0.001))))
+                self.xs_int = np.vstack((self.xs_int, np.linspace(xs[i], xs[i], int(self.dt_arr[i]/0.001))))
+                self.us_int = np.vstack((self.us_int, np.linspace(us[i], us[i], int(self.dt_arr[i]/0.001))))
 
         return self.xs_int, self.us_int, self.f_int
 
@@ -357,12 +357,13 @@ class SoloAcyclicGen:
         ax[2].legend()
 
         # Plot End-Effector Forces
+        print(len(F_arr), len(self.f_int))
         if plot_force:
             fig, ax_f = plt.subplots(self.n_eff, 1)
             for n in range(self.n_eff):
-                # ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
-                # ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
-                # ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
+                ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
+                ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
+                ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
                 ax_f[n].plot(self.f_int[:,3*n], label = self.eff_names[n] + " Fx")
                 ax_f[n].plot(self.f_int[:,3*n+1], label = self.eff_names[n] + " Fy")
                 ax_f[n].plot(self.f_int[:,3*n+2], label = self.eff_names[n] + " Fz")

@@ -14,7 +14,7 @@ from motions.plan_cartwheel import plan
 from motions.rearing import plan
 #from motions.plan_hifive import plan
 #from motions.stand import plan
-from motions.plan_jump import plan
+#from motions.plan_jump import plan
 
 pin_robot = Solo12Config.buildRobotWrapper()
 rmodel = pin_robot.model

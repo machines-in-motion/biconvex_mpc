@@ -162,6 +162,7 @@ class SoloAcyclicGen:
 
         ## IK Costs ##
         self.dt_arr = np.zeros(self.ik_horizon)
+
         # adding contact costs
         for i in range(self.ik_horizon):
             for j in range(len(self.eff_names)):
@@ -170,21 +171,19 @@ class SoloAcyclicGen:
                                                               "cnt_" + str(0) + self.eff_names[j], i)
 
         ## Adding swing costs
-        if isinstance(self.params.swing_wt, np.ndarray): 
+        if isinstance(self.params.swing_wt, np.ndarray) or isinstance(self.params.swing_wt, list):
             ft = t - self.params.dt_arr[0]
             i = 0
             while i < self.ik_horizon:    
-                ft += self.params.dt_arr[min(i,self.ik_horizon-1)]
-                self.dt_arr[min(i,self.ik_horizon-1)] = self.params.dt_arr[min(i,self.ik_horizon-1)]
+                ft += self.params.dt_arr[min(i, self.ik_horizon-1)]
                 ft = np.round(ft, 3)
                 if ft < self.params.swing_wt[-1][0][5]:
                     for k in range(len(self.params.swing_wt)):
-                        if ft >= self.params.swing_wt[k][0][4] and ft < self.params.swing_wt[k][0][5]:
+                        if self.params.swing_wt[k][0][4] <= ft < self.params.swing_wt[k][0][5]:
                             for j in range(len(self.eff_names)):
                                 if self.params.swing_wt[k][j][0] > 0:
                                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.params.swing_wt[k][j][1:4], self.params.swing_wt[k][j][0],
                                                                 "swing_" + str(0) + self.eff_names[j], i)
-                                    print("Adding Swing Cost")
                             break
                 else:
                     if not make_cyclic:

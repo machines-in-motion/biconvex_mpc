@@ -41,7 +41,7 @@ mg.update_motion_params(plan, sim_t)
 
 time.sleep(2)
 
-plot_time = 0.0
+plot_time = np.inf
 
 for o in range(int(500*(plan_freq/sim_dt))):
 

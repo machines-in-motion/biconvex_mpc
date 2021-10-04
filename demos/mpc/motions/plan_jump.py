@@ -68,7 +68,7 @@ plan.swing_wt = [[[1e2, 0.3946,   0.14695,  0.0, st + 0.25*flight_time, st + 0.5
 
 x_reg1 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
 
-state_wt_1 = np.array([1e-2, 1e-2, 1e2 ] + [5.0, 5.0, 5.0] + 4*[1e1, 1e1, 1e1] + \
+state_wt_1 = np.array([1e-2, 1e-2, 1e2] + [5.0, 5.0, 5.0] + 4*[1e1, 1e1, 1e1] +
                       [0.00, 0.00, 0.00] + [5.0, 5.0, 5.0] + 4*[3.5, 3.5, 3.5]
                       )
 

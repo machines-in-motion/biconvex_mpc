@@ -14,7 +14,7 @@ from motions.plan_cartwheel import plan
 from motions.rearing import plan
 #from motions.plan_hifive import plan
 #from motions.stand import plan
-#from motions.plan_jump import plan
+from motions.plan_jump import plan
 
 pin_robot = Solo12Config.buildRobotWrapper()
 rmodel = pin_robot.model
@@ -41,7 +41,7 @@ mg.update_motion_params(plan, sim_t)
 
 time.sleep(2)
 
-plot_time = np.inf
+plot_time = 0.0
 
 for o in range(int(500*(plan_freq/sim_dt))):
 

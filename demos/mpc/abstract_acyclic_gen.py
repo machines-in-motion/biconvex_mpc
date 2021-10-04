@@ -126,8 +126,6 @@ class SoloAcyclicGen:
         X_init = np.zeros(9)
         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
         X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
-        print("Center of mass: ")
-        print(X_init[0:3])
         X_init[3:] = np.array(self.rdata.hg)
         X_init[3:6] /= self.m
 
@@ -186,6 +184,7 @@ class SoloAcyclicGen:
                                 if self.params.swing_wt[k][j][0] > 0:
                                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.params.swing_wt[k][j][1:4], self.params.swing_wt[k][j][0],
                                                                 "swing_" + str(0) + self.eff_names[j], i)
+                                    print("Adding Swing Cost")
                             break
                 else:
                     if not make_cyclic:
@@ -324,17 +323,16 @@ class SoloAcyclicGen:
         F_opt = self.mp.return_opt_f()
         momentum_opt = self.mp.return_opt_mom()
 
+        com = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
+
         # Plot Center of Mass
         fig, ax = plt.subplots(3,1)
         ax[0].plot(com_opt[:, 0], label="com x")
-        ax[0].plot(q[0], 'o', label="Currente Center of Mass x")
+        ax[0].plot(com[0], 'o', label="Current Center of Mass x")
         ax[1].plot(com_opt[:, 1], label="com y")
-        ax[1].plot(q[1], 'o', label="Currente Center of Mass y")
+        ax[1].plot(com[1], 'o', label="Current Center of Mass y")
         ax[2].plot(com_opt[:, 2], label="com z")
-        ax[2].plot(q[2], 'o', label="Current Center of Mass z")
-
-        print("Z_error: ")
-        print(abs(q[2]-com_opt[:, 2][0]))
+        ax[2].plot(com[2], 'o', label="Current Center of Mass z")
 
         ax[0].grid()
         ax[0].legend()

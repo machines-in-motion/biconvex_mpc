@@ -61,10 +61,10 @@ plan.X_ter = [0.2, 0, 0.22, 0, 0, 0, 0, 0.0, 0.0]
 plan.cent_wt = [1e1, 1e4]
 plan.cnt_wt = 1e3
 
-# plan.swing_wt = [[[1e2, 0.3946,   0.14695,  0.0, st + 0.25*flight_time, st + 0.5*flight_time],
-#                   [1e2, 0.3946,   -0.14695,  0.0, st + 0.25*flight_time, st + 0.5*flight_time],
-#                   [1e2,  0.0054,   0.14695,  0., st + 0.25*flight_time, st + 0.5*flight_time],
-#                   [1e2,  0.0054,   -0.14695,  0., st + 0.25*flight_time, st + 0.5*flight_time]]]
+plan.swing_wt = [[[1e2, 0.3946,   0.14695,  0.0, st + 0.25*flight_time, st + 0.5*flight_time],
+                  [1e2, 0.3946,   -0.14695,  0.0, st + 0.25*flight_time, st + 0.5*flight_time],
+                  [1e2,  0.0054,   0.14695,  0., st + 0.25*flight_time, st + 0.5*flight_time],
+                  [1e2,  0.0054,   -0.14695,  0., st + 0.25*flight_time, st + 0.5*flight_time]]]
 
 x_reg1 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
 

@@ -76,7 +76,7 @@ class BiConvexMP{
                 {prob_data_f.lb_ = lb; prob_data_f.ub_ = ub;}
 
         // box constraints created on parameters and contact plan
-        void create_bound_constraints(double bx, double by, double bz, double fx_max, double fy_max, double fz_max);
+        void create_bound_constraints(Eigen::MatrixXd b, double fx_max, double fy_max, double fz_max);
         // creates basic quadratic costs for optimizing X
         void create_cost_X(Eigen::VectorXd W_X, Eigen::VectorXd W_X_ter, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom);
         void create_cost_F(Eigen::VectorXd W_F);

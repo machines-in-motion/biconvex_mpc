@@ -25,7 +25,7 @@ namespace motion_planner{
 
     };
 
-    void BiConvexMP::create_bound_constraints(double bx, double by, double bz, double fx_max, double fy_max, double fz_max){
+    void BiConvexMP::create_bound_constraints(Eigen::MatrixXd b, double fx_max, double fy_max, double fz_max){
         
         prob_data_x.lb_ = -1*std::numeric_limits<double>::infinity()*Eigen::VectorXd::Ones(prob_data_x.lb_.size());        
         prob_data_x.ub_ = std::numeric_limits<double>::infinity()*Eigen::VectorXd::Ones(prob_data_x.lb_.size());        
@@ -42,17 +42,16 @@ namespace motion_planner{
                 prob_data_f.ub_[3*n_eff_*i+ j*3 + 2] = fz_max;                    
             }
             if (centroidal_dynamics.cnt_arr_.row(i).sum() > 0){
-                prob_data_x.lb_[9*i] = centroidal_dynamics.r_[i].col(0).maxCoeff() - bx;                 
-                prob_data_x.lb_[9*i+1] = centroidal_dynamics.r_[i].col(1).maxCoeff() - by;                 
+                prob_data_x.lb_[9*i] = centroidal_dynamics.r_[i].col(0).maxCoeff() - b(i,0);                 
+                prob_data_x.lb_[9*i+1] = centroidal_dynamics.r_[i].col(1).maxCoeff() - b(i,1);                 
                 prob_data_x.lb_[9*i+2] = centroidal_dynamics.r_[i].col(2).maxCoeff() - 0;
 
-                prob_data_x.ub_[9*i] = centroidal_dynamics.r_[i].col(0).minCoeff() + bx;                 
-                prob_data_x.ub_[9*i+1] = centroidal_dynamics.r_[i].col(1).minCoeff() + by;                 
-                prob_data_x.ub_[9*i+2] = centroidal_dynamics.r_[i].col(2).minCoeff() + bz;
+                prob_data_x.ub_[9*i] = centroidal_dynamics.r_[i].col(0).minCoeff() + b(i,0);                 
+                prob_data_x.ub_[9*i+1] = centroidal_dynamics.r_[i].col(1).minCoeff() + b(i,1);                 
+                prob_data_x.ub_[9*i+2] = centroidal_dynamics.r_[i].col(2).minCoeff() + b(i,2);
                                  
             }
         };
-            
     };
 
     void BiConvexMP::create_cost_X(Eigen::VectorXd W_X, Eigen::VectorXd W_X_ter, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom){

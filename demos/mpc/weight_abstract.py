@@ -61,6 +61,8 @@ class ACyclicMotionParams:
         self.X_ter = None
         self.rho = None       #ADMM Rho parameter
 
+        self.bounds = None         # Bound constraints to be set based on time [[bx, by, bz, st, et]]
+
 
         ## Inverse Kinematic valuess
 

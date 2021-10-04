@@ -35,9 +35,6 @@ class SoloAcyclicGen:
             self.ee_frame_id.append(self.rmodel.getFrameId(self.eff_names[i]))
         
         # Set up constraints for Dynamics
-        self.bx = 0.45
-        self.by = 0.45
-        self.bz = 0.45
         self.fx_max = 25.0
         self.fy_max = 25.0
         self.fz_max = 25.0
@@ -155,9 +152,29 @@ class SoloAcyclicGen:
 
             i += 1
 
+        self.bounds = np.zeros((self.horizon, 3))
+        ft = t - self.params.dt_arr[0]
+        i = 0
+        while i < self.params.n_col:    
+            ft += self.params.dt_arr[i]
+            ft = np.round(ft, 3)
+            if ft < self.params.bounds[-1][-1]:
+                for k in range(len(self.params.bounds)):
+                    if ft >= self.params.bounds[k][3] and ft < self.params.bounds[k][4]:
+                        self.bounds[i] = self.params.bounds[k][0:3]
+                        break
+            else:
+                if not make_cyclic:
+                    self.bounds[i] = self.params.bounds[-1][0:3]
+                else:
+                    # make this cyclic later
+                    pass
+
+            i += 1
+
         X_nom[0:9] = X_init
 
-        self.mp.create_bound_constraints(self.bx, self.by, self.bz, self.fx_max, self.fy_max, self.fz_max)
+        self.mp.create_bound_constraints(self.bounds, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(np.tile(self.params.W_X, self.horizon), self.params.W_X_ter, X_ter, X_nom)
         self.mp.create_cost_F(np.tile(self.params.W_F, self.horizon))
 

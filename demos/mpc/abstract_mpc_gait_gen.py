@@ -4,13 +4,11 @@
 
 import time
 import numpy as np
-from numpy.lib.arraysetops import isin
 import pinocchio as pin
 from inverse_kinematics_cpp import InverseKinematics
 from biconvex_mpc_cpp import BiconvexMP, KinoDynMP
 from gait_planner_cpp import GaitPlanner
-import math
-#from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 
 class SoloMpcGaitGen:
 

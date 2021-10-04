@@ -8,7 +8,6 @@ import pinocchio as pin
 from inverse_kinematics_cpp import InverseKinematics
 from biconvex_mpc_cpp import KinoDynMP
 
-import math
 from matplotlib import pyplot as plt
 
 class SoloAcyclicGen:
@@ -106,6 +105,7 @@ class SoloAcyclicGen:
                     dt = self.params.dt_arr[i]
             else:
                 dt = self.params.dt_arr[i]
+
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             i += 1
         
@@ -118,7 +118,6 @@ class SoloAcyclicGen:
             t : current time into the plan
         """
         # initial and terminal state
-        
         self.x0 = np.hstack((q,v))
         
         X_init = np.zeros(9)
@@ -180,24 +179,24 @@ class SoloAcyclicGen:
 
         ## IK Costs ##
         self.dt_arr = np.zeros(self.ik_horizon)
+
         # adding contact costs
         for i in range(self.ik_horizon):
             for j in range(len(self.eff_names)):
                 if self.cnt_plan[i][j][0] == 1:
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], self.params.cnt_wt,
                                                               "cnt_" + str(0) + self.eff_names[j], i)
-        
+
         ## Adding swing costs
-        if isinstance(self.params.swing_wt, np.ndarray): 
+        if isinstance(self.params.swing_wt, np.ndarray) or isinstance(self.params.swing_wt, list):
             ft = t - self.params.dt_arr[0]
             i = 0
             while i < self.ik_horizon:    
-                ft += self.params.dt_arr[min(i,self.ik_horizon-1)]
-                self.dt_arr[min(i,self.ik_horizon-1)] = self.params.dt_arr[min(i,self.ik_horizon-1)]
+                ft += self.params.dt_arr[min(i, self.ik_horizon-1)]
                 ft = np.round(ft, 3)
                 if ft < self.params.swing_wt[-1][0][5]:
                     for k in range(len(self.params.swing_wt)):
-                        if ft >= self.params.swing_wt[k][0][4] and ft < self.params.swing_wt[k][0][5]:
+                        if self.params.swing_wt[k][0][4] <= ft < self.params.swing_wt[k][0][5]:
                             for j in range(len(self.eff_names)):
                                 if self.params.swing_wt[k][j][0] > 0:
                                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.params.swing_wt[k][j][1:4], self.params.swing_wt[k][j][0],
@@ -211,9 +210,9 @@ class SoloAcyclicGen:
         ## State regularization
         ft = t - self.params.dt_arr[0]
         i = 0
-        while i < self.ik_horizon + 1:    
+        while i < self.ik_horizon + 1:
             ## is there a more effecient way to handle terminal states?
-            ## TODO: have to make sure that dt is picked from the right index. 
+            ## TODO: have to make sure that dt is picked from the right index.
             ft += self.params.dt_arr[min(i,self.ik_horizon-1)]
             self.dt_arr[min(i,self.ik_horizon-1)] = self.params.dt_arr[min(i,self.ik_horizon-1)]
             ft = np.round(ft, 3)
@@ -225,7 +224,7 @@ class SoloAcyclicGen:
                                         "xReg", self.params.state_wt[k][0:2*self.rmodel.nv],\
                                                     self.params.state_reg[k][0:self.rmodel.nq + self.rmodel.nv])
                         else:
-                            # account for terminal here. 
+                            # account for terminal here.
                             self.ik.add_state_regularization_cost(0, i, self.params.state_scale[k][0], \
                                                                 "xReg", self.params.state_wt[k][0:2*self.rmodel.nv],\
                                                                             self.params.state_reg[k][0:self.rmodel.nq + self.rmodel.nv], True)
@@ -246,10 +245,10 @@ class SoloAcyclicGen:
 
             i += 1
 
-        ## control regularization
+        # control regularization
         ft = t - self.params.dt_arr[0]
         i = 0
-        while i < self.params.n_col + 1:    
+        while i < self.params.n_col + 1:
             ft += self.params.dt_arr[min(i,self.params.n_col-1)]
             ft = np.round(ft, 3)
             if ft < self.params.ctrl_scale[-1][-1]:
@@ -260,7 +259,7 @@ class SoloAcyclicGen:
                                         "ctrlReg", self.params.ctrl_wt[k][0:self.rmodel.nv],\
                                                     self.params.ctrl_reg[k][0:self.rmodel.nv])
                         else:
-                            # account for terminal here. 
+                            # account for terminal here.
                             self.ik.add_ctrl_regularization_cost(0, i, self.params.ctrl_scale[k][0], \
                                                                 "ctrlReg", self.params.ctrl_wt[k][0:self.rmodel.nv],\
                                                                             self.params.ctrl_reg[k][0:self.rmodel.nv], True)
@@ -291,6 +290,10 @@ class SoloAcyclicGen:
             v : current joint velocity
             t : current time into the plan
         """
+        pin.forwardKinematics(self.rmodel, self.rdata, q, np.zeros(self.rmodel.nv))
+        pin.updateFramePlacements(self.rmodel, self.rdata)
+        pin.framesForwardKinematics(self.rmodel, self.rdata, q)
+
         t1 = time.time()
         self.create_contact_plan(q, v, t)
         #Creates costs for IK and Dynamics
@@ -331,30 +334,52 @@ class SoloAcyclicGen:
 
         return self.xs_int, self.us_int, self.f_int
 
-    def plot(self):
+    def plot(self, q, v):
         com_opt = self.mp.return_opt_com()
         F_opt = self.mp.return_opt_f()
+        momentum_opt = self.mp.return_opt_mom()
 
+        com = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
+
+        # Plot Center of Mass
         fig, ax = plt.subplots(3,1)
-        ax[0].plot(com_opt[:,0] ,label = "com x")
-        ax[1].plot(com_opt[:,1] ,label = "com y")
-        ax[2].plot(com_opt[:,2] ,label = "com z")
+        ax[0].plot(com_opt[:, 0], label="com x")
+        ax[0].plot(com[0], 'o', label="Current Center of Mass x")
+        ax[1].plot(com_opt[:, 1], label="com y")
+        ax[1].plot(com[1], 'o', label="Current Center of Mass y")
+        ax[2].plot(com_opt[:, 2], label="com z")
+        ax[2].plot(com[2], 'o', label="Current Center of Mass z")
+
         ax[0].grid()
         ax[0].legend()
-
         ax[1].grid()
         ax[1].legend()
-
         ax[2].grid()
         ax[2].legend()
 
-        fig, ax_f = plt.subplots(self.n_eff,1)
+        # Plot End-Effector Forces
+        fig, ax_f = plt.subplots(self.n_eff, 1)
         for n in range(self.n_eff):
-            ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = "ee: " + str(n) + "Fx")
-            ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = "ee: " + str(n) + "Fy")
-            ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = "ee: " + str(n) + "Fz")
+            ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
+            ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
+            ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
 
             ax_f[n].grid()
             ax_f[n].legend()
+
+        # Plot Momentum
+        fig, ax_m = plt.subplots(3,1)
+        ax_m[0].plot(momentum_opt[:, 0], label = "linear_momentum x")
+        ax_m[1].plot(momentum_opt[:, 1], label = "linear_momentum y")
+        ax_m[2].plot(momentum_opt[:, 2], label = "linear_momentum z")
+        ax_m[0].grid()
+        ax_m[0].legend()
+
+        ax_m[1].grid()
+        ax_m[1].legend()
+
+        ax_m[2].grid()
+        ax_m[2].legend()
+
 
         plt.show()

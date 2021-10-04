@@ -35,6 +35,9 @@ class FISTA
         //Use Second Order Cone Projection
         void set_soc_true() { use_soc_projection_ = true; }
 
+        //Set Friction Cone
+        void set_friction_coefficient(double mu) { mu_ = mu; }
+
     private:
         //Computes step length
         void compute_step_length(Eigen::VectorXd y_k);
@@ -54,7 +57,7 @@ class FISTA
         double t_k;
         double t_k_1;
 
-        double mu = 1.0;
+        double mu_ = 1.0;
     };
 } //namespace solvers
 

@@ -71,6 +71,7 @@ namespace ik{
     };
 
     void InverseKinematics::compute_optimal_com_and_mom(Eigen::MatrixXd &opt_com, Eigen::MatrixXd &opt_mom){
+        // TODO: Change name to optimal_com_vel : to be used for kino-dyn iteration
         xs_ = ddp_->get_xs();
         for(unsigned i = 0; i < n_col_+1; ++i){
             pinocchio::computeCentroidalMomentum(rmodel_, rdata_, xs_[i].head(rmodel_.nq), xs_[i].tail(rmodel_.nv));
@@ -96,9 +97,6 @@ namespace ik{
         for(unsigned i = 0; i < n_col_+1; ++i){
             pinocchio::computeCentroidalMomentum(rmodel_, rdata_, xs_[i].head(rmodel_.nq), xs_[i].tail(rmodel_.nv));
             ik_mom_opt_.row(i) = rdata_.hg.toVector();
-            ik_mom_opt_(i,0) /= m_; 
-            ik_mom_opt_(i,1) /= m_;
-            ik_mom_opt_(i,2) /= m_;
         }
         return ik_mom_opt_;
     }

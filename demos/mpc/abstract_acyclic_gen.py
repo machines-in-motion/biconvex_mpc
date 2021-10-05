@@ -327,15 +327,13 @@ class SoloAcyclicGen:
 
         return self.xs_int, self.us_int, self.f_int
 
-    def plot(self, q_arr, v_arr, F_arr, plot_force = True):
+    def plot(self, q, v, plot_force = True):
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()
         F_opt = self.mp.return_opt_f()
         ik_com_opt = self.ik.return_opt_com()
         ik_mom_opt = self.ik.return_opt_mom()
-        com = pin.centerOfMass(self.rmodel, self.rdata, q_arr[0].copy(), v_arr[0].copy())
-
-        F_arr = np.asarray(F_arr)
+        com = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
 
         # Plot Center of Mass
         fig, ax = plt.subplots(3,1)
@@ -357,22 +355,12 @@ class SoloAcyclicGen:
         ax[2].legend()
 
         # Plot End-Effector Forces
-        print(len(F_arr), len(self.f_int))
         if plot_force:
             fig, ax_f = plt.subplots(self.n_eff, 1)
             for n in range(self.n_eff):
                 ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
                 ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
                 ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
-                ax_f[n].plot(self.f_int[:,3*n], label = self.eff_names[n] + " Fx")
-                ax_f[n].plot(self.f_int[:,3*n+1], label = self.eff_names[n] + " Fy")
-                ax_f[n].plot(self.f_int[:,3*n+2], label = self.eff_names[n] + " Fz")
-
-
-                ax_f[n].plot(F_arr[:,3*n], label = self.eff_names[n] + " Fx")
-                ax_f[n].plot(F_arr[:,3*n+1], label = self.eff_names[n] + " Fy")
-                ax_f[n].plot(F_arr[:,3*n+2], label = self.eff_names[n] + " Fz")
-
                 ax_f[n].grid()
                 ax_f[n].legend()
 

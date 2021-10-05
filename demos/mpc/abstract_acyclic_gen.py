@@ -327,6 +327,28 @@ class SoloAcyclicGen:
 
         return self.xs_int, self.us_int, self.f_int
 
+    def get_plan_freq(self, t):
+        """
+        This function returns the planning frequency based on the plan
+        """
+        for k in range(len(self.params.plan_freq)):
+            if t < self.params.plan_freq[-1][-1]:
+                if t < self.params.plan_freq[k][-1] and t >= self.params.plan_freq[k][-2]:
+                    return self.params.plan_freq[k][0]
+            else:
+                return self.params.plan_freq[-1][0]
+
+    def get_gains(self, t):
+        """
+        returns the gains for the ID controller at different times based on the plan
+        """
+        for k in range(len(self.params.kp)):
+            if t < self.params.kp[-1][-1]:
+                if t < self.params.kp[k][-1] and t >= self.params.kp[k][-2]:
+                    return self.params.kp[k][0], self.params.kd[k][0]
+            else:
+                return self.params.kp[-1][0], self.params.kd[-1][0]
+
     def plot(self, q, v, plot_force = True):
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()

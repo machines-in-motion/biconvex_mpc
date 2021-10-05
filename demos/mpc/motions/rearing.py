@@ -43,6 +43,8 @@ plan.cnt_plan = [[[1.,      0.3946,   0.14695,  0., 0.,  st    ],
 
 plan.n_col = 20
 plan.dt_arr = plan.n_col*[dt, ]
+plan.plan_freq = [[0.4, 0, st + rear_time],
+                  [0.1, st + rear_time, T]]
 
 #  dynamic optimization params
 plan.W_X =        np.array([1e+3, 1e1, 1e+5, 1e-4, 1e-4, 1e-4, 1e+2, 5e+3, 1e+2])
@@ -84,5 +86,5 @@ plan.ctrl_reg = [np.hstack((np.zeros(rmodel.nv), [0, T]))]
 plan.ctrl_scale = [[5e-4, 0, T]]
 
 # controller details
-plan.kp = 2.0
-plan.kd = 0.1
+plan.kp = [[2.0, 0, T]]
+plan.kd = [[0.1, 0, T]]

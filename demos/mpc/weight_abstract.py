@@ -49,7 +49,8 @@ class ACyclicMotionParams:
 
         self.n_col = None #number of collocation points 
         self.dt_arr = None # discretization in each collocation points
-
+        self.plan_freq = None # the time after which a new plan is to be computed
+        
         self.cnt_plan = None # contact plan
 
         ## Dynamic values

@@ -12,10 +12,10 @@ from abstract_acyclic_gen import SoloAcyclicGen
 from data_plotter import DataRecorder
 
 # from motions.plan_cartwheel import plan
-from motions.rearing import plan
+# from motions.rearing import plan
 # from motions.plan_hifive import plan
 # from motions.stand import plan
-# from motions.plan_jump import plan
+from motions.plan_jump import plan
 
 pin_robot = Solo12Config.buildRobotWrapper()
 rmodel = pin_robot.model
@@ -34,7 +34,7 @@ sim_t = 0.0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-plan_freq = 0.4 # sec
+plan_freq = plan.plan_freq[0][0] # sec
 update_time = 0.0 # sec (time of lag)
 lag = int(update_time/sim_dt)
 
@@ -45,11 +45,12 @@ time.sleep(2)
 
 plot_time = 0.005
 
-for o in range(int(10*(plan_freq/sim_dt))):
+for o in range(int(100/sim_dt)):
 
     contact_configuration = robot.get_current_contacts()
     q, v = robot.get_state()
-    robot_id_ctrl.set_gains(plan.kp, plan.kd)
+    kp, kd = mg.get_gains(sim_t)
+    robot_id_ctrl.set_gains(kp, kd)
 
     if pln_ctr == 0 or sim_t == 0:
         # if sim_t > max(plot_time, 0.001):
@@ -74,7 +75,7 @@ for o in range(int(10*(plan_freq/sim_dt))):
 
     sim_t += sim_dt
     sim_t = np.round(sim_t, 3)
-    pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
+    pln_ctr = int((pln_ctr + 1)%(mg.get_plan_freq(sim_t)/sim_dt))
     index += 1
 
 

@@ -41,11 +41,9 @@ lag = int(update_time/sim_dt)
 mg = SoloAcyclicGen(pin_robot, urdf, plan_freq)
 mg.update_motion_params(plan, sim_t)
 
-time.sleep(2)
+plot_time = 1.2
 
-plot_time = 0.005
-
-for o in range(int(100/sim_dt)):
+for o in range(int(5/sim_dt)):
 
     contact_configuration = robot.get_current_contacts()
     q, v = robot.get_state()
@@ -53,16 +51,17 @@ for o in range(int(100/sim_dt)):
     robot_id_ctrl.set_gains(kp, kd)
 
     if pln_ctr == 0 or sim_t == 0:
-        # if sim_t > max(plot_time, 0.001):
-        #     mg.plot(q_arr, v_arr, F_arr, plot_force=True)
-        #     assert False
-
+    
         xs, us, f = mg.optimize(q, v, sim_t)
         xs = xs[lag:]
         us = us[lag:]
         f = f[lag:]
         index = 0
-    
+        
+        # if sim_t > max(plot_time, 0.001):
+        #     mg.plot(q, v, plot_force=False)
+            # assert False
+
     q_des = xs[index][:pin_robot.model.nq].copy()
     dq_des = xs[index][pin_robot.model.nq:].copy()
     tau = robot_id_ctrl.id_joint_torques(q, v, q_des, dq_des, us[index], f[index], contact_configuration)

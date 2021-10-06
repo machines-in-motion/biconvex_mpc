@@ -12,10 +12,10 @@ from abstract_acyclic_gen import SoloAcyclicGen
 from data_plotter import DataRecorder
 
 # from motions.plan_cartwheel import plan
-# from motions.rearing import plan
-# from motions.plan_hifive import plan
+# from motions.rearing import plan as rearing
+# from motions.plan_hifive import plan as hifive
 # from motions.stand import plan
-from motions.plan_jump import plan
+from motions.plan_jump import plan as jump
 
 pin_robot = Solo12Config.buildRobotWrapper()
 rmodel = pin_robot.model
@@ -34,16 +34,16 @@ sim_t = 0.0
 sim_dt = .001
 index = 0
 pln_ctr = 0
-plan_freq = plan.plan_freq[0][0] # sec
 update_time = 0.0 # sec (time of lag)
 lag = int(update_time/sim_dt)
 
-mg = SoloAcyclicGen(pin_robot, urdf, plan_freq)
-mg.update_motion_params(plan, sim_t)
+mg = SoloAcyclicGen(pin_robot, urdf)
+q, v = robot.get_state()
+mg.update_motion_params(jump, q, sim_t)
 
-plot_time = 1.2
+plot_time = 0.0
 
-for o in range(int(5/sim_dt)):
+for o in range(int(1/sim_dt)):
 
     contact_configuration = robot.get_current_contacts()
     q, v = robot.get_state()
@@ -57,11 +57,14 @@ for o in range(int(5/sim_dt)):
         us = us[lag:]
         f = f[lag:]
         index = 0
+        dr.record_plan(xs, us, f, sim_t)
         
-        # if sim_t > max(plot_time, 0.001):
-        #     mg.plot(q, v, plot_force=False)
+        # if sim_t >= plot_time:
+            # print(mg.cnt_plan[0:3])
+            # mg.plot(q, v, plot_force=True)
             # assert False
 
+    # controller
     q_des = xs[index][:pin_robot.model.nq].copy()
     dq_des = xs[index][pin_robot.model.nq:].copy()
     tau = robot_id_ctrl.id_joint_torques(q, v, q_des, dq_des, us[index], f[index], contact_configuration)
@@ -77,5 +80,5 @@ for o in range(int(5/sim_dt)):
     pln_ctr = int((pln_ctr + 1)%(mg.get_plan_freq(sim_t)/sim_dt))
     index += 1
 
-
-dr.plot()
+# dr.plot_plans()
+# dr.plot(False)

@@ -12,17 +12,15 @@ from matplotlib import pyplot as plt
 
 class SoloAcyclicGen:
 
-    def __init__(self, robot, r_urdf, freq):
+    def __init__(self, robot, r_urdf):
         """
         Input:
             robot : robot model
             r_urdf : urdf of robot
-            freq : planning frequency
         """
         self.rmodel = robot.model
         self.rdata = robot.data
         self.r_urdf = r_urdf
-        self.freq = freq
         # --- Set up Dynamics ---
         self.m = pin.computeTotalMass(self.rmodel)
 
@@ -38,14 +36,18 @@ class SoloAcyclicGen:
         self.fy_max = 25.0
         self.fz_max = 25.0
 
-    def update_motion_params(self, weight_abstract, t):
+    def update_motion_params(self, weight_abstract, q0, t0):
         """
         Updates the gaits
         Input:
             weight_abstract : the parameters of the gaits
-            t : time
+            q0 : joint config to bias 
+            t : time to bias
         """
+        self.q0 = q0
+        self.t0 = t0
         self.params = weight_abstract
+        self.freq = self.params.plan_freq[0][0]
         self.horizon = self.params.n_col
         self.ik_horizon = self.params.n_col
         self.kd = KinoDynMP(self.r_urdf, self.m, len(self.eff_names), self.horizon, self.ik_horizon)
@@ -74,7 +76,7 @@ class SoloAcyclicGen:
             t : current time into the plan
         """
         self.cnt_plan = np.zeros((self.horizon, len(self.eff_names), 4))
-        ft = t - self.params.dt_arr[0]
+        ft = t - self.params.dt_arr[0] - self.t0
         i = 0
         while i < self.params.n_col:    
             ft += self.params.dt_arr[i]
@@ -128,7 +130,7 @@ class SoloAcyclicGen:
 
         ## Dyn Costs ##
         X_nom = np.zeros((9*self.horizon))
-        ft = t - self.params.dt_arr[0]
+        ft = t - self.params.dt_arr[0] - self.t0
         i = 0
         while i < self.params.n_col:    
             ft += self.params.dt_arr[i]
@@ -152,7 +154,7 @@ class SoloAcyclicGen:
             i += 1
 
         self.bounds = np.zeros((self.horizon, 6))
-        ft = t - self.params.dt_arr[0]
+        ft = t - self.params.dt_arr[0] - self.t0
         i = 0
         while i < self.params.n_col:    
             ft += self.params.dt_arr[i]
@@ -189,7 +191,7 @@ class SoloAcyclicGen:
 
         ## Adding swing costs
         if isinstance(self.params.swing_wt, np.ndarray) or isinstance(self.params.swing_wt, list):
-            ft = t - self.params.dt_arr[0]
+            ft = t - self.params.dt_arr[0] - self.t0
             i = 0
             while i < self.ik_horizon:    
                 ft += self.params.dt_arr[min(i, self.ik_horizon-1)]
@@ -208,7 +210,7 @@ class SoloAcyclicGen:
                 i += 1
 
         ## State regularization
-        ft = t - self.params.dt_arr[0]
+        ft = t - self.params.dt_arr[0] - self.t0
         i = 0
         while i < self.ik_horizon + 1:
             ## is there a more effecient way to handle terminal states?
@@ -246,7 +248,7 @@ class SoloAcyclicGen:
             i += 1
 
         # control regularization
-        ft = t - self.params.dt_arr[0]
+        ft = t - self.params.dt_arr[0] - self.t0
         i = 0
         while i < self.params.n_col + 1:
             ft += self.params.dt_arr[min(i,self.params.n_col-1)]
@@ -294,14 +296,16 @@ class SoloAcyclicGen:
         pin.updateFramePlacements(self.rmodel, self.rdata)
         pin.framesForwardKinematics(self.rmodel, self.rdata, q)
 
-        t1 = time.time()
+        t1 = time.time()        
+        # q[0:2] -= self.q0[0:2] - [0.2,0] 
+        
         self.create_contact_plan(q, v, t)
         #Creates costs for IK and Dynamics
         self.create_costs(q, v, t)
 
         t2 = time.time()
 
-        self.kd.optimize(q, v, 80, 1)
+        self.kd.optimize(q, v, 50, 1)
 
         t3 = time.time()
 
@@ -332,8 +336,8 @@ class SoloAcyclicGen:
         This function returns the planning frequency based on the plan
         """
         for k in range(len(self.params.plan_freq)):
-            if t < self.params.plan_freq[-1][-1]:
-                if t < self.params.plan_freq[k][-1] and t >= self.params.plan_freq[k][-2]:
+            if t-self.t0 < self.params.plan_freq[-1][-1]:
+                if t-self.t0 < self.params.plan_freq[k][-1] and t-self.t0 >= self.params.plan_freq[k][-2]:
                     return self.params.plan_freq[k][0]
             else:
                 return self.params.plan_freq[-1][0]
@@ -343,8 +347,8 @@ class SoloAcyclicGen:
         returns the gains for the ID controller at different times based on the plan
         """
         for k in range(len(self.params.kp)):
-            if t < self.params.kp[-1][-1]:
-                if t < self.params.kp[k][-1] and t >= self.params.kp[k][-2]:
+            if t-self.t0< self.params.kp[-1][-1]:
+                if t-self.t0 < self.params.kp[k][-1] and t-self.t0 >= self.params.kp[k][-2]:
                     return self.params.kp[k][0], self.params.kd[k][0]
             else:
                 return self.params.kp[-1][0], self.params.kd[-1][0]

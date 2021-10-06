@@ -10,7 +10,8 @@ class BiconvexMotionParams:
 
         self.robot_name = robot_name 
         self.motion_name = motion_name
-
+        self.plan_freq = None # the time after which a new plan is to be computed
+        
         ## Contact Values
         self.gait_period = None     #Total Gait Period
         self.stance_percent = None  #Stance Percent

@@ -26,6 +26,11 @@ class DataRecorder:
         self.des_f = []
         self.des_com = []
 
+        self.xs_plan = []
+        self.us_plan = []
+        self.f_plan = []
+        self.record_time = []
+
     def record_data(self, q, v, tau, f, des_q, des_v, des_a, des_f):
         """
         This function records data
@@ -41,6 +46,62 @@ class DataRecorder:
         self.des_a.append(des_a)
         self.des_f.append(des_f)
         self.des_com.append(pin.centerOfMass(self.rmodel, self.rdata, des_q.copy(), des_v.copy()))
+
+    def record_plan(self, xs, us, f, sim_t):
+        """
+        this function stores the plans
+        """
+        self.xs_plan.append(xs)
+        self.us_plan.append(us)
+        self.f_plan.append(f)
+        self.record_time.append(sim_t)
+
+    def plot_plans(self):
+        
+        t_arr = 0.001*np.arange(1, 1000*self.record_time[-1] + len(self.xs_plan[-1][:,0])+1)
+        self.q = np.asarray(self.q)
+        fig, ax = plt.subplots(3,1)
+        for i in range(len(self.xs_plan)):
+            st = int(1000*self.record_time[i])
+            ax[0].plot(t_arr[st:st + len(self.xs_plan[i][:, 0])], self.xs_plan[i][:, 0], label="plan base x - " + str(0.001*st) + " sec")
+            ax[1].plot(t_arr[st:st + len(self.xs_plan[i][:, 1])], self.xs_plan[i][:, 1], label="plan base y - " + str(0.001*st) + " sec")
+            ax[2].plot(t_arr[st:st + len(self.xs_plan[i][:, 2])], self.xs_plan[i][:, 2], label="plan base z - " + str(0.001*st) + " sec")
+
+        ax[0].plot(t_arr[0:len(self.q[:,0])], self.q[:, 0], label="actual base x")
+        ax[1].plot(t_arr[0:len(self.q[:,0])], self.q[:, 1], label="actual base y")
+        ax[2].plot(t_arr[0:len(self.q[:,0])], self.q[:, 2], label="actual base z")
+        
+        ax[0].grid()
+        ax[0].legend()
+
+        ax[1].grid()
+        ax[1].legend()
+
+        ax[2].grid()
+        ax[2].legend()
+
+        eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
+        
+        fig, ax_f = plt.subplots(4, 1, sharex=True, sharey=True)
+        t_arr = 0.001*np.arange(1, 1000*self.record_time[-1] + len(self.f_plan[-1][:,0])+1)
+        for i in range(len(self.f_plan)):
+            for n in range(4):
+                st = int(1000*self.record_time[i])
+                # ax_f[n].plot(t_arr[st:st+len(self.f_plan[i][:,3*n])], self.f_plan[i][:,3*n],   label = eff_names[n] + " Fx")
+                # ax_f[n].plot(t_arr[st:st+len(self.f_plan[i][:,3*n])], self.f_plan[i][:,3*n+1], label = eff_names[n] + " Fy")
+                ax_f[n].plot(t_arr[st:st+len(self.f_plan[i][:,3*n])], self.f_plan[i][:,3*n+2], label = eff_names[n] + " Fz")
+
+                ax_f[n].grid()
+                ax_f[n].legend()
+        
+        F_arr = np.asarray(self.f)
+        for n in range(4):     
+            # ax_f[n].plot(t_arr[0:len(F_arr[:,3*n])], F_arr[:,3*n], label = "real " + eff_names[n] + " Fx")
+            # ax_f[n].plot(t_arr[0:len(F_arr[:,3*n])], F_arr[:,3*n+1], label = "real " + eff_names[n] + " Fy")
+            ax_f[n].plot(t_arr[0:len(F_arr[:,3*n])], F_arr[:,3*n+2], label = "real " + eff_names[n] + " Fz")
+
+
+        plt.show()
 
     def plot(self, plot_force = True):
 

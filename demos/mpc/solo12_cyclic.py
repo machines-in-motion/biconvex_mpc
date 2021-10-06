@@ -7,7 +7,7 @@ import numpy as np
 import pinocchio as pin
 
 from robot_properties_solo.config import Solo12Config
-from abstract_mpc_gait_gen import SoloMpcGaitGen
+from abstract_cyclic_gen import SoloMpcGaitGen
 from solo12_gait_params import trot, walk, air_bound, bound, still, gallop, jump, balance, bound_turn, trot_turn
 
 from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env

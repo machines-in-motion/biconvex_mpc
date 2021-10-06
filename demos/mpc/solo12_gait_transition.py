@@ -7,34 +7,34 @@ import numpy as np
 import pinocchio as pin
 
 from robot_properties_solo.config import Solo12Config
-from abstract_mpc_gait_gen import SoloMpcGaitGen
+from abstract_cyclic_gen import SoloMpcGaitGen
 from solo12_gait_params import trot, walk, air_bound, bound, still, gallop, jump, balance, bound_turn, trot_turn
 
-from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
+from py_biconvex_mpc.bullet_utils.solo_mpc_env import AbstractEnv
 from blmc_controllers.robot_id_controller import InverseDynamicsController
 
 ## robot config and init
 pin_robot = Solo12Config.buildRobotWrapper()
 urdf_path = Solo12Config.urdf_path
-
-n_eff = 4
 q0 = np.array(Solo12Config.initial_configuration)
 q0[0:2] = 0.0
-
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
 
+robot = AbstractEnv(q0, v0, False, False)
+robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
+
+
 v_des = np.array([0.3,0.0,0.0])
 w_des = 0.0
-
-plan_freq = 0.05 # sec
-update_time = 0.0 # sec (time of lag)
 
 sim_t = 0.0
 sim_dt = .001
 index = 0
 pln_ctr = 0
+update_time = 0.0 # sec (time of lag)
+plan_freq = 0.05 # sec
 
 ## Motion
 gait_params = trot
@@ -42,9 +42,6 @@ lag = int(update_time/sim_dt)
 gg = SoloMpcGaitGen(pin_robot, urdf_path, x0, plan_freq, q0, None)
 
 gg.update_gait_params(gait_params, sim_t)
-
-robot = Solo12Env(q0, v0, False, False)
-robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
 
 plot_time = np.inf #Time to start plotting
 

@@ -1,5 +1,5 @@
-## This file creates the costs for the kino-dyn planner
-## Author : Avadesh Meduri
+## This file creates the costs and contact planner for the kino-dyn planner
+## Author : Avadesh Meduri, Paarth Shah
 ## Date : 23/09/2021
 
 import time
@@ -25,7 +25,6 @@ class SoloAcyclicGen:
         self.m = pin.computeTotalMass(self.rmodel)
 
         self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
-        self.hip_names = ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]
         self.n_eff = 4
         self.ee_frame_id = []
         for i in range(len(self.eff_names)):
@@ -36,8 +35,9 @@ class SoloAcyclicGen:
         self.fy_max = 25.0
         self.fz_max = 25.0
 
-        #
+        # Set up optional parameters for updating contact plan
         self.use_current_eef_location = False
+        self.use_current_contact = False
 
     def update_motion_params(self, weight_abstract, q0, t0):
         """
@@ -70,7 +70,7 @@ class SoloAcyclicGen:
         self.us_int = np.zeros((self.rmodel.nv, self.size))
         self.f_int = np.zeros((4*len(self.eff_names), self.size))
 
-    def create_contact_plan(self, q, v, t, eef_locations, make_cyclic = False):
+    def create_contact_plan(self, q, v, t, make_cyclic = False):
         """
         Creates contact plan based on moving horizon
         Input:
@@ -79,11 +79,11 @@ class SoloAcyclicGen:
             t : current time into the plan
         """
         self.cnt_plan = np.zeros((self.horizon, len(self.eff_names), 4))
-        ft = np.round(t - self.params.dt_arr[0] - self.t0),3)
+        ft = np.round( (t - self.params.dt_arr[0] - self.t0),3)
 
         prev_current_eef_used = np.ones(len(self.eff_names))
 
-        for i in range(self.params.n_col)  
+        for i in range(self.params.n_col):
             ft += np.round(self.params.dt_arr[i],3)
 
             if ft < self.params.cnt_plan[-1][0][5]:
@@ -137,7 +137,7 @@ class SoloAcyclicGen:
         X_init[3:] = np.array(self.rdata.hg)
         X_init[3:6] /= self.m
 
-        ## Dyn Costs ##
+        ## Dynamics Costs ##
         X_nom = np.zeros((9*self.horizon))
         ft = t - self.params.dt_arr[0] - self.t0
         i = 0

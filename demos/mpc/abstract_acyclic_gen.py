@@ -353,6 +353,23 @@ class SoloAcyclicGen:
             else:
                 return self.params.kp[-1][0], self.params.kd[-1][0]
 
+    def save_plan(self, file_name):
+        """
+        This function saves the plan for later plotting
+        Input:
+            file_name : name of the file
+        """
+
+        np.savez("./"+file_name, com_opt = self.mp.return_opt_com(),\
+                                 mom_opt = self.mp.return_opt_mom(),\
+                                 F_opt = self.mp.return_opt_f(), \
+                                 ik_com_opt = self.ik.return_opt_com(),\
+                                 ik_mom_opt = self.ik.return_opt_mom(),\
+                                 xs = self.ik.get_xs())
+                                 
+        print("finished saving ...")
+        assert False
+
     def plot(self, q, v, plot_force = True):
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()
@@ -391,20 +408,30 @@ class SoloAcyclicGen:
                 ax_f[n].legend()
 
         # Plot Momentum
-        fig, ax_m = plt.subplots(3,1)
+        fig, ax_m = plt.subplots(6,1)
         ax_m[0].plot(mom_opt[:, 0], label = "Dyn linear_momentum x")
         ax_m[0].plot(ik_mom_opt[:, 0], label="IK linear_momentum x")
         ax_m[1].plot(mom_opt[:, 1], label = "linear_momentum y")
-        ax_m[1].plot(ik_mom_opt[:, 1], label="IK linear_momentum y")
+        ax_m[1].plot(ik_mom_opt[:, 1], label="Dyn IK linear_momentum y")
         ax_m[2].plot(mom_opt[:, 2], label = "linear_momentum z")
-        ax_m[2].plot(ik_mom_opt[:, 2], label="IK linear_momentum z")
+        ax_m[2].plot(ik_mom_opt[:, 2], label="Dyn IK linear_momentum z")
+        ax_m[3].plot(mom_opt[:, 3], label = "Dyn Angular momentum x")
+        ax_m[3].plot(ik_mom_opt[:, 3], label="IK Angular momentum x")
+        ax_m[4].plot(mom_opt[:, 4], label = "Dyn Angular momentum y")
+        ax_m[4].plot(ik_mom_opt[:, 4], label="IK Angular momentum y")
+        ax_m[5].plot(mom_opt[:, 5], label = "Dyn Angular momentum z")
+        ax_m[5].plot(ik_mom_opt[:, 5], label="IK Angular momentum z")
         ax_m[0].grid()
         ax_m[0].legend()
-
         ax_m[1].grid()
         ax_m[1].legend()
-
         ax_m[2].grid()
         ax_m[2].legend()
+        ax_m[3].grid()
+        ax_m[3].legend()
+        ax_m[4].grid()
+        ax_m[4].legend()
+        ax_m[5].grid()
+        ax_m[5].legend()
 
         plt.show()

@@ -13,9 +13,9 @@ from data_plotter import DataRecorder
 
 # from motions.plan_cartwheel import plan
 # from motions.rearing import plan as rearing
-# from motions.plan_hifive import plan as hifive
+from motions.plan_hifive import plan as hifive
 # from motions.stand import plan
-from motions.plan_jump import plan as jump
+# from motions.plan_jump import plan as jump
 
 pin_robot = Solo12Config.buildRobotWrapper()
 rmodel = pin_robot.model
@@ -39,11 +39,11 @@ lag = int(update_time/sim_dt)
 
 mg = SoloAcyclicGen(pin_robot, urdf)
 q, v = robot.get_state()
-mg.update_motion_params(jump, q, sim_t)
+mg.update_motion_params(hifive, q, sim_t)
 
 plot_time = 0.0
 
-for o in range(int(1/sim_dt)):
+for o in range(int(1.4/sim_dt)):
 
     contact_configuration = robot.get_current_contacts()
     q, v = robot.get_state()
@@ -59,10 +59,11 @@ for o in range(int(1/sim_dt)):
         index = 0
         dr.record_plan(xs, us, f, sim_t)
         
-        # if sim_t >= plot_time:
-            # print(mg.cnt_plan[0:3])
+        if sim_t >= plot_time:
+            print(mg.cnt_plan[0:3])
             # mg.plot(q, v, plot_force=True)
-            # assert False
+            mg.save_plan("hifive")
+            assert False
 
     # controller
     q_des = xs[index][:pin_robot.model.nq].copy()

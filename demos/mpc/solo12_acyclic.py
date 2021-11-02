@@ -11,11 +11,11 @@ from py_biconvex_mpc.bullet_utils.solo_mpc_env import AbstractEnv
 from abstract_acyclic_gen import SoloAcyclicGen
 from data_plotter import DataRecorder
 
-# from motions.plan_cartwheel import plan
-# from motions.rearing import plan as rearing
-from motions.plan_hifive import plan as hifive
+from motions.plan_cartwheel import plan
+# from motions.rearing import plan
+# from motions.plan_hifive import plan
 # from motions.stand import plan
-# from motions.plan_jump import plan as jump
+# from motions.plan_jump import plan
 
 pin_robot = Solo12Config.buildRobotWrapper()
 rmodel = pin_robot.model
@@ -39,9 +39,9 @@ lag = int(update_time/sim_dt)
 
 mg = SoloAcyclicGen(pin_robot, urdf)
 q, v = robot.get_state()
-mg.update_motion_params(hifive, q, sim_t)
+mg.update_motion_params(plan, q, sim_t)
 
-plot_time = 0.0
+plot_time = np.inf
 
 for o in range(int(1.4/sim_dt)):
 
@@ -76,8 +76,7 @@ for o in range(int(1.4/sim_dt)):
     dr.record_data(q, v, tau, grf, q_des, dq_des, us[index], f[index])
     time.sleep(0.001)
 
-    sim_t += sim_dt
-    sim_t = np.round(sim_t, 3)
+    sim_t += np.round(sim_dt,3)
     pln_ctr = int((pln_ctr + 1)%(mg.get_plan_freq(sim_t)/sim_dt))
     index += 1
 

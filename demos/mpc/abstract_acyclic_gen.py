@@ -1,5 +1,5 @@
-## This file creates the costs for the kino-dyn planner
-## Author : Avadesh Meduri
+## This file creates the costs and contact planner for the kino-dyn planner
+## Author : Avadesh Meduri, Paarth Shah
 ## Date : 23/09/2021
 
 import time
@@ -25,7 +25,6 @@ class SoloAcyclicGen:
         self.m = pin.computeTotalMass(self.rmodel)
 
         self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
-        self.hip_names = ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]
         self.n_eff = 4
         self.ee_frame_id = []
         for i in range(len(self.eff_names)):
@@ -35,6 +34,10 @@ class SoloAcyclicGen:
         self.fx_max = 25.0
         self.fy_max = 25.0
         self.fz_max = 25.0
+
+        # Set up optional parameters for updating contact plan
+        self.use_current_eef_location = False
+        self.use_current_contact = False
 
     def update_motion_params(self, weight_abstract, q0, t0):
         """
@@ -76,29 +79,36 @@ class SoloAcyclicGen:
             t : current time into the plan
         """
         self.cnt_plan = np.zeros((self.horizon, len(self.eff_names), 4))
-        ft = t - self.params.dt_arr[0] - self.t0
-        i = 0
-        while i < self.params.n_col:    
-            ft += self.params.dt_arr[i]
-            ft = np.round(ft, 3)
+        ft = np.round( (t - self.params.dt_arr[0] - self.t0),3)
+
+        prev_current_eef_used = np.ones(len(self.eff_names))
+
+        for i in range(self.params.n_col):
+            ft += np.round(self.params.dt_arr[i],3)
+
             if ft < self.params.cnt_plan[-1][0][5]:
                 for k in range(len(self.params.cnt_plan)):
-                ## making an assumption that each phase is fixed for each leg
-                ## can be changed
                     if ft >= self.params.cnt_plan[k][0][4] and ft < self.params.cnt_plan[k][0][5]:
                         for j in range(len(self.eff_names)):
-                            ## not sure how to update the plan based on current foot step locations
-                            ## should discuss this
                             self.cnt_plan[i][j] = self.params.cnt_plan[k][j][0:4]
-                        break
 
+                            # if self.use_current_eef_location and cnt_plan[i][j][0] == 1 and \
+                            #     prev_current_eef_used[j] == 1:
+                            #         cnt_plan[i][j][1:4] = eef_locations[j]
+
+                            # if cnt_plan[i][j][0] == 0:
+                            #     prev_current_eef_used[j] = 0
+                        break
             else:
-                ## case where the t is larger than the plan horizon
                 if not make_cyclic:
                     for j in range(len(self.eff_names)):
                         self.cnt_plan[i][j] = self.params.cnt_plan[-1][j][0:4]
+
+                        # if self.use_current_eef_location and cnt_plan[i][j][0] == 1 and \
+                        #     prev_current_eef_used[j] == 1:
+                        #     cnt_plan[i][j][1:4] = eef_locations[j]
+
                 else:
-                    # make this cyclic later
                     pass
         
             if i == 0:
@@ -109,7 +119,6 @@ class SoloAcyclicGen:
                 dt = self.params.dt_arr[i]
 
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
-            i += 1
         
     def create_costs(self, q, v, t, make_cyclic = False):
         """
@@ -128,7 +137,7 @@ class SoloAcyclicGen:
         X_init[3:] = np.array(self.rdata.hg)
         X_init[3:6] /= self.m
 
-        ## Dyn Costs ##
+        ## Dynamics Costs ##
         X_nom = np.zeros((9*self.horizon))
         ft = t - self.params.dt_arr[0] - self.t0
         i = 0

@@ -10,7 +10,7 @@ from robot_properties_solo.config import Solo12Config
 from abstract_cyclic_gen import SoloMpcGaitGen
 from solo12_gait_params import trot, walk, air_bound, bound, still, gallop, jump, balance, bound_turn, trot_turn
 
-from py_biconvex_mpc.bullet_utils.solo_mpc_env import Solo12Env
+from py_biconvex_mpc.bullet_utils.solo_mpc_env import AbstractEnv
 from blmc_controllers.robot_id_controller import InverseDynamicsController
 
 ## robot config and init
@@ -25,7 +25,7 @@ v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
 
-v_des = np.array([0.3,0.0,0.0])
+v_des = np.array([0.5,0.0,0.0])
 w_des = 0.0
 
 plan_freq = 0.05 # sec
@@ -37,26 +37,28 @@ index = 0
 pln_ctr = 0
 
 ## Motion
-gait_params = jump
+gait_params = trot
 lag = int(update_time/sim_dt)
 gg = SoloMpcGaitGen(pin_robot, urdf_path, x0, plan_freq, q0, None)
 
 gg.update_gait_params(gait_params, sim_t)
 
-robot = Solo12Env(q0, v0, False, False)
+robot = AbstractEnv(q0, v0, False, False)
 robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
 robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
-plot_time = np.inf #Time to start plotting
+plot_time = 0 #Time to start plotting
 
-for o in range(int(500*(plan_freq/sim_dt))):
+solve_times = []
+
+for o in range(int(50*(plan_freq/sim_dt))):
     # this bit has to be put in shared memory
     q, v = robot.get_state()
     
-    if o == int(50*(plan_freq/sim_dt)):
-        gait_params = trot
-        gg.update_gait_params(gait_params, sim_t)
-        robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
+    # if o == int(50*(plan_freq/sim_dt)):
+    #     gait_params = trot
+    #     gg.update_gait_params(gait_params, sim_t)
+    #     robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
     if pln_ctr == 0:
         contact_configuration = robot.get_current_contacts()
@@ -64,12 +66,14 @@ for o in range(int(500*(plan_freq/sim_dt))):
         pr_st = time.time()
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(sim_t,3), v_des, w_des)
 
-        #Plot if necessary
-        if sim_t > plot_time:
-            gg.plot_plan()
+        # Plot if necessary
+        if sim_t >= plot_time:
+            # gg.plot_plan(q, v)
+            gg.save_plan("trot")
 
         pr_et = time.time()
-    
+        solve_times.append(pr_et - pr_et)
+
     # first loop assume that trajectory is planned
     if o < int(plan_freq/sim_dt) - 1:
         xs = xs_plan
@@ -90,11 +94,12 @@ for o in range(int(500*(plan_freq/sim_dt))):
                                 , us[index], f[index], contact_configuration)
     robot.send_joint_command(tau)
 
-    time.sleep(0.001)
+    # time.sleep(0.001)
     sim_t += sim_dt
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
 
+np.savez("./bound_" + str(gg.horizon))
 print("done")
 
 

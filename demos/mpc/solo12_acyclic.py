@@ -43,7 +43,7 @@ mg.update_motion_params(plan, q, sim_t)
 
 plot_time = np.inf
 
-for o in range(int(plan.cnt_plan[-1][0][5]/sim_dt) + int(1.0/sim_dt)):
+for o in range(int(1.4/sim_dt)):
 
     contact_configuration = robot.get_current_contacts()
     q, v = robot.get_state()
@@ -61,7 +61,9 @@ for o in range(int(plan.cnt_plan[-1][0][5]/sim_dt) + int(1.0/sim_dt)):
         
         if sim_t >= plot_time:
             print(mg.cnt_plan[0:3])
-            mg.plot(q, v, plot_force=True)
+            # mg.plot(q, v, plot_force=True)
+            mg.save_plan("hifive")
+            assert False
 
     # controller
     q_des = xs[index][:pin_robot.model.nq].copy()

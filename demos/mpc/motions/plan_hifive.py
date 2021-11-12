@@ -48,9 +48,9 @@ plan.cnt_plan = [[[1.,      0.3946,   0.14695,  0., 0.,  st    ],
 
 plan.n_col = 25
 plan.dt_arr = plan.n_col*[dt, ]
-plan.plan_freq = [[1.0, 0, st ],
-                  [1.0, st, st + rear_time+jt],
-                  [0.2, st + rear_time+jt, T]]
+plan.plan_freq = [[1.4, 0, st ],
+                  [1.4, st, st + rear_time+jt],
+                  [0.05, st + rear_time+jt, T]]
 
 #  dynamic optimization params
 plan.W_X =        np.array([1e+3, 1e1, 1e+2, 1e-4, 1e-4, 1e-4, 1e+2, 5e+3, 1e+2])
@@ -59,7 +59,7 @@ plan.W_F = np.array(4*[1e+1, 1e+1, 5e-1])
 plan.rho = 5e+4
 
 plan.X_nom = [[0.2, 0, 0.22, 0, 0, 0, 0, -0.05, 0.0, 0.0, st],
-              [0.18, 0, 0.28, 0, 0, 0, 0, -0.65, 0., st, st+rear_time],
+              [0.18, 0, 0.28, 0, 0, 0, 0, -0.45, 0., st, st+rear_time],
               [0.18, 0, 0.32, 0, 0, 0, 0, 0.0, 0., st+rear_time, st+rear_time+jt],
               [0.2, 0, 0.22, 0, 0, 0, 0, 0.0, 0., st+rear_time+jt, T]]
 
@@ -71,11 +71,11 @@ plan.bounds = [ [-0.25, -0.25, 0.1, 0.25, 0.25, 0.25, 0, st],
 
 # ik optimization params
 
-plan.cent_wt = [1e1, 5e1]  # CoM, Momentum
-plan.cnt_wt = 1e3  # End-Effector Contact Weight
+plan.cent_wt = [1e1, 1e2]  # CoM, Momentum
+plan.cnt_wt = 1e4  # End-Effector Contact Weight
 
-plan.swing_wt = [[[1e2, 0.4,   0.14695,  0.7, st + 0.4*rear_time, st + 0.5*rear_time],
-                  [1e2, 0.4,   -0.14695,  0.7, st + 0.4*rear_time, st + 0.5*rear_time],
+plan.swing_wt = [[[0e2, 0.55,   0.14695,  0.7, st + 0.4*rear_time, st + 0.5*rear_time],
+                  [0e2, 0.55,   -0.14695,  0.7, st + 0.4*rear_time, st + 0.5*rear_time],
                   [0,  0.0054,   0.14695,  0., st + 0.25*rear_time, st + 0.5*rear_time],
                   [0,  0.0054,   -0.14695,  0., st + 0.25*rear_time, st + 0.5*rear_time]]]
 

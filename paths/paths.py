@@ -14,5 +14,4 @@ class Paths:
     def load_yaml(self, config_file):
         with open(config_file) as config:
             data = yaml.safe_load(config)
-        
         return data

@@ -8,9 +8,9 @@ import pinocchio as pin
 
 from robot_properties_solo.config import Solo12Config
 from abstract_cyclic_gen import SoloMpcGaitGen
-from solo12_gait_params import trot, walk, air_bound, bound, still, gallop, jump, balance, bound_turn, trot_turn
+from solo12_gait_params import trot
 
-from py_biconvex_mpc.bullet_utils.solo_mpc_env import AbstractEnv
+from environment_interface.environment_interface import AbstractEnv
 from blmc_controllers.robot_id_controller import InverseDynamicsController
 
 ## robot config and init
@@ -47,11 +47,9 @@ robot = AbstractEnv(q0, v0, False, False)
 robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
 robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
-plot_time = 0 #Time to start plotting
+plot_time = np.inf
 
-solve_times = []
-
-for o in range(int(50*(plan_freq/sim_dt))):
+for o in range(int(500*(plan_freq/sim_dt))):
     # this bit has to be put in shared memory
     q, v = robot.get_state()
     
@@ -62,7 +60,6 @@ for o in range(int(50*(plan_freq/sim_dt))):
 
     if pln_ctr == 0:
         contact_configuration = robot.get_current_contacts()
-        
         pr_st = time.time()
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(sim_t,3), v_des, w_des)
 
@@ -70,9 +67,6 @@ for o in range(int(50*(plan_freq/sim_dt))):
         if sim_t >= plot_time:
             # gg.plot_plan(q, v)
             gg.save_plan("trot")
-
-        pr_et = time.time()
-        solve_times.append(pr_et - pr_et)
 
     # first loop assume that trajectory is planned
     if o < int(plan_freq/sim_dt) - 1:
@@ -98,8 +92,5 @@ for o in range(int(50*(plan_freq/sim_dt))):
     sim_t += sim_dt
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
-
-np.savez("./bound_" + str(gg.horizon))
-print("done")
 
 

@@ -3,7 +3,7 @@
 import raisimpy as raisim
 import pinocchio as pin
 
-class RobotInterface:
+class AbstractInterface:
 
     def __init__(self, urdf, dt, robot_model, isRealRobot = False):
         """

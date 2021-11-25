@@ -4,7 +4,6 @@ namespace motion_planner{
 
     KinoDynMP::KinoDynMP(std::string urdf, double m, int n_eff, int dyn_col, int ik_col):
                 dyn_col_(dyn_col), ik_col_(ik_col), dyn(m, dyn_col, n_eff), ik(urdf, ik_col){
-
         std::cout << "Initialized Kino-Dyn planner" << std::endl;
         pinocchio::urdf::buildModel(urdf,pinocchio::JointModelFreeFlyer(), rmodel_) ;
         pinocchio::Data rdata_tmp(rmodel_);
@@ -36,11 +35,13 @@ namespace motion_planner{
     void KinoDynMP::optimize(Eigen::VectorXd q, Eigen::VectorXd v, int dyn_iters, int kino_dyn_iters){
 
         pinocchio::computeCentroidalMomentum(rmodel_, rdata_, q, v);
-        x0.head(rmodel_.nq) = q; x0.tail(rmodel_.nv) = v;
+        x0.head(rmodel_.nq) = q;
+        x0.tail(rmodel_.nv) = v;
 
         set_warm_starts();
 
-        dyn.optimize(X_wm.head(9), dyn_iters);
+        //dyn.optimize(X_wm.head(9), dyn_iters);
+        dyn.optimize_osqp(X_wm.head(9), dyn_iters);
         dyn_com_opt = dyn.return_opt_com();
         dyn_mom_opt = dyn.return_opt_mom();
 
@@ -50,9 +51,13 @@ namespace motion_planner{
         ik.add_com_position_tracking_task(0, ik_col_, dyn_com_opt.topRows(ik_col_), wt_com_, "com_track", false);
         ik.add_com_position_tracking_task(0, ik_col_, dyn_com_opt.row(ik_col_), wt_com_, "com_track", true);
 
+        std::cout << "About to optimize Kinematics" << std::endl;
+
         ik.optimize(x0);
         // Todo: add kino dyn iteration requirement later
         // ik.compute_optimal_com_and_mom(ik_com_opt, ik_mom_opt);
+
+        std::cout << "Kinematics optimized" << std::endl;
 
         n++;
     }

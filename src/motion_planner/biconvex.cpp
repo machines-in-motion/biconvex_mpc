@@ -41,7 +41,7 @@ namespace motion_planner{
         //osqp_x.settings()->setMaxIteration(25);
         osqp_x.settings()->setScaling(0);
         osqp_x.settings()->setWarmStart(true);
-        osqp_x.settings()->setVerbosity(false);
+        osqp_x.settings()->setVerbosity(true);
 
         osqp_f.data()->setNumberOfVariables(3*n_eff_* n_col_);
         osqp_f.data()->setNumberOfConstraints(3*n_eff_* n_col_);
@@ -53,7 +53,7 @@ namespace motion_planner{
         //osqp_f.settings()->setMaxIteration(25);
         osqp_f.settings()->setScaling(0);
         osqp_f.settings()->setWarmStart(true);
-        osqp_f.settings()->setVerbosity(false);
+        osqp_f.settings()->setVerbosity(true);
         #endif
 
     };
@@ -206,6 +206,11 @@ namespace motion_planner{
 
                 if (dyn_violation.norm() < exit_tol){
                     std::cout << "breaking outerloop due to norm ..." << std::endl;
+                    centroidal_dynamics.r_.clear();
+                    osqp_f.clearSolver();
+                    osqp_f.data()->clearHessianMatrix();
+                    osqp_x.clearSolver();
+                    osqp_x.data()->clearHessianMatrix();
                     //std::cout << "Optimizer finished after " << i << " iterations" << std::endl;
                     break;
                 };

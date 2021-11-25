@@ -25,7 +25,7 @@ class AbstractMpcGaitGen:
         self.rmodel = pin.buildModelFromUrdf(r_urdf, pin.JointModelFreeFlyer())
         self.rdata = self.rmodel.createData()
         self.r_urdf = r_urdf
-        self.foot_size = 0.018
+        self.foot_size = robot_info['foot_size']
         
         # TODO: DEPRECATE THIS...
         # Use for a fixed frequency planning time
@@ -360,7 +360,7 @@ class AbstractMpcGaitGen:
 
         t2 = time.time()
 
-        self.kd.optimize(q, v, 100, 1)
+        self.kd.optimize(q, v, 60, 1)
 
         t3 = time.time()
 

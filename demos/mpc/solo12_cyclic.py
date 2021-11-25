@@ -3,7 +3,7 @@ import numpy as np
 
 from paths.paths import Paths
 from abstract_cyclic_gen import AbstractMpcGaitGen
-from solo12_gait_params import trot
+from solo12_gait_params import trot, still
 
 from environment_interface.raisim_interface import RaisimEnv
 from controllers.robot_id_controller import InverseDynamicsController
@@ -20,13 +20,15 @@ pln_ctr = 0
 # Environment
 robot_interface = RaisimEnv(project_paths.URDF_PATH, project_paths.ROBOT_INFO, sim_dt)
 
-# Motion
-v_des = np.array([0.5, 0.0, 0.0])
+# Set Motion Parameters
+v_des = np.array([0.0, 0.0, 0.0])
 w_des = 0.0
 plan_freq = 0.05  # sec #TODO: Should go inside motion
 update_time = 0.0  # sec (time of lag) #TODO: Should go inside robot_info?
 lag_counter = int(update_time / sim_dt)  # TODO: Can I remove this?
-gait_params = trot
+
+# Choose Motion
+gait_params = still
 gait_generator = AbstractMpcGaitGen(project_paths.URDF_PATH, project_paths.ROBOT_INFO, plan_freq, None)
 gait_generator.update_gait_params(gait_params, sim_t)
 
@@ -53,7 +55,7 @@ for o in range(int(500 * (plan_freq / sim_dt))):
         # Plot if necessary
         if sim_t >= plot_time:
             gait_generator.plot_plan(q, v)
-            gait_generator.save_plan("trot")
+            #gait_generator.save_plan("trot")
 
     # first loop assume that trajectory is planned
     if o < int(plan_freq / sim_dt) - 1:

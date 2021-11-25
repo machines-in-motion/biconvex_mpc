@@ -5,10 +5,8 @@ import numpy as np
 
 
 class RaisimEnv(AbstractEnv):
-    def __init__(self, q0, v0, vis_ghost=False):
+    def __init__(self, q0, v0):
         urdf_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-
-        self.vis_ghost = vis_ghost
 
         # Set up Raisim
         self.dt = 0.001
@@ -25,7 +23,7 @@ class RaisimEnv(AbstractEnv):
         # Raisim Robot Configuration
         self.robot = self.world.addArticulatedSystem(urdf_path)
         self.robot.setControlMode(raisim.ControlMode.FORCE_AND_TORQUE)
-        self.num_eef = 4
+        self.num_eef = 4  # TODO: Read this in from an external file
 
         # Set up Raisim Robot Initial Configuration (assuming pinocchio-coordinates)
         rq = q0.copy()

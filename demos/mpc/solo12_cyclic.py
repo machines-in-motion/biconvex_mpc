@@ -4,12 +4,16 @@ import time
 import numpy as np
 import pinocchio as pin
 
+from paths.paths import Paths
+
 from robot_properties_solo.config import Solo12Config
 from abstract_cyclic_gen import AbstractMpcGaitGen
 from solo12_gait_params import trot
 
 from environment_interface.raisim_interface import RaisimEnv
 from controllers.robot_id_controller import InverseDynamicsController
+
+project_paths = Paths("a1")
 
 ## robot config and init
 pin_robot = Solo12Config.buildRobotWrapper()
@@ -25,8 +29,8 @@ f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
 v_des = np.array([0.5, 0.0, 0.0])
 w_des = 0.0
 
-plan_freq = 0.05 # sec
-update_time = 0.0 # sec (time of lag)
+plan_freq = 0.05  # sec
+update_time = 0.0  # sec (time of lag)
 
 sim_t = 0.0
 sim_dt = .001
@@ -40,10 +44,11 @@ gait_generator = AbstractMpcGaitGen(pin_robot, urdf_path, x0, plan_freq, q0, Non
 gait_generator.update_gait_params(gait_params, sim_t)
 
 # Environment
-robot_interface = RaisimEnv(q0, v0, False)
-robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
+robot_interface = RaisimEnv(q0, v0)
+robot_id_ctrl = InverseDynamicsController(urdf_path, f_arr)
 robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
+# Plotting
 plot_time = np.inf
 
 for o in range(int(500*(plan_freq/sim_dt))):
@@ -80,8 +85,9 @@ for o in range(int(500*(plan_freq/sim_dt))):
         f = f_plan[lag:]
         index = 0
 
-    tau = robot_id_ctrl.id_joint_torques(q, v, xs[index][:pin_robot.model.nq].copy(), xs[index][pin_robot.model.nq:].copy()\
-                                , us[index], f[index], contact_configuration)
+    tau = robot_id_ctrl.id_joint_torques(q, v, xs[index][:pin_robot.model.nq].copy(), \
+                                            xs[index][pin_robot.model.nq:].copy(), \
+                                            us[index], f[index], contact_configuration)
     robot_interface.send_joint_command(tau)
 
     # time.sleep(0.001)

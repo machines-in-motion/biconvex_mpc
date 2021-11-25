@@ -7,7 +7,7 @@ import pinocchio as pin
 
 
 class InverseDynamicsController:
-    def __init__(self, robot, eff_arr, pinModel = None, pinData = None, real_robot = False):
+    def __init__(self, r_urdf, eff_arr, pinModel = None, pinData = None, real_robot = False):
         """
         Input:
             robot : robot object returned by pinocchio wrapper
@@ -15,19 +15,18 @@ class InverseDynamicsController:
             real_robot : bool true if controller running on real robot
         """
         if pinModel is None:
-            if real_robot is False:
-                self.pin_robot = robot
-
-            self.pinModel = self.pin_robot.model
-            self.pinData = self.pin_robot.data
-            self.nq = self.pin_robot.nq
-            self.nv = self.pin_robot.nv
-
+            self.pinModel = pin.buildModelFromUrdf(r_urdf, pin.JointModelFreeFlyer())
+            self.nq = self.pinModel.nq
+            self.nv = self.pinModel.nv
         else:
             self.pinModel = pinModel
+            self.nq = self.pinModel.nq
+            self.nv = self.pinModel.nv
+
+        if pinData is None:
+            self.pinData = self.pinModel.createData()
+        else:
             self.pinData = pinData
-            self.nq = pinModel.nq
-            self.nv = pinModel.nv
 
         self.wt = 1e-6
         self.mu = 0.8

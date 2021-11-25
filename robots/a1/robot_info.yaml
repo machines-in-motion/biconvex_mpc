@@ -1,4 +1,4 @@
-robot_name: "A1"
+robot_name: "a1"
 num_eef: 4
 eef_names: ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
 hip_names: ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]

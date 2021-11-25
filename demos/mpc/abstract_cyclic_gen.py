@@ -12,8 +12,7 @@ from matplotlib import pyplot as plt
 
 
 class AbstractMpcGaitGen:
-
-    def __init__(self, robot, r_urdf, x_reg, planning_time, q0, height_map = None):
+    def __init__(self, r_urdf, robot_info, planning_time, height_map = None):
         """
         Input:
             robot : robot model
@@ -23,34 +22,33 @@ class AbstractMpcGaitGen:
             plan_freq : planning frequency in seconds
         """
 
-        ## Note : only creates plan for horizon of 2*st
-        self.rmodel = robot.model
-        self.rdata = robot.data
+        self.rmodel = pin.buildModelFromUrdf(r_urdf, pin.JointModelFreeFlyer())
+        self.rdata = self.rmodel.createData()
         self.r_urdf = r_urdf
         self.foot_size = 0.018
         
-        #TODO: DEPRECATE THIS...
-        #Use for a fixed frequency planning time
+        # TODO: DEPRECATE THIS...
+        # Use for a fixed frequency planning time
         self.planning_time = planning_time
+        self.eef_names = robot_info['eef_names']
+        self.hip_names = robot_info['hip_names']
+        self.n_eff = robot_info['num_eef']
+        self.q0 = np.array(robot_info['initial_configuration'])
 
-        self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
-        self.hip_names = ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]
-        self.n_eff = 4
-
-        pin.forwardKinematics(self.rmodel, self.rdata, q0, np.zeros(self.rmodel.nv))
+        pin.forwardKinematics(self.rmodel, self.rdata, self.q0, np.zeros(self.rmodel.nv))
         pin.updateFramePlacements(self.rmodel, self.rdata)
-        com_init = pin.centerOfMass(self.rmodel, self.rdata, q0, np.zeros(self.rmodel.nv))
+        com_init = pin.centerOfMass(self.rmodel, self.rdata, self.q0, np.zeros(self.rmodel.nv))
 
-        pin.framesForwardKinematics(self.rmodel, self.rdata, q0)
-        pin.crba(self.rmodel, self.rdata, q0)
+        pin.framesForwardKinematics(self.rmodel, self.rdata, self.q0)
+        pin.crba(self.rmodel, self.rdata, self.q0)
         self.I_composite_b = self.rdata.Ycrb[1].inertia
 
         self.gravity = 9.81
 
-        self.offsets = np.zeros((len(self.eff_names), 3))
+        self.offsets = np.zeros((len(self.eef_names), 3))
         self.ee_frame_id = []
-        for i in range(len(self.eff_names)):
-            self.ee_frame_id.append(self.rmodel.getFrameId(self.eff_names[i]))
+        for i in range(len(self.eef_names)):
+            self.ee_frame_id.append(self.rmodel.getFrameId(self.eef_names[i]))
             self.offsets[i] = self.rdata.oMf[self.rmodel.getFrameId(self.hip_names[i])].translation - com_init.copy()
             self.offsets[i] = np.round(self.offsets[i], 3)
 
@@ -69,13 +67,13 @@ class AbstractMpcGaitGen:
         self.apply_offset = True
 
         #Rotate offsets to local frame
-        R = pin.Quaternion(np.array(q0[3:7])).toRotationMatrix()
-        for i in range(len(self.eff_names)):
+        R = pin.Quaternion(np.array(self.q0[3:7])).toRotationMatrix()
+        for i in range(len(self.eef_names)):
             #Rotate offsets to local frame
             self.offsets[i] = np.matmul(R.T, self.offsets[i])
 
         #Regularization for IK using nominal position
-        self.x_reg = x_reg
+        self.x_reg = np.concatenate([self.q0, np.zeros(self.rmodel.nv)])
 
         # --- Set up Dynamics ---
         self.m = pin.computeTotalMass(self.rmodel)
@@ -125,7 +123,7 @@ class AbstractMpcGaitGen:
         self.dt_arr = np.zeros(self.horizon)
 
         # kino dyn
-        self.kd = KinoDynMP(self.r_urdf, self.m, len(self.eff_names), self.horizon, self.ik_horizon)
+        self.kd = KinoDynMP(self.r_urdf, self.m, len(self.eef_names), self.horizon, self.ik_horizon)
         self.kd.set_com_tracking_weight(self.params.cent_wt[0])
         self.kd.set_mom_tracking_weight(self.params.cent_wt[1])
         
@@ -142,7 +140,7 @@ class AbstractMpcGaitGen:
             self.size -= 1
         self.xs_int = np.zeros((len(self.x_reg), self.size))
         self.us_int = np.zeros((self.rmodel.nv, self.size))
-        self.f_int = np.zeros((4*len(self.eff_names), self.size))
+        self.f_int = np.zeros((4*len(self.eef_names), self.size))
 
     def create_cnt_plan(self, q, v, t, v_des, w_des):
         pin.forwardKinematics(self.rmodel, self.rdata, q, v)
@@ -162,16 +160,16 @@ class AbstractMpcGaitGen:
         vtrack = v_des[0:2] # this effects the step location (if set to vcom it becomes raibert)
         #vtrack = vcom[0:2]
 
-        self.cnt_plan = np.zeros((self.horizon, len(self.eff_names), 4))
+        self.cnt_plan = np.zeros((self.horizon, len(self.eef_names), 4))
         # This array determines when the swing foot cost should be enforced in the ik
-        self.swing_time = np.zeros((self.horizon, len(self.eff_names)))
-        self.prev_cnt = np.zeros((len(self.eff_names), 3))
-        self.curr_cnt = np.zeros(len(self.eff_names))
+        self.swing_time = np.zeros((self.horizon, len(self.eef_names)))
+        self.prev_cnt = np.zeros((len(self.eef_names), 3))
+        self.curr_cnt = np.zeros(len(self.eef_names))
         # Contact Plan Matrix: horizon x num_eef x 4: The '4' gives the contact plan and location:
         # i.e. the last vector should be [1/0, x, y, z] where 1/0 gives a boolean for contact (1 = contact, 0 = no cnt)
 
         for i in range(self.horizon):
-            for j in range(len(self.eff_names)):
+            for j in range(len(self.eef_names)):
                 if i == 0:
                     if self.gait_planner.get_phase(t, j) == 1:
                         self.cnt_plan[i][j][0] = 1
@@ -257,15 +255,15 @@ class AbstractMpcGaitGen:
         # --- Set Up IK --- #
         #Right now this is only setup to go for the *next* gait period only
         for i in range(self.ik_horizon):
-            for j in range(len(self.eff_names)):
+            for j in range(len(self.eef_names)):
                 if self.cnt_plan[i][j][0] == 1:
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], self.params.swing_wt[0],
-                                                              "cnt_" + str(0) + self.eff_names[j], i)
+                                                              "cnt_" + str(0) + self.eef_names[j], i)
                 elif self.swing_time[i][j] == 1:
                     pos = self.cnt_plan[i][j][1:4].copy()
                     pos[2] = self.params.step_ht
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, self.params.swing_wt[1],
-                                                              "via_" + str(0) + self.eff_names[j], i)
+                                                              "via_" + str(0) + self.eef_names[j], i)
 
         self.ik.add_state_regularization_cost(0, self.ik_horizon, self.params.reg_wt[0], "xReg", self.params.state_wt, self.x_reg, False)
         self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.params.reg_wt[1], "uReg", self.params.ctrl_wt, np.zeros(self.rmodel.nv), False)
@@ -376,7 +374,7 @@ class AbstractMpcGaitGen:
         xs = self.ik.get_xs()
         us = self.ik.get_us()
 
-        n_eff = 3*len(self.eff_names)
+        n_eff = 3*len(self.eef_names)
         for i in range(self.size):
             if i == 0:
                 self.f_int = np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i+1):n_eff*(i+2)], int(self.dt_arr[i]/0.001))
@@ -430,9 +428,9 @@ class AbstractMpcGaitGen:
         if plot_force:
             fig, ax_f = plt.subplots(self.n_eff, 1)
             for n in range(self.n_eff):
-                ax_f[n].plot(optimized_forces[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
-                ax_f[n].plot(optimized_forces[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
-                ax_f[n].plot(optimized_forces[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
+                ax_f[n].plot(optimized_forces[3*n::3*self.n_eff], label = self.eef_names[n] + " Fx")
+                ax_f[n].plot(optimized_forces[3*n+1::3*self.n_eff], label = self.eef_names[n] + " Fy")
+                ax_f[n].plot(optimized_forces[3*n+2::3*self.n_eff], label = self.eef_names[n] + " Fz")
                 ax_f[n].grid()
                 ax_f[n].legend()
 
@@ -536,9 +534,9 @@ class AbstractMpcGaitGen:
         if plot_force:
             fig, ax_f = plt.subplots(self.n_eff, 1)
             for n in range(self.n_eff):
-                ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
-                ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
-                ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
+                ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eef_names[n] + " Fx")
+                ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eef_names[n] + " Fy")
+                ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eef_names[n] + " Fz")
                 ax_f[n].grid()
                 ax_f[n].legend()
 

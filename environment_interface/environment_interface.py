@@ -4,14 +4,14 @@ from abc import abstractmethod
 
 
 class AbstractEnv:
-    def __init__(self, q0, v0, vis_ghost=False):
+    def __init__(self, urdf_path, robot_info, vis_ghost=False):
         urdf_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
 
         self.vis_ghost = vis_ghost
 
         self.env = RaiEnv()
         self.robot = self.env.add_robot(Solo12Config, urdf_path, vis_ghost=self.vis_ghost)
-        self.robot.reset_state(q0, v0)
+        #self.robot.reset_state(q0, v0)
         self.env.launch_server()
 
     def get_state(self):

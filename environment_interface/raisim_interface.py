@@ -5,9 +5,7 @@ import numpy as np
 
 
 class RaisimEnv(AbstractEnv):
-    def __init__(self, q0, v0):
-        urdf_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-
+    def __init__(self, urdf_path, robot_info):
         # Set up Raisim
         self.dt = 0.001
 
@@ -23,10 +21,11 @@ class RaisimEnv(AbstractEnv):
         # Raisim Robot Configuration
         self.robot = self.world.addArticulatedSystem(urdf_path)
         self.robot.setControlMode(raisim.ControlMode.FORCE_AND_TORQUE)
-        self.num_eef = 4  # TODO: Read this in from an external file
+        self.num_eef = robot_info['num_eef']
 
         # Set up Raisim Robot Initial Configuration (assuming pinocchio-coordinates)
-        rq = q0.copy()
+        self.q0 = np.array(robot_info['initial_configuration'])
+        rq = self.q0
         w = rq[6]
         rq[4:7] = rq[3:6]
         rq[3] = w
@@ -46,9 +45,15 @@ class RaisimEnv(AbstractEnv):
 
     def launch_server(self):
         self.server.launchServer(8080)
-        time.sleep(2)
+        time.sleep(1)
 
     def reset_state(self, q, v):
+        """
+        Resets Robot to a specific configuration
+        :param q: Joint Space
+        :param v: Velocity Space
+        :return: None
+        """
         rq = np.concatenate([q, v])
         w = rq[6]
         rq[4:7] = rq[3:6]

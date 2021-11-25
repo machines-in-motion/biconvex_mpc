@@ -1,15 +1,17 @@
- 
- class ContactPlanner:
+import numpy as np
+import pinocchio as pin
+
+class ContactPlanner:
 
     def __init__(self, gait_params, robot_model, height_map = None):
+        print("Test")
 
- 
     def create_cnt_plan(self, q, v, t, v_des, w_des):
             """
             Creates Contact Plan Matrix:
             Dimensions: horizon (number of collocation points) x num_eef x 4
             Extra Information: The final dimension (4) gives the contact boolean
-                               i.e. the last vector should be [1/0, x, y, z] 
+                               i.e. the last vector should be [1/0, x, y, z]
                                where 1/0 gives a boolean for contact (1 = contact, 0 = no cnt)
             """
             com = np.round(pin.centerOfMass(self.rmodel, self.rdata, q, v)[0:2], 3)
@@ -47,7 +49,7 @@
                         if self.gait_planner.get_phase(future_time, j) == 1:
                             #If foot will be in contact
                             self.cnt_plan[i][j][0] = 1
-                            
+
                             if self.cnt_plan[i-1][j][0] == 1:
                                 self.cnt_plan[i][j][1:4] = self.cnt_plan[i-1][j][1:4]
                             else:
@@ -55,7 +57,7 @@
                                 raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
                                 ang_step = 0.5*np.sqrt(z_height/self.gravity)*vtrack
                                 ang_step = np.cross(ang_step, [0.0, 0.0, w_des])
-                            
+
                                 self.cnt_plan[i][j][1:3] = raibert_step[0:2] + hip_loc + ang_step[0:2]
 
                                 if self.height_map != None:
@@ -75,7 +77,7 @@
                             ang_step = np.cross(ang_step, [0.0, 0.0, w_des])
 
                             percent_phase = np.round(self.gait_planner.get_percent_in_phase(future_time, j), 3)
-                            
+
                             if percent_phase < 0.5:
                                 self.cnt_plan[i][j][1:3] = hip_loc + ang_step[0:2]
                             else:

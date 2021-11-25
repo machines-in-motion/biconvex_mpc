@@ -9,7 +9,7 @@ class Paths:
         self.URDF_PATH = (self.ROBOT_PATH + "/" + robot_name + "/urdf/" + robot_name + ".urdf")
         print(self.YAML_PATH)
         print(robot_name)
-        self.YAML = self.load_yaml(self.YAML_PATH)
+        self.ROBOT_INFO = self.load_yaml(self.YAML_PATH)
 
     def load_yaml(self, config_file):
         with open(config_file) as config:

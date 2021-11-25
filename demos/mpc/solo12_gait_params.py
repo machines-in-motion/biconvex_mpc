@@ -1,5 +1,5 @@
 ## Contains solo 12 gait params
-## Author : Avadesh Meduri
+## Author : Avadesh Meduri & Paarth Shah
 ## Date : 7/7/21
 
 import numpy as np
@@ -128,7 +128,7 @@ trot.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
 
 trot.swing_wt = [1e4, 1e4]
 trot.cent_wt = [0*5e+1, 5e+2]
-trot.step_ht = 0.05
+trot.step_ht = 0.07
 trot.nom_ht = 0.2
 trot.reg_wt = [5e-2, 1e-5]
 

@@ -62,7 +62,7 @@ class ProblemData
         Eigen::VectorXd bPk_;
         Eigen::VectorXd ATbPk_;
 
-        //FISTA related optimization variables
+        // FISTA related optimization variables
         Eigen::VectorXd y_k;
         Eigen::VectorXd x_k;
         Eigen::VectorXd y_k_1;

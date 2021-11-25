@@ -5,9 +5,9 @@ import numpy as np
 
 
 class RaisimEnv(AbstractEnv):
-    def __init__(self, urdf_path, robot_info):
+    def __init__(self, urdf_path, robot_info, dt=0.001):
         # Set up Raisim
-        self.dt = 0.001
+        self.dt = dt
 
         # Array of robots
         self.robots = []
@@ -32,6 +32,7 @@ class RaisimEnv(AbstractEnv):
         self.robot.setGeneralizedCoordinate(rq)
 
         # Robot End Effector Configuration/Information
+        # TODO: Get these from robot_info?
         self.ee_body_names = ["FL_LOWER_LEG", "FR_LOWER_LEG", "HL_LOWER_LEG", "HR_LOWER_LEG"]
         self.raisim_foot_idx = np.zeros(len(self.ee_body_names))
         for i, eef_name in enumerate(self.ee_body_names):
@@ -40,7 +41,7 @@ class RaisimEnv(AbstractEnv):
         # Initializations for Visualization
         self.visualize_array = []
 
-        #self.reset_state(q0, v0)
+        # Launch RAISIM server
         self.launch_server()
 
     def launch_server(self):
@@ -81,7 +82,6 @@ class RaisimEnv(AbstractEnv):
         """
         tau = np.hstack((np.zeros(6), tau))
         self.robot.setGeneralizedForce(tau)
-
         self.step()
 
     def get_current_contacts(self):

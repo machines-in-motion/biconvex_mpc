@@ -14,8 +14,11 @@ project_paths = Paths("solo12")
 # Simulation Parameters
 sim_t = 0.0
 sim_dt = .001
-index = 0
+ctrlr_index = 0
 pln_ctr = 0
+
+# Environment
+robot_interface = RaisimEnv(project_paths.URDF_PATH, project_paths.ROBOT_INFO, sim_dt)
 
 # Motion
 v_des = np.array([0.5, 0.0, 0.0])
@@ -27,8 +30,7 @@ gait_params = trot
 gait_generator = AbstractMpcGaitGen(project_paths.URDF_PATH, project_paths.ROBOT_INFO, plan_freq, None)
 gait_generator.update_gait_params(gait_params, sim_t)
 
-# Environment
-robot_interface = RaisimEnv(project_paths.URDF_PATH, project_paths.ROBOT_INFO)
+# Controller
 robot_id_ctrl = InverseDynamicsController(project_paths.URDF_PATH, project_paths.ROBOT_INFO['eef_names'])
 robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
@@ -43,14 +45,14 @@ for o in range(int(500 * (plan_freq / sim_dt))):
     #     gg.update_gait_params(gait_params, sim_t)
     #     robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
+    # Update MPC Plan
     if pln_ctr == 0:
         contact_configuration = robot_interface.get_current_contacts()
-        pr_st = time.time()
         xs_plan, us_plan, f_plan = gait_generator.optimize(q, v, np.round(sim_t, 3), v_des, w_des)
 
         # Plot if necessary
         if sim_t >= plot_time:
-            # gg.plot_plan(q, v)
+            gait_generator.plot_plan(q, v)
             gait_generator.save_plan("trot")
 
     # first loop assume that trajectory is planned
@@ -67,14 +69,17 @@ for o in range(int(500 * (plan_freq / sim_dt))):
         xs = xs_plan[lag_counter:]
         us = us_plan[lag_counter:]
         f = f_plan[lag_counter:]
-        index = 0
+        ctrlr_index = 0
 
-    tau = robot_id_ctrl.id_joint_torques(q, v, xs[index][:19].copy(), \
-                                         xs[index][19:].copy(), \
-                                         us[index], f[index], contact_configuration)
+    #Calculate Torque
+    tau = robot_id_ctrl.id_joint_torques(q, v, xs[ctrlr_index][:19].copy(), \
+                                         xs[ctrlr_index][19:].copy(), \
+                                         us[ctrlr_index], f[ctrlr_index], contact_configuration)
+
+    #Send Torque to Robot
     robot_interface.send_joint_command(tau)
 
-    # time.sleep(0.001)
+    #Increase Counters
     sim_t += sim_dt
     pln_ctr = int((pln_ctr + 1) % (plan_freq / sim_dt))
-    index += 1
+    ctrlr_index += 1

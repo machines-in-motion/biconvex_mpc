@@ -54,7 +54,7 @@ class InverseDynamicsController:
         """
         return np.reshape(pin.rnea(self.pinModel, self.pinData, q, v, a), (self.nv,))
 
-    def id_joint_torques(self, q, dq, des_q, des_v, des_a, fff, cnt_array):
+    def id_joint_torques(self, q, dq, des_q, des_v, des_a, fff, cnt_array=None):
         """
         This function computes the input torques with gains
         Input:

@@ -1,6 +1,4 @@
 ## This is a demo for trot motion in mpc
-## Author : Avadesh Meduri & Paarth Shah
-## Date : 21/04/2021
 
 import time
 import numpy as np
@@ -10,8 +8,8 @@ from robot_properties_solo.config import Solo12Config
 from abstract_cyclic_gen import SoloMpcGaitGen
 from solo12_gait_params import trot
 
-from environment_interface.environment_interface import AbstractEnv
-from blmc_controllers.robot_id_controller import InverseDynamicsController
+from environment_interface.raisim_interface import RaisimEnv
+from controllers.robot_id_controller import InverseDynamicsController
 
 ## robot config and init
 pin_robot = Solo12Config.buildRobotWrapper()
@@ -25,7 +23,7 @@ v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
 
-v_des = np.array([0.5,0.0,0.0])
+v_des = np.array([0.5, 0.0, 0.0])
 w_des = 0.0
 
 plan_freq = 0.05 # sec
@@ -40,10 +38,10 @@ pln_ctr = 0
 gait_params = trot
 lag = int(update_time/sim_dt)
 gg = SoloMpcGaitGen(pin_robot, urdf_path, x0, plan_freq, q0, None)
-
 gg.update_gait_params(gait_params, sim_t)
 
-robot = AbstractEnv(q0, v0, False, False)
+#Environment
+robot_interface = RaisimEnv(q0, v0, False)
 robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
 robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
@@ -51,7 +49,7 @@ plot_time = np.inf
 
 for o in range(int(500*(plan_freq/sim_dt))):
     # this bit has to be put in shared memory
-    q, v = robot.get_state()
+    q, v = robot_interface.get_state()
     
     # if o == int(50*(plan_freq/sim_dt)):
     #     gait_params = trot
@@ -59,7 +57,7 @@ for o in range(int(500*(plan_freq/sim_dt))):
     #     robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
     if pln_ctr == 0:
-        contact_configuration = robot.get_current_contacts()
+        contact_configuration = robot_interface.get_current_contacts()
         pr_st = time.time()
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(sim_t,3), v_des, w_des)
 
@@ -86,7 +84,7 @@ for o in range(int(500*(plan_freq/sim_dt))):
 
     tau = robot_id_ctrl.id_joint_torques(q, v, xs[index][:pin_robot.model.nq].copy(), xs[index][pin_robot.model.nq:].copy()\
                                 , us[index], f[index], contact_configuration)
-    robot.send_joint_command(tau)
+    robot_interface.send_joint_command(tau)
 
     # time.sleep(0.001)
     sim_t += sim_dt

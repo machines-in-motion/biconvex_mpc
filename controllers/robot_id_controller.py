@@ -1,5 +1,5 @@
 ## This file contains an inverse dynamics controller between two frames
-## Author : Avadesh Meduri
+## Author : Avadesh Meduri & Paarth Shah
 ## Date : 16/03/2021
 
 import numpy as np
@@ -20,12 +20,9 @@ class InverseDynamicsController():
             eff_arr : end effector name arr
             real_robot : bool true if controller running on real robot
         """
-
-        if pinModel == None:
-            if real_robot:
+        if pinModel is None:
+            if real_robot is False:
                 self.pin_robot = robot
-            else:
-                self.pin_robot = robot.pin_robot
 
             self.pinModel = self.pin_robot.model
             self.pinData = self.pin_robot.data
@@ -40,6 +37,9 @@ class InverseDynamicsController():
 
         self.wt = 1e-6
         self.mu = 0.8
+
+        self.eff_arr = eff_arr
+        self.num_eef = len(eff_arr)
 
     def set_gains(self, kp, kd):
         """
@@ -79,15 +79,12 @@ class InverseDynamicsController():
         # w_com = self.compute_com_wrench(q, dq, des_q, des_v.copy())
         tau_id = self.compute_id_torques(des_q, des_v, des_a)
 
-        ## creating QP matrices
-        N = int(len(self.cnt_array))
-
-        for j in range(N):
+        for j in range(self.num_eef):
             self.J_arr.append(pin.computeFrameJacobian(self.pinModel, self.pinData, des_q,\
                      self.pinModel.getFrameId(self.eff_arr[j]), pin.LOCAL_WORLD_ALIGNED).T)
             tau_eff = np.zeros(self.nv)
     
-        for j in range(N):
+        for j in range(self.num_eef):
             if fff[(j*3)+2] > 0:
                 tau_eff += np.matmul(self.J_arr[j], np.hstack((fff[j*3:(j+1)*3], np.zeros(3))))
 

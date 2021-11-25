@@ -1,27 +1,18 @@
 from robot_properties_solo.solo12wrapper import Solo12Robot, Solo12Config
 from raisim_utils.rai_env import RaiEnv
+from abc import abstractmethod
+
 
 class AbstractEnv:
-
-    def __init__(self, q0, v0, vis_ghost = False, loadBullet = False):
-
-        urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-        model_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf"
-
-        # urdf_path =  "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf/solo12.urdf"
-        # model_path = "/home/ameduri/devel/workspace/robot_properties/raisim_utils/urdf/solo12/urdf"
+    def __init__(self, q0, v0, vis_ghost=False):
+        urdf_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
 
         self.vis_ghost = vis_ghost
 
-        print("loading rai")
         self.env = RaiEnv()
-        self.robot = self.env.add_robot(Solo12Config, urdf_path, vis_ghost = self.vis_ghost)
+        self.robot = self.env.add_robot(Solo12Config, urdf_path, vis_ghost=self.vis_ghost)
         self.robot.reset_state(q0, v0)
         self.env.launch_server()
-
-        ## For data recording
-        self.q_arr = []
-        self.v_arr = []
 
     def get_state(self):
         """
@@ -37,7 +28,7 @@ class AbstractEnv:
             tau : input torque
         """
         self.robot.send_joint_command(tau)
-        self.env.step() # You can sleep here if you want to slow down the replay
+        self.env.step()  # You can sleep here if you want to slow down the replay
 
     def get_current_contacts(self):
         """
@@ -66,3 +57,6 @@ class AbstractEnv:
         forces = self.robot.get_contact_forces()
         return forces
 
+    @abstractmethod
+    def step(self):
+        pass

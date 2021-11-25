@@ -4,15 +4,9 @@
 
 import numpy as np
 import pinocchio as pin
-import time
 
-#from . qp_solver import quadprog_solve_qp
 
-arr = lambda a: np.array(a).reshape(-1)
-mat = lambda a: np.matrix(a).reshape((-1, 1))
-
-class InverseDynamicsController():
-
+class InverseDynamicsController:
     def __init__(self, robot, eff_arr, pinModel = None, pinData = None, real_robot = False):
         """
         Input:

@@ -10,7 +10,8 @@ from biconvex_mpc_cpp import BiconvexMP, KinoDynMP
 from gait_planner_cpp import GaitPlanner
 from matplotlib import pyplot as plt
 
-class SoloMpcGaitGen:
+
+class AbstractMpcGaitGen:
 
     def __init__(self, robot, r_urdf, x_reg, planning_time, q0, height_map = None):
         """
@@ -73,7 +74,7 @@ class SoloMpcGaitGen:
             #Rotate offsets to local frame
             self.offsets[i] = np.matmul(R.T, self.offsets[i])
 
-        #Current Contact
+        #Regularization for IK using nominal position
         self.x_reg = x_reg
 
         # --- Set up Dynamics ---

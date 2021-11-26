@@ -12,3 +12,6 @@ initial_configuration: [0.0, 0.0, 0.25,        #X, Y, Z
 foot_size: 0.018
 dt: 0.001
 steps: 10000000
+friction_coefficient: 1.0
+max_eef_force: 15.0
+kinematic_limits: [0.45, 0.45, 0.45]

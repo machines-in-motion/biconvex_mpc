@@ -174,10 +174,10 @@ class BiConvexMP{
         Eigen::MatrixXd com_opt_;
         Eigen::MatrixXd mom_opt_;
         
-//        #ifdef USE_OSQP
-//            OsqpEigen::Solver osqp_x;
-//            OsqpEigen::Solver osqp_f;
-//        #endif
+        #ifdef USE_OSQP
+            OsqpEigen::Solver osqp_x;
+            OsqpEigen::Solver osqp_f;
+        #endif
 
         Eigen::VectorXd dyn_violation;
         Eigen::VectorXd P_k_;

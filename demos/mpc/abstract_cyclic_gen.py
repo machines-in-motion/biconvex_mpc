@@ -86,12 +86,12 @@ class AbstractMpcGaitGen:
         self.num_optimization_ctr = 0 #Counter
 
         # Set up constraints for Dynamics
-        self.bx = 0.45
-        self.by = 0.45
-        self.bz = 0.45
-        self.fx_max = 15.0
-        self.fy_max = 15.0
-        self.fz_max = 15.0
+        self.bx = robot_info['kinematic_limits'][0]
+        self.by = robot_info['kinematic_limits'][1]
+        self.bz = robot_info['kinematic_limits'][2]
+        self.fx_max = robot_info['friction_coefficient']*robot_info['max_eef_force']
+        self.fy_max = robot_info['friction_coefficient']*robot_info['max_eef_force']
+        self.fz_max = robot_info['max_eef_force']
 
         # For plotting
         self.com_traj = []

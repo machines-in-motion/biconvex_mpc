@@ -23,43 +23,44 @@ namespace motion_planner{
             //Use Second Order Cone Projection
             fista_f.set_soc_true();
 
-        //Set number of variables and constraints for osqp-eigen
-//        Eigen::SparseMatrix<double> constraintMatF =
-//                Eigen::MatrixXd::Identity(3*n_eff_* n_col_, 3*n_eff_* n_col_).sparseView();
-//        Eigen::SparseMatrix<double> constraintMatX =
-//                Eigen::MatrixXd::Identity(9*(n_col_+1), 9*(n_col_+1)).sparseView();
-//
-//        #ifdef USE_OSQP
-//        osqp_x.data()->setNumberOfVariables(9*(n_col_+1));
-//        osqp_x.data()->setNumberOfConstraints(9*(n_col_+1));
-//
-//        osqp_x.data()->setLinearConstraintsMatrix(constraintMatX);
-//        osqp_x.data()->setLowerBound(prob_data_x.lb_);
-//        osqp_x.data()->setUpperBound(prob_data_x.ub_);
-//        osqp_x.settings()->setAbsoluteTolerance(1e-5);
-//        osqp_x.settings()->setRelativeTolerance(1e-5);
-//        //osqp_x.settings()->setMaxIteration(25);
-//        osqp_x.settings()->setScaling(0);
-//        osqp_x.settings()->setWarmStart(false);
-//        osqp_x.settings()->setVerbosity(false);
-//
-//        osqp_f.data()->setNumberOfVariables(3*n_eff_* n_col_);
-//        osqp_f.data()->setNumberOfConstraints(3*n_eff_* n_col_);
-//        osqp_f.data()->setLinearConstraintsMatrix(constraintMatF);
-//        osqp_f.data()->setLowerBound(prob_data_f.lb_);
-//        osqp_f.data()->setUpperBound(prob_data_f.ub_);
-//        osqp_f.settings()->setAbsoluteTolerance(1e-5);
-//        osqp_f.settings()->setRelativeTolerance(1e-5);
-//        //osqp_f.settings()->setMaxIteration(25);
-//        osqp_f.settings()->setScaling(0);
-//        osqp_f.settings()->setWarmStart(false);
-//        osqp_f.settings()->setVerbosity(false);
-//        #endif
+            //Set number of variables and constraints for osqp-eigen
+            Eigen::SparseMatrix<double> constraintMatF =
+                    Eigen::MatrixXd::Identity(3*n_eff_* n_col_, 3*n_eff_* n_col_).sparseView();
+            Eigen::SparseMatrix<double> constraintMatX =
+                    Eigen::MatrixXd::Identity(9*(n_col_+1), 9*(n_col_+1)).sparseView();
+
+            #ifdef USE_OSQP
+                osqp_x.data()->setNumberOfVariables(9*(n_col_+1));
+                osqp_x.data()->setNumberOfConstraints(9*(n_col_+1));
+
+                osqp_x.data()->setLinearConstraintsMatrix(constraintMatX);
+                osqp_x.data()->setLowerBound(prob_data_x.lb_);
+                osqp_x.data()->setUpperBound(prob_data_x.ub_);
+                osqp_x.settings()->setAbsoluteTolerance(1e-5);
+                osqp_x.settings()->setRelativeTolerance(1e-5);
+                //osqp_x.settings()->setMaxIteration(25);
+                osqp_x.settings()->setScaling(0);
+                osqp_x.settings()->setWarmStart(true);
+                osqp_x.settings()->setVerbosity(false);
+
+                osqp_f.data()->setNumberOfVariables(3*n_eff_* n_col_);
+                osqp_f.data()->setNumberOfConstraints(3*n_eff_* n_col_);
+                osqp_f.data()->setLinearConstraintsMatrix(constraintMatF);
+                osqp_f.data()->setLowerBound(prob_data_f.lb_);
+                osqp_f.data()->setUpperBound(prob_data_f.ub_);
+                osqp_f.settings()->setAbsoluteTolerance(1e-5);
+                osqp_f.settings()->setRelativeTolerance(1e-5);
+                //osqp_f.settings()->setMaxIteration(25);
+                osqp_f.settings()->setScaling(0);
+                osqp_f.settings()->setWarmStart(true);
+                osqp_f.settings()->setVerbosity(false);
+            #endif
 
     };
 
     void BiConvexMP::create_bound_constraints(Eigen::MatrixXd b, double fx_max, double fy_max, double fz_max){
-        
+
+        // Add checks to use regular infinity and not osqp infinity when using FISTA
         prob_data_x.lb_ = -1*OsqpEigen::INFTY*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
         prob_data_x.ub_ = OsqpEigen::INFTY*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
         
@@ -88,7 +89,7 @@ namespace motion_planner{
                 prob_data_x.ub_[9*i+1] = centroidal_dynamics.r_[i].col(1).minCoeff() + b(i,4);
                 prob_data_x.ub_[9*i+2] = centroidal_dynamics.r_[i].col(2).minCoeff() + b(i,5);
             }
-        };
+        }
     };
 
     void BiConvexMP::create_cost_X(Eigen::VectorXd W_X, Eigen::VectorXd W_X_ter, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom){
@@ -132,6 +133,7 @@ namespace motion_planner{
             dyn_violation = centroidal_dynamics.A_f * prob_data_x.x_k - centroidal_dynamics.b_f;
             P_k_ += dyn_violation;
             // std::cout << dyn_violation.norm() << std::endl;
+
             //Keep track of any statistics that may be useful
             if (log_statistics) {
                 dyn_violation_hist_.push_back(dyn_violation.norm());
@@ -144,7 +146,7 @@ namespace motion_planner{
             };
 
             if (dyn_violation.norm() < exit_tol){
-                // std::cout << "breaking outer loop due to norm ..." << std::endl;
+                std::cout << "breaking outer loop due to norm ..." << std::endl;
                 break;
             };
         }
@@ -157,40 +159,8 @@ namespace motion_planner{
     #ifdef USE_OSQP
     void BiConvexMP::optimize_osqp(Eigen::VectorXd x_init, int num_iters){
         // updating x_init
-        OsqpEigen::Solver osqp_x;
-        OsqpEigen::Solver osqp_f;
-
-        Eigen::SparseMatrix<double> constraintMatF =
-                Eigen::MatrixXd::Identity(3*n_eff_* n_col_, 3*n_eff_* n_col_).sparseView();
-        Eigen::SparseMatrix<double> constraintMatX =
-                Eigen::MatrixXd::Identity(9*(n_col_+1), 9*(n_col_+1)).sparseView();
-
-        osqp_x.data()->setNumberOfVariables(9*(n_col_+1));
-        osqp_x.data()->setNumberOfConstraints(9*(n_col_+1));
-
-        osqp_x.data()->setLinearConstraintsMatrix(constraintMatX);
-        osqp_x.data()->setLowerBound(prob_data_x.lb_);
-        osqp_x.data()->setUpperBound(prob_data_x.ub_);
-        osqp_x.settings()->setAbsoluteTolerance(1e-5);
-        osqp_x.settings()->setRelativeTolerance(1e-5);
-        //osqp_x.settings()->setMaxIteration(25);
-        osqp_x.settings()->setScaling(0);
-        osqp_x.settings()->setWarmStart(false);
-        osqp_x.settings()->setVerbosity(false);
-
-        osqp_f.data()->setNumberOfVariables(3*n_eff_* n_col_);
-        osqp_f.data()->setNumberOfConstraints(3*n_eff_* n_col_);
-        osqp_f.data()->setLinearConstraintsMatrix(constraintMatF);
-        osqp_f.data()->setLowerBound(prob_data_f.lb_);
-        osqp_f.data()->setUpperBound(prob_data_f.ub_);
-        osqp_f.settings()->setAbsoluteTolerance(1e-5);
-        osqp_f.settings()->setRelativeTolerance(1e-5);
-        //osqp_f.settings()->setMaxIteration(25);
-        osqp_f.settings()->setScaling(0);
-        osqp_f.settings()->setWarmStart(false);
-        osqp_f.settings()->setVerbosity(false);
-
         centroidal_dynamics.update_x_init(x_init);
+
         for (unsigned i = 0; i < num_iters; ++i){
 
             // optimizing for F
@@ -212,7 +182,6 @@ namespace motion_planner{
             // optimizing for X
             centroidal_dynamics.compute_f_mat(prob_data_f.x_k);
             prob_data_x.set_data(centroidal_dynamics.A_f, centroidal_dynamics.b_f, P_k_, rho_);
-
 
             if (i == 0) {
                 osqp_x.data()->setHessianMatrix(prob_data_x.ATA_);
@@ -238,6 +207,8 @@ namespace motion_planner{
 
             if (dyn_violation.norm() < exit_tol){
                 std::cout << "breaking outerloop due to norm ..." << std::endl;
+
+                //Clear Contact Array (Check why this is necessary)
                 centroidal_dynamics.r_.clear();
 
                 osqp_f.clearSolver();
@@ -249,7 +220,10 @@ namespace motion_planner{
             };
         }
 
+        //Clear Contact Array (Check why this is necessary)
         centroidal_dynamics.r_.clear();
+
+        //Check if we can do things without clearing the Solvers and Hessians
         osqp_f.clearSolver();
         osqp_f.data()->clearHessianMatrix();
         osqp_x.clearSolver();

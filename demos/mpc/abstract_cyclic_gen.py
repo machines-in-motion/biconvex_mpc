@@ -376,8 +376,6 @@ class AbstractMpcGaitGen:
         xs = self.ik.get_xs()
         us = self.ik.get_us()
 
-        print("Got optimal values")
-
         n_eff = 3*len(self.eef_names)
         for i in range(self.size):
             if i == 0:

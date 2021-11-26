@@ -107,36 +107,36 @@ still.kd = 1.0
 # gallop.kd = 0.1
 #
 #
-# #### Trot #########################################
-# trot = BiconvexMotionParams("solo12", "Trot")
-#
-# # Cnt
-# trot.gait_period = 0.5
-# trot.stance_percent = [0.6, 0.6, 0.6, 0.6]
-# trot.gait_dt = 0.05
-# trot.phase_offset = [0.0, 0.5, 0.5, 0.0]
-#
-# # IK
-# trot.state_wt = np.array([0., 0, 10] + [1000, 1000, 1000] + [1.0] * (pin_robot.model.nv - 6) \
-#                          + [0.00] * 3 + [100, 100, 100] + [0.5] *(pin_robot.model.nv - 6))
-#
-# trot.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
-#
-# trot.swing_wt = [1e4, 1e4]
-# trot.cent_wt = [0*5e+1, 5e+2]
-# trot.step_ht = 0.07
-# trot.nom_ht = 0.2
-# trot.reg_wt = [5e-2, 1e-5]
-#
-# # Dyn
-# trot.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+4, 1e4])
-# trot.W_X_ter = 10*np.array([1e+5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e+5])
-# trot.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
-# trot.rho = 5e+4
-# trot.ori_correction = [0.3, 0.5, 0.4]
-# trot.gait_horizon = 1.0
-# trot.kp = 3.0
-# trot.kd = 0.05
+#### Trot #########################################
+trot = BiconvexMotionParams("solo12", "Trot")
+
+# Cnt
+trot.gait_period = 0.5
+trot.stance_percent = [0.6, 0.6, 0.6, 0.6]
+trot.gait_dt = 0.05
+trot.phase_offset = [0.0, 0.5, 0.5, 0.0]
+
+# IK
+trot.state_wt = np.array([0., 0, 10] + [1000, 1000, 1000] + [10.0] * (12) \
+                         + [0.00] * 3 + [100, 100, 100] + [5.0] *(12))
+
+trot.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [4.0] *(12)
+
+trot.swing_wt = [1e4, 1e4]
+trot.cent_wt = [0*5e+1, 5e+2]
+trot.step_ht = 0.1
+trot.nom_ht = 0.27
+trot.reg_wt = [5e-2, 1e-5]
+
+# Dyn
+trot.W_X =        np.array([3e-3, 3e-3, 5e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+5, 1e4])
+trot.W_X_ter = 10*np.array([1e+5, 1e+5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e5])
+trot.W_F = np.array(4*[1e-1, 1e-1, 1e-1])
+trot.rho = 5e+4
+trot.ori_correction = [0.3, 0.4, 0.4]
+trot.gait_horizon = 1.5
+trot.kp = 12.0
+trot.kd = 2.0
 #
 # #### Trot with Turning #########################################
 # trot_turn = BiconvexMotionParams("solo12", "Trot_turn")

@@ -7,7 +7,6 @@ from weight_abstract import BiconvexMotionParams
 from robot_properties_solo.config import Solo12Config
 
 pin_robot = Solo12Config.buildRobotWrapper()
-urdf_path = Solo12Config.urdf_path
 
 #### Stand Still #########################################
 still = BiconvexMotionParams("solo12", "Stand")

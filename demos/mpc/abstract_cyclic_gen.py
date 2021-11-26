@@ -83,7 +83,7 @@ class AbstractMpcGaitGen:
         self.dyn_comp_total = 0.0
         self.ik_comp_ave = 0.0
         self.ik_comp_total = 0.0
-        self.num_optimization_ctr = 0 #Counter
+        self.num_optimization_ctr = 0 # Counter
 
         # Set up constraints for Dynamics
         self.bx = robot_info['kinematic_limits'][0]
@@ -208,7 +208,7 @@ class AbstractMpcGaitGen:
                         self.prev_cnt[j] = self.cnt_plan[i][j][1:4]
 
                     else:
-                        #If foot will not be in contact
+                        # If foot will not be in contact
                         self.cnt_plan[i][j][0] = 0
                         per_ph = np.round(self.gait_planner.get_percent_in_phase(ft, j), 3)
                         hip_loc = com + np.matmul(R,self.offsets[j])[0:2] + i*self.params.gait_dt*vtrack
@@ -221,7 +221,7 @@ class AbstractMpcGaitGen:
                             raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
                             self.cnt_plan[i][j][1:3] = hip_loc + ang_step[0:2]
 
-                        #What is this?
+                        # What is this?
                         if per_ph - 0.5 < 0.02:
                             self.swing_time[i][j] = 1
 
@@ -254,7 +254,7 @@ class AbstractMpcGaitGen:
         self.x0 = np.hstack((q,v))
 
         # --- Set Up IK --- #
-        #Right now this is only setup to go for the *next* gait period only
+        # Right now this is only setup to go for the *next* gait period only
         for i in range(self.ik_horizon):
             for j in range(len(self.eef_names)):
                 if self.cnt_plan[i][j][0] == 1:

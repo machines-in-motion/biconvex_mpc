@@ -129,8 +129,8 @@ trot.nom_ht = 0.27
 trot.reg_wt = [5e-2, 1e-5]
 
 # Dyn
-trot.W_X =        np.array([3e-3, 3e-3, 5e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+5, 1e4])
-trot.W_X_ter = 10*np.array([1e+5, 1e+5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e5])
+trot.W_X =        np.array([3e-3, 3e-3, 5e+5, 1e+3, 1e+1, 2e+2, 1e+4, 1e+5, 1e4])
+trot.W_X_ter = 10*np.array([1e+5, 1e+5, 5e+5, 1e+3, 1e+1, 2e+2, 1e+5, 1e+5, 1e5])
 trot.W_F = np.array(4*[1e-1, 1e-1, 1e-1])
 trot.rho = 5e+4
 trot.ori_correction = [0.3, 0.4, 0.4]

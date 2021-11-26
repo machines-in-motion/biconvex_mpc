@@ -285,9 +285,9 @@ class AbstractMpcGaitGen:
         self.X_init[3:6] /= self.m
 
         self.X_nom[0::9] = self.X_init[0]
-        for i in range(1, self.horizon):
-            self.X_nom[9*i+0] = self.X_nom[9*(i-1)+0] + v_des[0]*self.dt_arr[i]
-            self.X_nom[9*i+1] = self.X_nom[9*(i-1)+1] + v_des[1]*self.dt_arr[i]
+        # for i in range(1, self.horizon):
+        #     self.X_nom[9*i+0] = self.X_nom[9*(i-1)+0] + v_des[0]*self.dt_arr[i]
+        #     self.X_nom[9*i+1] = self.X_nom[9*(i-1)+1] + v_des[1]*self.dt_arr[i]
 
         self.X_nom[2::9] = self.params.nom_ht
         self.X_nom[3::9] = v_des[0]
@@ -343,6 +343,7 @@ class AbstractMpcGaitGen:
         
         # reseting origin (causes scaling issues I think otherwise)
         q[0:2] = 0
+
         ## TODO: Needs to be done properly so it is not in the demo file
         if w_des != 0:
             ori_des = q[3:7]
@@ -352,6 +353,9 @@ class AbstractMpcGaitGen:
         #Move to local frame
         R = pin.Quaternion(np.array(q[3:7])).toRotationMatrix()
         v_des = np.matmul(R, v_des)
+
+        print("Velocity: ")
+        print(v[0:2])
 
         #TODO: Move to C++
         t1 = time.time()

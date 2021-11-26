@@ -54,8 +54,5 @@ PYBIND11_MODULE(biconvex_mpc_cpp, m)
     kd.def("optimize", &motion_planner::KinoDynMP::optimize);
     kd.def("set_com_tracking_weight", &motion_planner::KinoDynMP::set_com_tracking_weight);
     kd.def("set_mom_tracking_weight", &motion_planner::KinoDynMP::set_mom_tracking_weight);
-
-
-
-
+    kd.def("use_osqp", &motion_planner::KinoDynMP::use_osqp);
 }

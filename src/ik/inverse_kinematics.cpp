@@ -51,12 +51,10 @@ namespace ik{
 
     };
 
-    void InverseKinematics::optimize(const Eigen::VectorXd& x0){
-        
+    void InverseKinematics::optimize(const Eigen::VectorXd x0){
         problem_ = boost::make_shared<crocoddyl::ShootingProblem>(x0, rint_arr_, tint_model_);
         ddp_ = boost::make_shared<crocoddyl::SolverDDP>(problem_);
         ddp_->solve();
-
 
         // wonder how effecient this ?
         for (unsigned i = 0; i < n_col_; i++){

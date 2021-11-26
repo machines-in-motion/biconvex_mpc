@@ -1,4 +1,5 @@
 #include "motion_planner/kino_dyn.hpp"
+#include <chrono>
 
 namespace motion_planner{
 
@@ -33,15 +34,22 @@ namespace motion_planner{
     };
 
     void KinoDynMP::optimize(Eigen::VectorXd q, Eigen::VectorXd v, int dyn_iters, int kino_dyn_iters){
-
         pinocchio::computeCentroidalMomentum(rmodel_, rdata_, q, v);
         x0.head(rmodel_.nq) = q;
         x0.tail(rmodel_.nv) = v;
-
         set_warm_starts();
 
+        auto dyn_start = high_resolution_clock::now();
+        if (osqp_) {
+            dyn.optimize_osqp(X_wm.head(9), dyn_iters);
+        } else {
+            dyn.optimize(X_wm.head(9), dyn_iters);
+        }
+        auto dyn_end = high_resolution_clock::now();
+        auto dyn_duration = duration_cast<std::chrono::microseconds>(dyn_end - dyn_start);
+        std::cout << "Dynamics Optimization Took: " << dyn_duration.count() << " microseconds" << std::endl;
+
         //dyn.optimize(X_wm.head(9), dyn_iters);
-        dyn.optimize_osqp(X_wm.head(9), dyn_iters);
         dyn_com_opt = dyn.return_opt_com();
         dyn_mom_opt = dyn.return_opt_mom();
 
@@ -51,20 +59,18 @@ namespace motion_planner{
         ik.add_com_position_tracking_task(0, ik_col_, dyn_com_opt.topRows(ik_col_), wt_com_, "com_track", false);
         ik.add_com_position_tracking_task(0, ik_col_, dyn_com_opt.row(ik_col_), wt_com_, "com_track", true);
 
-        std::cout << "About to optimize Kinematics" << std::endl;
-
+        auto kin_start = high_resolution_clock::now();
         ik.optimize(x0);
+        auto kin_end = high_resolution_clock::now();
+        auto kin_duration = duration_cast<std::chrono::microseconds>(kin_end - kin_start);
+        std::cout << "Kinematics Optimization Took: " << kin_duration.count() << " microseconds" << std::endl;
         // Todo: add kino dyn iteration requirement later
         // ik.compute_optimal_com_and_mom(ik_com_opt, ik_mom_opt);
-
-        std::cout << "Kinematics optimized" << std::endl;
 
         n++;
     }
 
     void KinoDynMP::set_warm_starts(){
-
-        // if(n == 0){
         for (unsigned i = 0; i < X_wm.size()/9; ++i){
             X_wm[9*i] = rdata_.com[0][0];
             X_wm[9*i+1] = rdata_.com[0][1];

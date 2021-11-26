@@ -63,7 +63,7 @@ class BiConvexMP{
             rho_ = rho;
         }
         
-        void set_warm_start_vars(Eigen::VectorXd x_wm, Eigen::VectorXd f_wm, Eigen::VectorXd P_wm){
+        void set_warm_start_vars(Eigen::VectorXd& x_wm, Eigen::VectorXd& f_wm, Eigen::VectorXd& P_wm){
             prob_data_x.set_warm_x(x_wm);
             prob_data_f.set_warm_x(f_wm);
             P_k_ = P_wm;
@@ -174,10 +174,10 @@ class BiConvexMP{
         Eigen::MatrixXd com_opt_;
         Eigen::MatrixXd mom_opt_;
         
-        #ifdef USE_OSQP
-            OsqpEigen::Solver osqp_x;
-            OsqpEigen::Solver osqp_f;
-        #endif
+//        #ifdef USE_OSQP
+//            OsqpEigen::Solver osqp_x;
+//            OsqpEigen::Solver osqp_f;
+//        #endif
 
         Eigen::VectorXd dyn_violation;
         Eigen::VectorXd P_k_;

@@ -35,7 +35,7 @@ class ProblemData
         void compute_grad_obj();
 
         // warm starting x
-        void set_warm_x(Eigen::VectorXd x_wm){x_k = x_wm;}
+        void set_warm_x(Eigen::VectorXd& x_wm){x_k = x_wm;}
 
         int num_vars_; //Total number of variables to optimize over
         int state_ = 0; //Number of State Variables

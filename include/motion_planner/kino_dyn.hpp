@@ -21,8 +21,9 @@ namespace motion_planner{
             void set_warm_starts();
             void optimize(Eigen::VectorXd q, Eigen::VectorXd v, int dyn_iters, int kino_dyn_iters);
 
-            void set_com_tracking_weight(double wt_com){wt_com_ = wt_com;};
-            void set_mom_tracking_weight(double wt_mom){wt_mom_ = wt_mom;};
+            void set_com_tracking_weight(double wt_com){ wt_com_ = wt_com;};
+            void set_mom_tracking_weight(double wt_mom){ wt_mom_ = wt_mom;};
+            void use_osqp() { osqp_ = true; }
 
             BiConvexMP dyn;
             ik::InverseKinematics ik;
@@ -53,6 +54,8 @@ namespace motion_planner{
 
             double wt_com_ = 0; // com tracking weight
             double wt_mom_ = 0; // momentum tracking weight
+
+            bool osqp_ = false;
 
     };  
 }

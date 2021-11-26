@@ -124,6 +124,7 @@ class AbstractMpcGaitGen:
 
         # kino dyn
         self.kd = KinoDynMP(self.r_urdf, self.m, len(self.eef_names), self.horizon, self.ik_horizon)
+        self.kd.use_osqp()
         self.kd.set_com_tracking_weight(self.params.cent_wt[0])
         self.kd.set_mom_tracking_weight(self.params.cent_wt[1])
         
@@ -238,7 +239,7 @@ class AbstractMpcGaitGen:
                 dt = self.params.gait_dt
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
-        
+
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, w_des, ori_des):
@@ -355,7 +356,8 @@ class AbstractMpcGaitGen:
         #TODO: Move to C++
         t1 = time.time()
         self.create_cnt_plan(q, v, t, v_des, w_des)
-        #Creates costs for IK and Dynamics
+
+        # Creates costs for IK and Dynamics
         self.create_costs(q, v, v_des, w_des, ori_des)
 
         t2 = time.time()
@@ -364,15 +366,17 @@ class AbstractMpcGaitGen:
 
         t3 = time.time()
 
-        # print("Cost Time :", t2 - t1)
-        # print("Solve Time : ", t3 - t2)
-        # print(" ================================== ")
+        print("Cost Time :", t2 - t1)
+        print("Solve Time : ", t3 - t2)
+        print(" ================================== ")
 
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()
         F_opt = self.mp.return_opt_f()
         xs = self.ik.get_xs()
         us = self.ik.get_us()
+
+        print("Got optimal values")
 
         n_eff = 3*len(self.eef_names)
         for i in range(self.size):

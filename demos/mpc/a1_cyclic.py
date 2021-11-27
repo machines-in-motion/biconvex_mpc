@@ -1,5 +1,4 @@
 import numpy as np
-import time
 
 from paths.paths import Paths
 from abstract_cyclic_gen import AbstractMpcGaitGen
@@ -21,7 +20,7 @@ pln_ctr = 0
 robot_interface = RaisimEnv(project_paths.URDF_PATH, project_paths.ROBOT_INFO, sim_dt)
 
 # Set Motion Parameters
-v_des = np.array([0.8, 0.0, 0.0])
+v_des = np.array([0.35, 0.0, 0.0])
 w_des = 0.0
 plan_freq = 0.05  # sec #TODO: Should go inside motion
 update_time = 0.0  # sec (time of lag) #TODO: Should go inside robot_info?

@@ -14,8 +14,8 @@ class ProblemData
         ProblemData(int state, int horizon);
 
         // this sets the data for the optimization problem
-        void set_data(Eigen::SparseMatrix<double> A, Eigen::VectorXd b, 
-                      Eigen::VectorXd P_k, double rho);
+        void set_data(Eigen::SparseMatrix<double>& A, Eigen::VectorXd& b,
+                      Eigen::VectorXd& P_k, double rho);
 
         // function to set cost function
         void set_cost(Eigen::SparseMatrix<double> Q, Eigen::VectorXd q){

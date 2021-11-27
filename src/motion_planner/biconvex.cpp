@@ -38,7 +38,7 @@ namespace motion_planner{
                 osqp_x.data()->setUpperBound(prob_data_x.ub_);
                 osqp_x.settings()->setAbsoluteTolerance(1e-5);
                 osqp_x.settings()->setRelativeTolerance(1e-5);
-                //osqp_x.settings()->setMaxIteration(25);
+                //osqp_x.settings()->setMaxIteration(10);
                 osqp_x.settings()->setScaling(0);
                 osqp_x.settings()->setWarmStart(true);
                 osqp_x.settings()->setVerbosity(false);
@@ -162,7 +162,6 @@ namespace motion_planner{
         centroidal_dynamics.update_x_init(x_init);
 
         for (unsigned i = 0; i < num_iters; ++i){
-
             // optimizing for F
             centroidal_dynamics.compute_x_mat(prob_data_x.x_k);
             prob_data_f.set_data(centroidal_dynamics.A_x, centroidal_dynamics.b_x, P_k_, rho_);

@@ -6,7 +6,8 @@ namespace dynamics{
     CentroidalDynamics::CentroidalDynamics(double m, int n_col, int n_eff):
                 m_(m), n_col_(n_col), n_eff_(n_eff)
         {
-            dt_.resize(n_col_); dt_.setZero();
+            dt_.resize(n_col_);
+            dt_.setZero();
             // setting up A_f, and b_f (For optimizing for CoM, Vel, AMOM)
             A_f.resize(9*(n_col_+1), 9*(n_col_+1));
             b_f.resize(9*(n_col_+1));
@@ -55,7 +56,6 @@ namespace dynamics{
     }
 
     void CentroidalDynamics::compute_x_mat(Eigen::VectorXd &X){
-
         for (unsigned t = 0; t < n_col_; ++t){
             b_x[9*t+3] = X[9*(t+1)+3] - X[9*t+3];
             b_x[9*t+4] = X[9*(t+1)+4] - X[9*t+4];
@@ -70,7 +70,7 @@ namespace dynamics{
                 A_x.coeffRef(9*t+4, 3*n_eff_*t + 3*n + 1) = cnt_arr_(t,n)*(dt_[t]/m_);
                 A_x.coeffRef(9*t+5, 3*n_eff_*t + 3*n + 2) = cnt_arr_(t,n)*(dt_[t]/m_);
 
-                // AMOM constraints
+                // Angular Momentum constraints
                 A_x.coeffRef(9*t+6, 3*n_eff_*t+3*n+1) = cnt_arr_(t,n)*(X((9*t)+2) - r_[t](n,2))*dt_[t];
                 A_x.coeffRef(9*t+6, 3*n_eff_*t+3*n+2) = -cnt_arr_(t,n)*(X((9*t)+1) - r_[t](n,1))*dt_[t];
 

@@ -26,8 +26,7 @@ class AbstractMpcGaitGen:
         self.rdata = self.rmodel.createData()
         self.r_urdf = r_urdf
         self.foot_size = robot_info['foot_size']
-        
-        # TODO: DEPRECATE THIS...
+
         # Use for a fixed frequency planning time
         self.planning_time = planning_time
         self.eef_names = robot_info['eef_names']
@@ -53,23 +52,22 @@ class AbstractMpcGaitGen:
             self.offsets[i] = np.round(self.offsets[i], 3)
 
         # Contact-planning offsets
-        self.offsets[0][0] -= 0.00 #Front Left_X
-        self.offsets[0][1] += 0.04 #Front Left_Y
+        self.offsets[0][0] -= robot_info['offsets'][0][0] #Front Left_X
+        self.offsets[0][1] += robot_info['offsets'][0][1] #Front Left_Y
         
-        self.offsets[1][0] -= 0.00 #Front Right_X
-        self.offsets[1][1] -= 0.04 #Front Right_Y
+        self.offsets[1][0] -= robot_info['offsets'][1][0] #Front Right_X
+        self.offsets[1][1] -= robot_info['offsets'][1][1] #Front Right_Y
         
-        self.offsets[2][0] += 0.00 #Hind Left_X
-        self.offsets[2][1] += 0.04 #Hind Left_Y
+        self.offsets[2][0] += robot_info['offsets'][2][0] #Hind Left_X
+        self.offsets[2][1] += robot_info['offsets'][2][1] #Hind Left_Y
         
-        self.offsets[3][0] += 0.00 #Hind Right X
-        self.offsets[3][1] -= 0.04 #Hind Right Y
-        self.apply_offset = True
+        self.offsets[3][0] += robot_info['offsets'][3][0] #Hind Right X
+        self.offsets[3][1] -= robot_info['offsets'][3][1] #Hind Right Y
 
-        #Rotate offsets to local frame
+        # Rotate offsets to local frame
         R = pin.Quaternion(np.array(self.q0[3:7])).toRotationMatrix()
         for i in range(len(self.eef_names)):
-            #Rotate offsets to local frame
+            # Rotate offsets to local frame
             self.offsets[i] = np.matmul(R.T, self.offsets[i])
 
         #Regularization for IK using nominal position
@@ -77,13 +75,6 @@ class AbstractMpcGaitGen:
 
         # --- Set up Dynamics ---
         self.m = pin.computeTotalMass(self.rmodel)
-
-        #Set up logging for average optimization time
-        self.dyn_comp_ave = 0.0
-        self.dyn_comp_total = 0.0
-        self.ik_comp_ave = 0.0
-        self.ik_comp_total = 0.0
-        self.num_optimization_ctr = 0 # Counter
 
         # Set up constraints for Dynamics
         self.bx = robot_info['kinematic_limits'][0]
@@ -98,6 +89,13 @@ class AbstractMpcGaitGen:
         self.xs_traj = []
         self.q_traj = []
         self.v_traj = []
+
+        #Set up logging for average optimization time
+        self.dyn_comp_ave = 0.0
+        self.dyn_comp_total = 0.0
+        self.ik_comp_ave = 0.0
+        self.ik_comp_total = 0.0
+        self.num_optimization_ctr = 0 # Counter
 
         #Height Map (for contacts)
         self.height_map = height_map

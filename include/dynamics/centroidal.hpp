@@ -2,7 +2,6 @@
 // Author : Avadesh Meduri & Paarth Shah
 // Date : 15/04/2021
 
-
 #ifndef CENTROIDAL_HPP
 #define CENTROIDAL_HPP
 #include <iostream>
@@ -52,11 +51,8 @@ namespace dynamics{
             int n_col_;
             const double n_eff_;
 
+            //Vector of dt_'s for variable dt_
             Eigen::VectorXd dt_;
-
-            //TODO: 
     };
-
 }
-
 #endif

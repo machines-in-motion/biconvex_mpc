@@ -301,7 +301,7 @@ class AbstractMpcGaitGen:
 
         amom = self.compute_ori_correction(q, des_quat.coeffs())
 
-        #Set terminal references
+        # Set terminal references
         X_ter[0:2] = self.X_init[0:2] + (self.params.gait_horizon*self.params.gait_period*v_des)[0:2] #Changed this
         X_ter[2] = self.params.nom_ht
         X_ter[3:6] = v_des
@@ -316,7 +316,7 @@ class AbstractMpcGaitGen:
             yaw_momentum = np.matmul(self.I_composite_b,[0.0, 0.0, w_des])[2]
             self.X_nom[8::9] = yaw_momentum
             X_ter[8] = yaw_momentum
-            #print(yaw_momentum)
+            print(yaw_momentum)
 
         # Setup dynamic optimization costs
         bounds = np.tile([-self.bx, -self.by, 0, self.bx, self.by, self.bz], (self.horizon,1))

@@ -11,9 +11,8 @@ namespace ik{
             if (!isTerminal){
                 for (unsigned i = sn; i < en; ++i){
                     boost::shared_ptr<crocoddyl::CostModelAbstract> com_track = 
-                            boost::make_shared<crocoddyl::CostModelResidual>(
-                                    state_, 
-                                    boost::make_shared<crocoddyl::ResidualModelCoMPosition>(state_, traj.row(i - sn)));
+                            boost::make_shared<crocoddyl::CostModelResidual>(state_,
+                                    boost::make_shared<crocoddyl::ResidualModelCoMPosition>(state_,traj.row(i - sn)));
                     rcost_arr_[i].get()->addCost(cost_name, com_track, wt);
                 }
             }

@@ -134,14 +134,14 @@ namespace dynamics{
                 A_f.coeffRef(9*t+8, 9*t+1) += cnt_arr_(t,n)*F[3*t*n_eff_ + 3*n+0]*dt_[t];
 
                 //r x F where r is the end-effector location, and the x is the vector cross product
-                A_f.coeffRef(9*t+6, 9*(n_col_+1) + ((3*n_eff_)*t) + 3*n+1) = cnt_arr_(t,0)*F[3*t*n_eff_ + 3*n+2]*dt_[t];
-                A_f.coeffRef(9*t+6, 9*(n_col_+1) + ((3*n_eff_)*t)+ 3*n+2) = -cnt_arr_(t,0)*F[3*t*n_eff_ + 3*n+1]*dt_[t];
+                A_f.coeffRef(9*t+6, 9*(n_col_+1) + ((3*n_eff_)*t) + 3*n+1) = cnt_arr_(t,n)*F[3*t*n_eff_ + 3*n+2]*dt_[t];
+                A_f.coeffRef(9*t+6, 9*(n_col_+1) + ((3*n_eff_)*t)+ 3*n+2) = -cnt_arr_(t,n)*F[3*t*n_eff_ + 3*n+1]*dt_[t];
 
-                A_f.coeffRef(9*t+7, 9*(n_col_+1) + ((3*n_eff_)*t)+ 3*n+0) = -cnt_arr_(t,0)*F[3*t*n_eff_ + 3*n+2]*dt_[t];
-                A_f.coeffRef(9*t+7, 9*(n_col_+1) + ((3*n_eff_)*t)+ 3*n+2) = cnt_arr_(t,0)*F[3*t*n_eff_ + 3*n+0]*dt_[t];
+                A_f.coeffRef(9*t+7, 9*(n_col_+1) + ((3*n_eff_)*t)+ 3*n+0) = -cnt_arr_(t,n)*F[3*t*n_eff_ + 3*n+2]*dt_[t];
+                A_f.coeffRef(9*t+7, 9*(n_col_+1) + ((3*n_eff_)*t)+ 3*n+2) = cnt_arr_(t,n)*F[3*t*n_eff_ + 3*n+0]*dt_[t];
 
-                A_f.coeffRef(9*t+8, 9*(n_col_+1) + ((3*n_eff_)*t)+ 3*n+0) = cnt_arr_(t,0)*F[3*t*n_eff_ + 3*n+1]*dt_[t];
-                A_f.coeffRef(9*t+8, 9*(n_col_+1) + ((3*n_eff_)*t)+ 3*n+1) = -cnt_arr_(t,0)*F[3*t*n_eff_ + 3*n+0]*dt_[t];
+                A_f.coeffRef(9*t+8, 9*(n_col_+1) + ((3*n_eff_)*t)+ 3*n+0) = cnt_arr_(t,n)*F[3*t*n_eff_ + 3*n+1]*dt_[t];
+                A_f.coeffRef(9*t+8, 9*(n_col_+1) + ((3*n_eff_)*t)+ 3*n+1) = -cnt_arr_(t,n)*F[3*t*n_eff_ + 3*n+0]*dt_[t];
                 
                 b_f[9*t+3] += -cnt_arr_(t,n)*F[3*t*n_eff_+3*n+0]*dt_[t]/m_;
                 b_f[9*t+4] += -cnt_arr_(t,n)*F[3*t*n_eff_+3*n+1]*dt_[t]/m_;

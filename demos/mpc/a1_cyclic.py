@@ -36,7 +36,7 @@ robot_id_ctrl = InverseDynamicsController(project_paths.URDF_PATH, project_paths
 robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
 # Plotting
-plot_time = np.inf
+plot_time = 0.0
 
 for o in range(int(500 * (plan_freq / sim_dt))):
     q, v = robot_interface.get_state()

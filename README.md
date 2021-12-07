@@ -1,29 +1,21 @@
 # BiConvex Motion Planner
 
-This repo contains the centroidal motion planner based on a Biconvex solver and DDP based non linear IK
+This repo contains the full body centroidal motion planner based on an ADMM solution method for the centroidal dynamics and DDP based non-linear Inverse Kinematics
 
 ## Dependencies
 ```
 - Pinocchio
-- Crocoddyl (Version 1.7, Version 1.8 > not supported)
+- Crocoddyl (Version 1.8.1 or greater)
 - OsqpEigen (Optional, to use OSQP as the solver) [Link here: https://github.com/robotology/osqp-eigen]
-- Matplotlib (Optional, needed to run demos)
-- Robot_Properties_Solo (Optional, needed to run demos)
-- Robot_Properties_Bolt (Optional, needed to run demos)
-```
-## Installation
-```
-git@github.com:machines-in-motion/biconvex_mpc.git
-cd biconvex_mpc
-pip3 install .
 ```
 
-For C++:
+## Installation
 
 ```
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make install
+pip install ..
 ```
 
 If you want to use OSQP, the cmake instructions should be modified to the following:

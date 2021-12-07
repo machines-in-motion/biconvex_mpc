@@ -10,10 +10,15 @@ namespace motion_planner{
     
             com_opt_.resize(n_col_ + 1, 3); com_opt_.setZero();
             mom_opt_.resize(n_col_ + 1, 6); mom_opt_.setZero();
-        
-            dyn_violation.resize(9*(n_col_+1));
+
+            num_com_states_ = 9*(n_col_+1);
+
+            prob_data_x.resize((9+12)*(n_col_+1));
+            std::cout << "Prob Data Resized" << std::endl;
+
+            dyn_violation.resize(prob_data_x.num_vars_);
             dyn_violation.setZero();
-            P_k_.resize(9*(n_col_+1));
+            P_k_.resize(prob_data_x.num_vars_);
             P_k_.setZero();
 
             // setting starting line search params
@@ -27,11 +32,11 @@ namespace motion_planner{
             Eigen::SparseMatrix<double> constraintMatF =
                     Eigen::MatrixXd::Identity(3*n_eff_* n_col_, 3*n_eff_* n_col_).sparseView();
             Eigen::SparseMatrix<double> constraintMatX =
-                    Eigen::MatrixXd::Identity(9*(n_col_+1), 9*(n_col_+1)).sparseView();
+                    Eigen::MatrixXd::Identity(prob_data_x.num_vars_, prob_data_x.num_vars_).sparseView();
 
             #ifdef USE_OSQP
-                osqp_x.data()->setNumberOfVariables(9*(n_col_+1));
-                osqp_x.data()->setNumberOfConstraints(9*(n_col_+1));
+                osqp_x.data()->setNumberOfVariables(prob_data_x.num_vars_);
+                osqp_x.data()->setNumberOfConstraints(prob_data_x.num_vars_);
 
                 osqp_x.data()->setLinearConstraintsMatrix(constraintMatX);
                 osqp_x.data()->setLowerBound(prob_data_x.lb_);
@@ -55,7 +60,6 @@ namespace motion_planner{
                 osqp_f.settings()->setWarmStart(true);
                 osqp_f.settings()->setVerbosity(false);
             #endif
-
     };
 
     void BiConvexMP::create_bound_constraints(Eigen::MatrixXd b, double fx_max, double fy_max, double fz_max){
@@ -63,6 +67,11 @@ namespace motion_planner{
         // Add checks to use regular infinity and not osqp infinity when using FISTA
         prob_data_x.lb_ = -1*OsqpEigen::INFTY*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
         prob_data_x.ub_ = OsqpEigen::INFTY*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
+
+//        prob_data_x.lb_[prob_data_x.num_vars_] = 0.0;
+//        prob_data_x.ub_[prob_data_x.num_vars_] = 0.0;
+        prob_data_x.lb_.tail(12*(prob_data_x.horizon_)) = Eigen::VectorXd::Zero(12*(prob_data_x.horizon_));
+        prob_data_x.ub_.tail(12*(prob_data_x.horizon_)) = Eigen::VectorXd::Zero(12*(prob_data_x.horizon_));
         
         // TODO: Throw errors here
         if (b.cols() != 6){
@@ -81,11 +90,11 @@ namespace motion_planner{
                 prob_data_f.ub_[3*n_eff_*i+ j*3 + 2] = fz_max;                    
             }
             if (centroidal_dynamics.cnt_arr_.row(i).sum() > 0){
-                prob_data_x.lb_[9*i] = centroidal_dynamics.r_[i].col(0).maxCoeff() + b(i,0);
+                prob_data_x.lb_[9*i] =   centroidal_dynamics.r_[i].col(0).maxCoeff() + b(i,0);
                 prob_data_x.lb_[9*i+1] = centroidal_dynamics.r_[i].col(1).maxCoeff() + b(i,1);
                 prob_data_x.lb_[9*i+2] = centroidal_dynamics.r_[i].col(2).maxCoeff() + b(i,2);
 
-                prob_data_x.ub_[9*i] = centroidal_dynamics.r_[i].col(0).minCoeff() + b(i,3);
+                prob_data_x.ub_[9*i] =   centroidal_dynamics.r_[i].col(0).minCoeff() + b(i,3);
                 prob_data_x.ub_[9*i+1] = centroidal_dynamics.r_[i].col(1).minCoeff() + b(i,4);
                 prob_data_x.ub_[9*i+2] = centroidal_dynamics.r_[i].col(2).minCoeff() + b(i,5);
             }
@@ -93,21 +102,31 @@ namespace motion_planner{
     };
 
     void BiConvexMP::create_cost_X(Eigen::VectorXd W_X, Eigen::VectorXd W_X_ter, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom){
-
-        for (unsigned i = 0; i < prob_data_x.num_vars_ - 9; ++i){
+        //Set Hessian
+        for (unsigned int i = 0; i < num_com_states_ - 9; ++i){
             prob_data_x.Q_.coeffRef(i,i) = W_X[i];
         }
-        for (unsigned i = prob_data_x.num_vars_-9; i < prob_data_x.num_vars_ ; ++i){
-            prob_data_x.Q_.coeffRef(i,i) = W_X_ter[i - prob_data_x.num_vars_ + 9];
-        }
-        
-        prob_data_x.q_.head(prob_data_x.num_vars_ - 9) = -2*X_nom.cwiseProduct(W_X);
-        prob_data_x.q_.tail(9) = -2*X_ter.cwiseProduct(W_X_ter);
 
+        //Fix this...it's ugly
+        int j = 0;
+        std::cout << "initial i: " <<  num_com_states_ - 9 << std::endl;
+        for (unsigned int i = num_com_states_ - 9; i < num_com_states_; ++i){
+            prob_data_x.Q_.coeffRef(i,i) = W_X_ter[j];
+            ++j;
+        }
+
+        for (unsigned int i = num_com_states_; i < prob_data_x.num_vars_; ++i) {
+            prob_data_x.Q_.coeffRef(i, i) = 1e-8;
+        }
+
+        //Set Gradient
+        prob_data_x.q_.head(9*(n_col_+1)) = -2*X_nom.cwiseProduct(W_X);
+        //prob_data_x.q_.tail(9) = -2*X_ter.cwiseProduct(W_X_ter);
+        prob_data_x.q_.segment(9*(n_col_), 9) = -2*X_ter.cwiseProduct(W_X_ter);
     };
 
     void BiConvexMP::create_cost_F(Eigen::VectorXd W_F){
-        for (unsigned i = 0; i < prob_data_f.num_vars_; ++i){
+        for (unsigned int i = 0; i < prob_data_f.num_vars_; ++i){
             prob_data_f.Q_.coeffRef(i,i) = W_F[i];
         }
     }
@@ -130,6 +149,7 @@ namespace motion_planner{
             prob_data_x.set_data(centroidal_dynamics.A_f, centroidal_dynamics.b_f, P_k_, rho_);
             fista_x.optimize(prob_data_x, maxit, tol);
 
+            //Dynamic Violation Calculation
             dyn_violation = centroidal_dynamics.A_f * prob_data_x.x_k - centroidal_dynamics.b_f;
             P_k_ += dyn_violation;
             // std::cout << dyn_violation.norm() << std::endl;

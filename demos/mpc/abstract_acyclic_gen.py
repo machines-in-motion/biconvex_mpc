@@ -316,6 +316,7 @@ class SoloAcyclicGen:
 
         t2 = time.time()
 
+        print("About to Optimize: ")
         self.kd.optimize(q, v, 50, 1)
 
         t3 = time.time()

@@ -158,6 +158,7 @@ class BiConvexMP{
 
         int n_col_ = 0;
         int n_eff_ = 0;
+        int num_com_states_ = 0;
         double T_;
         
         // problem data for x optimization (Used in optimization for Forces)

@@ -58,4 +58,31 @@ namespace function
         gradient = ATA_*y_k + ATbPk_;
     }
 
+    void ProblemData::resize(int num_vars) {
+        num_vars_ = num_vars;
+
+        y_k.resize(num_vars_);
+        y_k.setZero();
+        y_k_1.resize(num_vars_);
+        y_k_1.setZero();
+        x_k.resize(num_vars_);
+        x_k.setZero();
+        x_k_1.resize(num_vars_);
+        x_k_1.setZero();
+
+        gradient.resize(num_vars_);
+        gradient.setZero();
+        y_diff.resize(num_vars_);
+        y_diff.setZero();
+
+        lb_.resize(num_vars_);
+        lb_.setZero();
+        ub_.resize(num_vars_);
+        ub_.setZero();
+
+        Q_.resize(num_vars_, num_vars_);
+        q_.resize(num_vars_);
+        q_.setZero();
+    }
+
 } //namespace function

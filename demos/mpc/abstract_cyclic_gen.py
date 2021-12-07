@@ -320,6 +320,7 @@ class AbstractMpcGaitGen:
 
         # Setup dynamic optimization costs
         bounds = np.tile([-self.bx, -self.by, 0, self.bx, self.by, self.bz], (self.horizon,1))
+
         self.mp.create_bound_constraints(bounds, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(np.tile(self.params.W_X, self.horizon), self.params.W_X_ter, X_ter, self.X_nom)
         self.mp.create_cost_F(np.tile(self.params.W_F, self.horizon))
@@ -364,6 +365,7 @@ class AbstractMpcGaitGen:
 
         t2 = time.time()
 
+        print("Optimizing: ")
         self.kd.optimize(q, v, 60, 1)
 
         t3 = time.time()

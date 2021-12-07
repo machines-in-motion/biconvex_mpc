@@ -36,15 +36,10 @@ robot_id_ctrl = InverseDynamicsController(project_paths.URDF_PATH, project_paths
 robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
 # Plotting
-plot_time = 0.0
+plot_time = np.inf
 
 for o in range(int(500 * (plan_freq / sim_dt))):
     q, v = robot_interface.get_state()
-
-    # if o == int(50*(plan_freq/sim_dt)):
-    #     gait_params = trot
-    #     gg.update_gait_params(gait_params, sim_t)
-    #     robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
     # Update MPC Plan
     if pln_ctr == 0:

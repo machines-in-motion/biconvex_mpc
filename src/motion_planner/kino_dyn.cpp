@@ -5,7 +5,6 @@ namespace motion_planner{
 
     KinoDynMP::KinoDynMP(std::string urdf, double m, int n_eff, int dyn_col, int ik_col):
                 dyn_col_(dyn_col), ik_col_(ik_col), dyn(m, dyn_col, n_eff), ik(urdf, ik_col){
-        std::cout << "Initialized Kino-Dyn planner" << std::endl;
         pinocchio::urdf::buildModel(urdf,pinocchio::JointModelFreeFlyer(), rmodel_) ;
         pinocchio::Data rdata_tmp(rmodel_);
         rdata_ = rdata_tmp;
@@ -31,6 +30,8 @@ namespace motion_planner{
         ik_com_opt.setZero();
         ik_mom_opt.resize(ik_col+1, 6);
         ik_mom_opt.setZero();
+
+        std::cout << "Initialized Kino-Dynamic Planner" << std::endl;
     };
 
     void KinoDynMP::optimize(Eigen::VectorXd q, Eigen::VectorXd v, int dyn_iters, int kino_dyn_iters){

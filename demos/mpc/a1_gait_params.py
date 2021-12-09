@@ -123,16 +123,16 @@ trot.state_wt = np.array([0., 0, 100] + [1000, 1000, 1000] + [10.0] * (12) \
 trot.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [2.0] *(12)
 
 trot.swing_wt = [1e4, 1e4]
-trot.cent_wt = [5e+1, 5e+2]
+trot.cent_wt = [5e+2, 5e+2]
 trot.step_ht = 0.1
 trot.nom_ht = 0.27
-trot.reg_wt = [5e-2, 1e-5]
+trot.reg_wt = [5e-1, 1e-5]
 
 # Dyn
 trot.W_X =        np.array([3e-3, 3e-3, 1e+5, 1e+2, 1e+2, 2e+2, 1e+4, 1e+5, 1e4])
 trot.W_X_ter = 10*np.array([1e+5, 1e+5, 5e+5, 1e+2, 1e+2, 2e+2, 1e+5, 1e+5, 1e5])
 trot.W_F = np.array(4*[1e-1, 1e-1, 1e-1])
-trot.rho = 5e+4
+trot.rho = 3e+4
 trot.ori_correction = [0.30, 0.4, 0.4]
 trot.gait_horizon = 1.25
 trot.kp = 12.0

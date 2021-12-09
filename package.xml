@@ -10,8 +10,8 @@
         This repo contains the centroidal motion planner based on a Biconvex solver
     </description>
     
-    <author email="am9789@nyu.edu">Avadesh Meduri</author>
-    <maintainer "am9789@nyu.edu">Avadesh Meduri</maintainer>
+    <author email="paarth@oxfordrobotics.institute">Paarth Shah</author>
+    <maintainer "paarth@oxfordrobotics.institute">Paarth Shah</maintainer>
     
     <license>BSD-3-clause</license>
 

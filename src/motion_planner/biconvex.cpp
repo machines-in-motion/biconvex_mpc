@@ -31,6 +31,17 @@ namespace motion_planner{
             //Set number of variables and constraints for osqp-eigen
             Eigen::SparseMatrix<double> constraintMatF =
                     Eigen::MatrixXd::Identity(3*n_eff_* n_col_, 3*n_eff_* n_col_).sparseView();
+
+            Eigen::SparseMatrix<double> constraintMatFTrue =
+                    Eigen::MatrixXd::Zeros(5*n_eff_* n_col_, 3*n_eff_* n_col_).sparseView();
+
+            //Set up friction cone constraints properly
+//            for (unsigned int = 0; i < n_col_; ++i) {
+//                for (unsigned int j = 0; j < n_eff_; ++j) {
+//                    constraintMatFTrue.coeffRef(i * (5 * j))
+//                }
+//            }
+
             Eigen::SparseMatrix<double> constraintMatX =
                     Eigen::MatrixXd::Identity(prob_data_x.num_vars_, prob_data_x.num_vars_).sparseView();
 
@@ -68,8 +79,6 @@ namespace motion_planner{
         prob_data_x.lb_ = -1*OsqpEigen::INFTY*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
         prob_data_x.ub_ = OsqpEigen::INFTY*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
 
-//        prob_data_x.lb_[prob_data_x.num_vars_] = 0.0;
-//        prob_data_x.ub_[prob_data_x.num_vars_] = 0.0;
         prob_data_x.lb_.tail(12*(prob_data_x.horizon_)) = Eigen::VectorXd::Zero(12*(prob_data_x.horizon_));
         prob_data_x.ub_.tail(12*(prob_data_x.horizon_)) = Eigen::VectorXd::Zero(12*(prob_data_x.horizon_));
         

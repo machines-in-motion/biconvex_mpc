@@ -51,63 +51,64 @@ class BiConvexMP{
         }
     
         // function to set cost function
-        void set_cost_x(Eigen::SparseMatrix<double> Q_x, Eigen::VectorXd q_x){
-            prob_data_x.Q_ = Q_x; prob_data_x.q_ = q_x;
+        void set_cost_x(Eigen::SparseMatrix<double> Q_x, Eigen::VectorXd q_x) {
+            prob_data_x.Q_ = Q_x;
+            prob_data_x.q_ = q_x;
         }
 
-        void set_cost_f(Eigen::SparseMatrix<double> Q_f, Eigen::VectorXd q_f){
-            prob_data_f.Q_ = Q_f; prob_data_f.q_ = q_f;
+        void set_cost_f(Eigen::SparseMatrix<double> Q_f, Eigen::VectorXd q_f) {
+            prob_data_f.Q_ = Q_f;
+            prob_data_f.q_ = q_f;
         }
         
         void set_rho(double rho){
             rho_ = rho;
         }
         
-        void set_warm_start_vars(Eigen::VectorXd& x_wm, Eigen::VectorXd& f_wm, Eigen::VectorXd& P_wm){
+        void set_warm_start_vars(Eigen::VectorXd& x_wm, Eigen::VectorXd& f_wm, Eigen::VectorXd& P_wm) {
             prob_data_x.set_warm_x(x_wm);
             prob_data_f.set_warm_x(f_wm);
             P_k_ = P_wm;
         }
 
-        void set_bounds_x(Eigen::VectorXd lb, Eigen::VectorXd ub) 
-                {prob_data_x.lb_ = lb; prob_data_x.ub_ = ub;}
-
-        void set_bounds_f(Eigen::VectorXd lb, Eigen::VectorXd ub) 
-                {prob_data_f.lb_ = lb; prob_data_f.ub_ = ub;}
-
-        // box constraints created on parameters and contact plan
+        // box constraints for kinematics
         void create_bound_constraints(Eigen::MatrixXd b, double fx_max, double fy_max, double fz_max);
-        // creates basic quadratic costs for optimizing X
+
+        // Create friction cone constraints
+        void create_friction_cone_constraints(double fz_max);
+
+        // creates basic quadratic costs for optimizing CoM, Linear Momentum, Angular Momentum
         void create_cost_X(Eigen::VectorXd W_X, Eigen::VectorXd W_X_ter, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom);
+
+        // Create basic quadratic cost for optimizing for Forces
         void create_cost_F(Eigen::VectorXd W_F);
+
+        //Update nominal values of center of mass and momentum
         void update_nomimal_com_mom(Eigen::MatrixXd opt_com, Eigen::MatrixXd opt_mom);
- 
+
+        //Set rotation matrix
+        //TODO: Move this to be implicitly inside the calculation of Force
         void set_rotation_matrix_f(Eigen::MatrixXd rot_matrix)
         {
             prob_data_f.rotation_matrices.push_back(rot_matrix);
             prob_data_f.rotation_matrices_trans.push_back(rot_matrix.transpose());
         }
 
-
+        //Biconvex Optimization
         void optimize(Eigen::VectorXd x_init, int no_iters);
 
+        //Biconvex Optimization using OSQP
         void optimize_osqp(Eigen::VectorXd x_init, int no_iters);
 
         //Shifting cost function for MPC by one knot point
         //TODO: Rename to shift_cost() ?
         void update_cost_x(Eigen::VectorXd X_ter, Eigen::VectorXd X_ter_nrml);
 
-        //Update bounds on X (states) for MPC
-        //Inputs: lb_fin = new final lower bound constraints, not ALL bounds (i.e. should be length = 9)
-        //      : ub_fin = new final upper bound constraints, not ALL bounds (i.e. should be length 
-        void update_bounds_x(Eigen::VectorXd lb_fin, Eigen::VectorXd ub_fin);
-
-        //Update constraint Matrix A_x, and b_x
-        void update_constraints_x();
+        //Update initial states
+        void update_initial_states(Eigen::VectorXd init_state);
 
         //Shift cost functions, constraints, and solutions
         void shift_horizon();
-        
 
         Eigen::VectorXd return_opt_x(){
             return prob_data_x.x_k;
@@ -130,6 +131,7 @@ class BiConvexMP{
 
         void set_friction_coefficient(double mu) {
             fista_f.set_friction_coefficient(mu);
+            mu_ = mu;
         }
 
         void set_robot_mass(double m) {
@@ -155,6 +157,8 @@ class BiConvexMP{
         double tol = 1e-5;
         // tolerance for exiting biconvex
         double exit_tol = 1e-3;
+
+        double mu_ = 1.0;
 
         int n_col_ = 0;
         int n_eff_ = 0;
@@ -188,6 +192,7 @@ class BiConvexMP{
         bool log_statistics = false;
         std::vector<double> dyn_violation_hist_;
 
+        bool use_proper_constraints_ = false;
     };
 }
 

@@ -75,6 +75,8 @@ class AbstractMpcGaitGen:
 
         # --- Set up Dynamics ---
         self.m = pin.computeTotalMass(self.rmodel)
+        # print("Mass:")
+        # print(self.m)
 
         # Set up constraints for Dynamics
         self.bx = robot_info['kinematic_limits'][0]
@@ -238,6 +240,7 @@ class AbstractMpcGaitGen:
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
 
+        print(self.cnt_plan)
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, w_des, ori_des):
@@ -324,6 +327,7 @@ class AbstractMpcGaitGen:
         self.mp.create_bound_constraints(bounds, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(np.tile(self.params.W_X, self.horizon), self.params.W_X_ter, X_ter, self.X_nom)
         self.mp.create_cost_F(np.tile(self.params.W_F, self.horizon))
+        self.mp.update_initial_states(self.X_init)
 
     def compute_ori_correction(self, q, des_quat):
         """

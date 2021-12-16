@@ -13,12 +13,7 @@ namespace dynamics{
             b_f.resize((9+12)*(n_col_+1));
             b_f.setZero();
             for (unsigned t = 0; t < n_col_; ++t){
-                for (unsigned l = 0; l < 3; ++l){
-                    // creating identities
-                    A_f.coeffRef(9*t+l,9*t+l) = 1.0;
-                    A_f.coeffRef(9*t+l,9*(t+1)+l) = -1.0;
-                }
-                for (unsigned l = 3; l < 9; ++l){
+                for (unsigned l = 0; l < 9; ++l){
                     // creating identities
                     A_f.coeffRef(9*t+l,9*t+l) = 1.0;
                     A_f.coeffRef(9*t+l,9*(t+1)+l) = -1.0;

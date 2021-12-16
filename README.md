@@ -24,6 +24,28 @@ If you want to use OSQP, the cmake instructions should be modified to the follow
 cmake .. -DCMAKE_BUILD_TYPE=Release -DOSQP=TRUE
 ```
 
+Finally, you must install the package as follows in the main directory as follows:
+
+```
+pip install
+```
+
+## Adding Paths
+In order to run and use the libraries, you must add the following paths to your $PYTHONPATH in the ~/.bashrc (or equivalent)
+
+```
+export PYTHONPATH=$PYTHONPATH:<WHERE-YOU-INSTALLED-THIS-PACKAGE>/build
+export PYTHONPATH=$PYTHONPATH:<WHERE-YOU-INSTALLED-THIS-PACKAGE>
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<WHERE-YOU-INSTALLED-THIS-PCKAGE>/build
+```
+
+If you are using Mac OSX, replace the last line with:
+
+```
+export DYLD_LIBRARY_PATH=DYLD_LIBRARY_PATH:<WHERE-YOU-HAVE-INSTALLED-THIS-PACKAGE>/build
+```
+
+
 
 ## Authors
 - Avadesh Meduri

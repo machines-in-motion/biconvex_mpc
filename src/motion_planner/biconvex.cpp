@@ -25,20 +25,33 @@ namespace motion_planner{
             fista_x.set_l0(2.25e6);
             fista_f.set_l0(506.25);
 
-            //Use Second Order Cone Projection
+            //Use Second Order Cone Projection for FISTA
             fista_f.set_soc_true();
 
             //Set number of variables and constraints for osqp-eigen
             Eigen::SparseMatrix<double> constraintMatF =
-                    Eigen::MatrixXd::Identity(3*n_eff_* n_col_, 3*n_eff_* n_col_).sparseView();
+                    Eigen::MatrixXd::Identity(prob_data_f.num_vars_, prob_data_f.num_vars_).sparseView();
 
             Eigen::SparseMatrix<double> constraintMatFTrue =
-                    Eigen::MatrixXd::Zeros(5*n_eff_* n_col_, 3*n_eff_* n_col_).sparseView();
+                    Eigen::MatrixXd::Zero(5*n_eff_* n_col_, prob_data_f.num_vars_).sparseView();
 
-            //Set up friction cone constraints properly
-//            for (unsigned int = 0; i < n_col_; ++i) {
+//            //Set up friction cone constraints properly
+//            for (unsigned int i = 0; i < n_col_; ++i) {
 //                for (unsigned int j = 0; j < n_eff_; ++j) {
-//                    constraintMatFTrue.coeffRef(i * (5 * j))
+//                    //Friction Cone Constraints on Fx (i.e. mu*Fz <= Fx <= mu*Fz
+//                    constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 0, i*(n_eff_*3) + 3*j + 0) = 1.0;
+//                    constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 0, i*(n_eff_*3) + 3*j + 2) = mu_;
+//                    constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 1, i*(n_eff_*3) + 3*j + 0) = 1.0;
+//                    constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 1, i*(n_eff_*3) + 3*j + 2) = -mu_;
+//
+//                    //Friction Cone Constraints on Fy (i.e. mu*Fz <= Fy <= mu*Fz
+//                    constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 2, i*(n_eff_*3) + 3*j + 0) = 1.0;
+//                    constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 2, i*(n_eff_*3) + 3*j + 2) = mu_;
+//                    constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 3, i*(n_eff_*3) + 3*j + 0) = 1.0;
+//                    constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 3, i*(n_eff_*3) + 3*j + 2) = -mu_;
+//
+//                    //Friction Cone Constraints on Fz (i.e. 0 <= Fz <= Fz_max
+//                    constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 4, i*(n_eff_*3) + 3*j + 3) = 1.0;
 //                }
 //            }
 
@@ -60,8 +73,14 @@ namespace motion_planner{
                 osqp_x.settings()->setVerbosity(false);
 
                 osqp_f.data()->setNumberOfVariables(3*n_eff_* n_col_);
-                osqp_f.data()->setNumberOfConstraints(3*n_eff_* n_col_);
-                osqp_f.data()->setLinearConstraintsMatrix(constraintMatF);
+                if (use_proper_constraints_) {
+                    osqp_f.data()->setNumberOfConstraints(5*n_eff_* n_col_);
+                    osqp_f.data()->setLinearConstraintsMatrix(constraintMatFTrue);
+                }
+                else {
+                    osqp_f.data()->setNumberOfConstraints(3*n_eff_* n_col_);
+                    osqp_f.data()->setLinearConstraintsMatrix(constraintMatF);
+                }
                 osqp_f.data()->setLowerBound(prob_data_f.lb_);
                 osqp_f.data()->setUpperBound(prob_data_f.ub_);
                 osqp_f.settings()->setAbsoluteTolerance(1e-5);
@@ -74,7 +93,6 @@ namespace motion_planner{
     };
 
     void BiConvexMP::create_bound_constraints(Eigen::MatrixXd b, double fx_max, double fy_max, double fz_max){
-
         // Add checks to use regular infinity and not osqp infinity when using FISTA
         prob_data_x.lb_ = -1*OsqpEigen::INFTY*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
         prob_data_x.ub_ = OsqpEigen::INFTY*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
@@ -134,13 +152,21 @@ namespace motion_planner{
         prob_data_x.q_.segment(9*(n_col_), 9) = -2*X_ter.cwiseProduct(W_X_ter);
     };
 
-    void BiConvexMP::create_cost_F(Eigen::VectorXd W_F){
+    void BiConvexMP::create_cost_F(Eigen::VectorXd W_F) {
         for (unsigned int i = 0; i < prob_data_f.num_vars_; ++i){
             prob_data_f.Q_.coeffRef(i,i) = W_F[i];
         }
     }
 
-    void BiConvexMP::optimize(Eigen::VectorXd x_init, int num_iters){
+    void BiConvexMP::update_initial_states(Eigen::VectorXd init_constraints) {
+        //Add assert to make sure the Vector provided has the same length as the initial state constraints
+        for (int i = 0; i < 9; ++i) {
+            prob_data_x.lb_[i] = init_constraints[i];
+            prob_data_x.ub_[i] = init_constraints[i];
+        }
+    }
+
+    void BiConvexMP::optimize(Eigen::VectorXd x_init, int num_iters) {
         // updating x_init
         centroidal_dynamics.update_x_init(x_init);
 
@@ -181,7 +207,6 @@ namespace motion_planner{
         }
     
         centroidal_dynamics.r_.clear();
-
         std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }
 
@@ -239,6 +264,7 @@ namespace motion_planner{
                 //Clear Contact Array (Check why this is necessary)
                 centroidal_dynamics.r_.clear();
 
+                //Clear solver (can I get rid of the clearSolver?)
                 osqp_f.clearSolver();
                 osqp_f.data()->clearHessianMatrix();
                 osqp_x.clearSolver();

@@ -6,11 +6,14 @@ namespace dynamics{
     CentroidalDynamics::CentroidalDynamics(double m, int n_col, int n_eff):
                 m_(m), n_col_(n_col), n_eff_(n_eff)
         {
+            //Setting arrays of dt_ in case we want to use variable timesteps
+            //Currently variable timesteps not used
             dt_.resize(n_col_);
             dt_.setZero();
+
             // setting up A_f, and b_f (For optimizing for CoM, Vel, AMOM)
-            A_f.resize((9+12)*(n_col_+1), (9+12)*(n_col_+1));
-            b_f.resize((9+12)*(n_col_+1));
+            A_f.resize((9)*(n_col_+1), (9)*(n_col_+1));
+            b_f.resize((9)*(n_col_+1));
             b_f.setZero();
             for (unsigned t = 0; t < n_col_; ++t){
                 for (unsigned l = 0; l < 9; ++l){
@@ -32,7 +35,29 @@ namespace dynamics{
             r_t.setZero();
     };
 
-    void CentroidalDynamics::set_contact_arrays(Eigen::MatrixXd cnt_plan, double dt){
+    void CentroidalDynamics::resize_f_mat(int num_states) {
+        A_f.resize((num_states)*(n_col_+1), (num_states)*(n_col_+1));
+        b_f.resize((num_states)*(n_col_+1));
+
+        b_f.setZero();
+
+        for (unsigned t = 0; t < n_col_; ++t){
+            for (unsigned l = 0; l < 9; ++l){
+                // creating identities
+                A_f.coeffRef(9*t+l,9*t+l) = 1.0;
+                A_f.coeffRef(9*t+l,9*(t+1)+l) = -1.0;
+            }
+        }
+    }
+
+    void CentroidalDynamics::update_x_init(Eigen::VectorXd &x_init) {
+        for(unsigned t = 0; t < 9; ++t){
+            A_f.coeffRef(9*n_col_+t, t) = 1.0;
+            b_f[9*n_col_+t] = x_init[t];
+        }
+    }
+
+    void CentroidalDynamics::set_contact_arrays(Eigen::MatrixXd cnt_plan, double dt) {
         r_.push_back(r_t);
         int i = r_.size() -1 ;
         for (unsigned j = 0; j < n_eff_; ++j) {
@@ -99,15 +124,17 @@ namespace dynamics{
             A_f.coeffRef(9*t+8, 9*t+0) = -cnt_arr_(t,0)*F[3*t*n_eff_+1]*dt_[t];
             A_f.coeffRef(9*t+8, 9*t+1) = cnt_arr_(t,0)*F[3*t*n_eff_+0]*dt_[t];
 
-            //r x F where r is the end-effector location, and the x is the vector cross product
-            A_f.coeffRef(9*t+6, 9*(n_col_+1) + ((3*n_eff_)*t)+1) = cnt_arr_(t,0)*F[3*t*n_eff_+2]*dt_[t];
-            A_f.coeffRef(9*t+6, 9*(n_col_+1) + ((3*n_eff_)*t)+2) = -cnt_arr_(t,0)*F[3*t*n_eff_+1]*dt_[t];
+            if (variable_footsteps_) {
+                //r x F where r is the end-effector location, and the x is the vector cross product
+                A_f.coeffRef(9*t+6, 9*(n_col_+1) + ((3*n_eff_)*t)+1) = cnt_arr_(t,0)*F[3*t*n_eff_+2]*dt_[t];
+                A_f.coeffRef(9*t+6, 9*(n_col_+1) + ((3*n_eff_)*t)+2) = -cnt_arr_(t,0)*F[3*t*n_eff_+1]*dt_[t];
 
-            A_f.coeffRef(9*t+7, 9*(n_col_+1) + ((3*n_eff_)*t)+0) = -cnt_arr_(t,0)*F[3*t*n_eff_+2]*dt_[t];
-            A_f.coeffRef(9*t+7, 9*(n_col_+1) + ((3*n_eff_)*t)+2) = cnt_arr_(t,0)*F[3*t*n_eff_+0]*dt_[t];
+                A_f.coeffRef(9*t+7, 9*(n_col_+1) + ((3*n_eff_)*t)+0) = -cnt_arr_(t,0)*F[3*t*n_eff_+2]*dt_[t];
+                A_f.coeffRef(9*t+7, 9*(n_col_+1) + ((3*n_eff_)*t)+2) = cnt_arr_(t,0)*F[3*t*n_eff_+0]*dt_[t];
 
-            A_f.coeffRef(9*t+8, 9*(n_col_+1) + ((3*n_eff_)*t)+0) = cnt_arr_(t,0)*F[3*t*n_eff_+1]*dt_[t];
-            A_f.coeffRef(9*t+8, 9*(n_col_+1) + ((3*n_eff_)*t)+1) = -cnt_arr_(t,0)*F[3*t*n_eff_+0]*dt_[t];
+                A_f.coeffRef(9*t+8, 9*(n_col_+1) + ((3*n_eff_)*t)+0) = cnt_arr_(t,0)*F[3*t*n_eff_+1]*dt_[t];
+                A_f.coeffRef(9*t+8, 9*(n_col_+1) + ((3*n_eff_)*t)+1) = -cnt_arr_(t,0)*F[3*t*n_eff_+0]*dt_[t];
+            }
 
             b_f[9*t+3] = -cnt_arr_(t,0)*F[3*t*n_eff_+0]*dt_[t]/m_;
             b_f[9*t+4] = -cnt_arr_(t,0)*F[3*t*n_eff_+1]*dt_[t]/m_;
@@ -128,21 +155,23 @@ namespace dynamics{
                     A_f.coeffRef(9 * t + 8, 9 * t + 0) += -cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 1] * dt_[t];
                     A_f.coeffRef(9 * t + 8, 9 * t + 1) += cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 0] * dt_[t];
 
-                    //r x F where r is the end-effector location, and the x is the vector cross product
-                    A_f.coeffRef(9 * t + 6, 9 * (n_col_ + 1) + ((3 * n_eff_) * t) + 3 * n + 1) =
-                            cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 2] * dt_[t];
-                    A_f.coeffRef(9 * t + 6, 9 * (n_col_ + 1) + ((3 * n_eff_) * t) + 3 * n + 2) =
-                            -cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 1] * dt_[t];
+                    if (variable_footsteps_) {
+                        //r x F where r is the end-effector location, and the x is the vector cross product
+                        A_f.coeffRef(9 * t + 6, 9 * (n_col_ + 1) + ((3 * n_eff_) * t) + 3 * n + 1) =
+                                cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 2] * dt_[t];
+                        A_f.coeffRef(9 * t + 6, 9 * (n_col_ + 1) + ((3 * n_eff_) * t) + 3 * n + 2) =
+                                -cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 1] * dt_[t];
 
-                    A_f.coeffRef(9 * t + 7, 9 * (n_col_ + 1) + ((3 * n_eff_) * t) + 3 * n + 0) =
-                            -cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 2] * dt_[t];
-                    A_f.coeffRef(9 * t + 7, 9 * (n_col_ + 1) + ((3 * n_eff_) * t) + 3 * n + 2) =
-                            cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 0] * dt_[t];
+                        A_f.coeffRef(9 * t + 7, 9 * (n_col_ + 1) + ((3 * n_eff_) * t) + 3 * n + 0) =
+                                -cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 2] * dt_[t];
+                        A_f.coeffRef(9 * t + 7, 9 * (n_col_ + 1) + ((3 * n_eff_) * t) + 3 * n + 2) =
+                                cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 0] * dt_[t];
 
-                    A_f.coeffRef(9 * t + 8, 9 * (n_col_ + 1) + ((3 * n_eff_) * t) + 3 * n + 0) =
-                            cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 1] * dt_[t];
-                    A_f.coeffRef(9 * t + 8, 9 * (n_col_ + 1) + ((3 * n_eff_) * t) + 3 * n + 1) =
-                            -cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 0] * dt_[t];
+                        A_f.coeffRef(9 * t + 8, 9 * (n_col_ + 1) + ((3 * n_eff_) * t) + 3 * n + 0) =
+                                cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 1] * dt_[t];
+                        A_f.coeffRef(9 * t + 8, 9 * (n_col_ + 1) + ((3 * n_eff_) * t) + 3 * n + 1) =
+                                -cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 0] * dt_[t];
+                    }
 
                     b_f[9 * t + 3] += -cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 0] * dt_[t] / m_;
                     b_f[9 * t + 4] += -cnt_arr_(t, n) * F[3 * t * n_eff_ + 3 * n + 1] * dt_[t] / m_;

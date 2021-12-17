@@ -163,7 +163,11 @@ class BiConvexMP{
         int n_col_ = 0;
         int n_eff_ = 0;
         int num_com_states_ = 0;
+        int num_friction_constraints_ = 0;
         double T_;
+
+        //Sets footstep locations to be variables
+        bool variable_footsteps_ = false;
         
         // problem data for x optimization (Used in optimization for Forces)
         function::ProblemData prob_data_x;
@@ -178,11 +182,6 @@ class BiConvexMP{
         // optimal CoM and Momentum trajectory (required for IK)
         Eigen::MatrixXd com_opt_;
         Eigen::MatrixXd mom_opt_;
-        
-        #ifdef USE_OSQP
-            OsqpEigen::Solver osqp_x;
-            OsqpEigen::Solver osqp_f;
-        #endif
 
         Eigen::VectorXd dyn_violation;
         Eigen::VectorXd P_k_;
@@ -192,6 +191,16 @@ class BiConvexMP{
         bool log_statistics = false;
         std::vector<double> dyn_violation_hist_;
 
+        /*
+         * OSQP Specific variables
+         * TODO: Make this all dependent on whether or not osqp is used
+         */
+        #ifdef USE_OSQP
+                OsqpEigen::Solver osqp_x;
+                OsqpEigen::Solver osqp_f;
+        #endif
+
+        //Use proper friction cone constraints for OSQP
         bool use_proper_constraints_ = false;
     };
 }

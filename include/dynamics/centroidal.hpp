@@ -14,17 +14,22 @@ namespace dynamics{
 
         public:
             CentroidalDynamics(double m, int n_col, int n_eff);
-        
-            void compute_x_mat(Eigen::VectorXd &X);
-            void compute_f_mat(Eigen::VectorXd &F);
-            
-            void update_x_init(Eigen::VectorXd &x_init){
-                for(unsigned t = 0; t < 9; ++t){
-                    A_f.coeffRef(9*n_col_+t, t) = 1.0;
-                    b_f[9*n_col_+t] = x_init[t];
-                }; 
-            };
 
+            //Computes A(X) which is used when optimizing for forces
+            void compute_x_mat(Eigen::VectorXd &X);
+
+            //Computes A(F) which is used when optimizing for states
+            void compute_f_mat(Eigen::VectorXd &F);
+
+            //Updates the size of A(F) and b(F)
+            void resize_f_mat(int num_states);
+
+            //Updating X
+            //TODO: Only do this one not setting x_init explicitly with equality constraints
+            //TODO: Do not update A_f every time
+            void update_x_init(Eigen::VectorXd &x_init);
+
+            // Set Contact Matrix which includes positions, etc.
             void set_contact_arrays(Eigen::MatrixXd cnt_plan, double dt);
 
             //Update the binary contact array
@@ -47,12 +52,22 @@ namespace dynamics{
             // location of contact point at time t
             Eigen::MatrixXd r_t;
 
+        private:
+
+            //Mass of total robot
             const double m_;
+
+            //Number of collocation points
             int n_col_;
+
+            //Number of end-effectors
             const double n_eff_;
 
             //Vector of dt_'s for variable dt_
             Eigen::VectorXd dt_;
+
+            //Boolean of whether or not footsteps are variables
+            bool variable_footsteps_ = false;
     };
 }
 #endif

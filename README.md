@@ -2,13 +2,14 @@
 
 This repo contains the full body centroidal motion planner based on an ADMM solution method for the centroidal dynamics and DDP based non-linear Inverse Kinematics
 
-It is highly recommended you install this in a virtual environment such as Conda. This allows easier use of installed dependencies such as Crocoddyl and OsqpEigen. 
+It is highly recommended you install this in a virtual environment such as Conda. This allows easier use of installed dependencies such as Crocoddyl, OsqpEigen, and PyBind11. 
 
 ## Dependencies
 ```
 - Pinocchio
 - Crocoddyl (Version 1.8.1 or greater)
 - OsqpEigen (Optional, to use OSQP as the solver) [Link here: https://github.com/robotology/osqp-eigen]
+- PyBind11
 ```
 
 ## Installation

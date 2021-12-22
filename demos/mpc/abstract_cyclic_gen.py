@@ -240,7 +240,7 @@ class AbstractMpcGaitGen:
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
 
-        print(self.cnt_plan)
+        #print(self.cnt_plan)
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, w_des, ori_des):
@@ -305,7 +305,7 @@ class AbstractMpcGaitGen:
         amom = self.compute_ori_correction(q, des_quat.coeffs())
 
         # Set terminal references
-        X_ter[0:2] = self.X_init[0:2] + (self.params.gait_horizon*self.params.gait_period*v_des)[0:2] #Changed this
+        X_ter[0:2] = self.X_init[0:2] + (self.params.gait_horizon*self.params.gait_period*v_des)[0:2]
         X_ter[2] = self.params.nom_ht
         X_ter[3:6] = v_des
         X_ter[6:] = amom
@@ -370,7 +370,7 @@ class AbstractMpcGaitGen:
         t2 = time.time()
 
         print("Optimizing: ")
-        self.kd.optimize(q, v, 60, 1)
+        self.kd.optimize(q, v, 50, 1)
 
         t3 = time.time()
 

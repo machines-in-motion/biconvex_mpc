@@ -81,6 +81,11 @@ class RaisimEnv(AbstractEnv):
             tau : input torque
         """
         tau = np.hstack((np.zeros(6), tau))
+
+        #TODO: Read this from the robot_info file
+
+        if any(abs(i) >= 33.5 for i in tau):
+            print("Torque limits violated")
         self.robot.setGeneralizedForce(tau)
         self.step()
 

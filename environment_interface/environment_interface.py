@@ -1,5 +1,3 @@
-#from robot_properties_solo.solo12wrapper import Solo12Robot, Solo12Config
-from raisim_utils.rai_env import RaiEnv
 from abc import abstractmethod
 
 

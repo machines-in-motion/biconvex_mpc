@@ -112,7 +112,7 @@ trot = BiconvexMotionParams("a1", "Trot")
 
 # Cnt
 trot.gait_period = 0.5
-trot.stance_percent = [0.5, 0.5, 0.5, 0.5]
+trot.stance_percent = [0.6, 0.6, 0.6, 0.6]
 trot.gait_dt = 0.05
 trot.phase_offset = [0.0, 0.5, 0.5, 0.0]
 
@@ -129,12 +129,12 @@ trot.nom_ht = 0.27
 trot.reg_wt = [5e-1, 1e-5]
 
 # Dyn
-trot.W_X =        np.array([3e-3, 3e-3, 1e+5, 5e+5, 5e+4, 2e+2, 1e+4, 1e+5, 1e4])
-trot.W_X_ter = 10*np.array([1e+5, 1e+5, 5e+5, 5e+5, 5e+4, 2e+2, 1e+5, 1e+5, 1e5])
+trot.W_X =        np.array([3e-3, 3e-3, 1e+5, 5e+4, 5e+4, 2e+2, 1e+4, 1e+5, 1e4])
+trot.W_X_ter = 10*np.array([1e+5, 1e+5, 5e+5, 5e+4, 5e+4, 2e+2, 1e+5, 1e+5, 1e5])
 trot.W_F = np.array(4*[1e-1, 1e-1, 1e-1])
-trot.rho = 1e+4
+trot.rho = 5e+4
 trot.ori_correction = [0.4, 0.4, 0.4]
-trot.gait_horizon = 1.25
+trot.gait_horizon = 1.5
 trot.kp = 12.0
 trot.kd = 2.0
 #

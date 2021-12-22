@@ -4,9 +4,7 @@
 
 import numpy as np
 from weight_abstract import BiconvexMotionParams
-from robot_properties_solo.config import Solo12Config
 
-pin_robot = Solo12Config.buildRobotWrapper()
 
 #### Stand Still #########################################
 still = BiconvexMotionParams("solo12", "Stand")
@@ -18,10 +16,10 @@ still.gait_dt = 0.05
 still.phase_offset = [0.0, 0.4, 0.4, 0.0]
 
 # IK
-still.state_wt = np.array([0., 0, 10] + [1000] * 3 + [1.0] * (pin_robot.model.nv - 6) \
-                         + [0.00] * 3 + [100] * 3 + [0.5] *(pin_robot.model.nv - 6))
+still.state_wt = np.array([0., 0, 10] + [1000] * 3 + [1.0] * (12) \
+                         + [0.00] * 3 + [100] * 3 + [0.5] *(12))
 
-still.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
+still.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(12)
 
 still.swing_wt = [1e4, 1e4]
 still.cent_wt = [0*5e+1, 5e+2]
@@ -54,9 +52,9 @@ balance.phase_offset = [0.0, 0.0, 0.0, 0.0]
 # IK
 balance.state_wt = np.array([0., 0, 10] + [1000] * 3 + [1.0, 1.0, 1.0] + 3 * [0.0] + 3 * [0.0] + [1.0, 1.0, 1.0]
                         \
-                         + [0.00] * 3 + [100] * 3 + [0.5] *(pin_robot.model.nv - 6))
+                         + [0.00] * 3 + [100] * 3 + [0.5] *(12))
 
-balance.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
+balance.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(12)
 
 balance.swing_wt = [2e3, 2e3]
 balance.cent_wt = [3e+5, 5e+1]
@@ -89,7 +87,7 @@ gallop.phase_offset = [0.0, 0.80, 0.70, 0.5]
 gallop.state_wt = np.array([0.0, 0.0, 10.0] + [5000] * 3 + [0.0, 60.0, 60.0] * 4 \
                          + [0.0, 0.0, 0.0]  + [1000] * 3 + [30.0, 30.0, 30.0] * 4)
 
-gallop.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
+gallop.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(12)
 
 gallop.swing_wt = [1e4, 1e4]
 gallop.cent_wt = [5e+3, 5e+3]
@@ -120,10 +118,10 @@ trot.gait_dt = 0.05
 trot.phase_offset = [0.0, 0.5, 0.5, 0.0]
 
 # IK
-trot.state_wt = np.array([0., 0, 10] + [1000, 1000, 1000] + [1.0] * (pin_robot.model.nv - 6) \
-                        + [0.00] * 3 + [100, 100, 100] + [0.5] *(pin_robot.model.nv - 6))
+trot.state_wt = np.array([0., 0, 10] + [1000, 1000, 1000] + [1.0] * (12) \
+                        + [0.00] * 3 + [100, 100, 100] + [0.5] *(12))
 
-trot.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
+trot.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(12)
 
 trot.swing_wt = [1e4, 1e4]
 trot.cent_wt = [0*5e+1, 5e+2]
@@ -151,10 +149,10 @@ trot_turn.gait_dt = 0.05
 trot_turn.phase_offset = [0.0, 0.4, 0.4, 0.0]
 
 # IK
-trot_turn.state_wt = np.array([0., 0, 10] + [1000, 1000, 10] + [1.0] * (pin_robot.model.nv - 6) \
-                        + [0.00] * 3 + [100, 100, 10] + [0.5] *(pin_robot.model.nv - 6))
+trot_turn.state_wt = np.array([0., 0, 10] + [1000, 1000, 10] + [1.0] * (12) \
+                        + [0.00] * 3 + [100, 100, 10] + [0.5] *(12))
 
-trot_turn.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
+trot_turn.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(12)
 
 trot_turn.swing_wt = [1e4, 1e4]
 trot_turn.cent_wt = [0*5e+1, 5e+2]
@@ -183,10 +181,10 @@ walk.gait_dt = 0.05
 walk.phase_offset = [0.6, 0.0, 0.2, 0.8]
 
 # IK
-walk.state_wt = np.array([0., 0, 1000] + [1e3] * 3 + [0.5] * (pin_robot.model.nv - 6) \
-                        + [0.00] * 3 + [50] * 3 + [1e-2] *(pin_robot.model.nv - 6))
+walk.state_wt = np.array([0., 0, 1000] + [1e3] * 3 + [0.5] * (12) \
+                        + [0.00] * 3 + [50] * 3 + [1e-2] *(12))
 
-walk.ctrl_wt = [1, 1, 10] + [10, 10, 20] + [5e-3] *(pin_robot.model.nv - 6)
+walk.ctrl_wt = [1, 1, 10] + [10, 10, 20] + [5e-3] *(12)
 
 walk.swing_wt = [1e4,1e4]
 walk.cent_wt = [5e+1, 5e+2]
@@ -216,10 +214,10 @@ bound.gait_dt = 0.05
 bound.phase_offset = [0.0, 0.0, 0.5, 0.5]
 # 
 # IK
-bound.state_wt = np.array([0., 0, 1e3] + [10, 10, 10] + [50.0] * (pin_robot.model.nv - 6) \
-                        + [0.00] * 3 + [100, 10, 100] + [0.5] *(pin_robot.model.nv - 6))
+bound.state_wt = np.array([0., 0, 1e3] + [10, 10, 10] + [50.0] * (12) \
+                        + [0.00] * 3 + [100, 10, 100] + [0.5] *(12))
 # 
-bound.ctrl_wt = [0.5, 0.5, 0.5] + [1, 1, 1] + [0.5] *(pin_robot.model.nv - 6)
+bound.ctrl_wt = [0.5, 0.5, 0.5] + [1, 1, 1] + [0.5] *(12)
 # 
 bound.swing_wt = [1e4, 1e4]
 bound.cent_wt = [5e+1, 5e+2]
@@ -249,10 +247,10 @@ bound_turn.gait_dt = 0.05
 bound_turn.phase_offset = [0.0, 0.0, 0.5, 0.5]
 # 
 # IK
-bound_turn.state_wt = np.array([0., 0, 1e3] + [10, 10, 10] + [50.0] * (pin_robot.model.nv - 6) \
-                        + [0.00] * 3 + [100, 10, 10] + [0.5] *(pin_robot.model.nv - 6))
+bound_turn.state_wt = np.array([0., 0, 1e3] + [10, 10, 10] + [50.0] * (12) \
+                        + [0.00] * 3 + [100, 10, 10] + [0.5] *(12))
 # 
-bound_turn.ctrl_wt = [0.5, 0.5, 0.5] + [1, 1, 1] + [0.5] *(pin_robot.model.nv - 6)
+bound_turn.ctrl_wt = [0.5, 0.5, 0.5] + [1, 1, 1] + [0.5] *(12)
 # 
 bound_turn.swing_wt = [1e4, 1e4]
 bound_turn.cent_wt = [5e+1, 5e+2]
@@ -282,10 +280,10 @@ air_bound.gait_dt = 0.05
 air_bound.phase_offset = [0.0, 0.0, 0.5, 0.5]
 
 # IK
-air_bound.state_wt = np.array([0., 0, 1e3] + [10, 10, 10] + [50.0] * (pin_robot.model.nv - 6) \
-                        + [0.00] * 3 + [100, 10, 100] + [0.5] *(pin_robot.model.nv - 6))
+air_bound.state_wt = np.array([0., 0, 1e3] + [10, 10, 10] + [50.0] * (12) \
+                        + [0.00] * 3 + [100, 10, 100] + [0.5] *(12))
 
-air_bound.ctrl_wt = [0.5, 0.5, 0.5] + [1, 1, 1] + [0.5] *(pin_robot.model.nv - 6)
+air_bound.ctrl_wt = [0.5, 0.5, 0.5] + [1, 1, 1] + [0.5] *(12)
 
 air_bound.swing_wt = [1e4, 1e4]
 air_bound.cent_wt = [5e+1, 5e+2]
@@ -315,10 +313,10 @@ jump.gait_dt = 0.05
 jump.phase_offset = [0.3, 0.3, 0.3, 0.3]
 
 # IK
-jump.state_wt = np.array([0., 0, 10] + [1000] * 3 + [1.0] * (pin_robot.model.nv - 6) \
-                        + [0.00] * 3 + [100] * 3 + [0.5] *(pin_robot.model.nv - 6))
+jump.state_wt = np.array([0., 0, 10] + [1000] * 3 + [1.0] * (12) \
+                        + [0.00] * 3 + [100] * 3 + [0.5] *(12))
 
-jump.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
+jump.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(12)
 
 jump.swing_wt = [1e4, 1e4]
 jump.cent_wt = [0*5e+1, 5e+2]

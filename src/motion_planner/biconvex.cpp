@@ -75,7 +75,7 @@ namespace motion_planner{
                 osqp_x.settings()->setAbsoluteTolerance(1e-5);
                 osqp_x.settings()->setRelativeTolerance(1e-5);
                 //osqp_x.settings()->setMaxIteration(10);
-                osqp_x.settings()->setScaling(0);
+                osqp_x.settings()->setScaling(1);
                 osqp_x.settings()->setWarmStart(true);
                 osqp_x.settings()->setVerbosity(false);
 
@@ -93,7 +93,7 @@ namespace motion_planner{
                 osqp_f.settings()->setAbsoluteTolerance(1e-5);
                 osqp_f.settings()->setRelativeTolerance(1e-5);
                 //osqp_f.settings()->setMaxIteration(25);
-                osqp_f.settings()->setScaling(0);
+                osqp_f.settings()->setScaling(1);
                 osqp_f.settings()->setWarmStart(true);
                 osqp_f.settings()->setVerbosity(false);
             #endif
@@ -140,12 +140,11 @@ namespace motion_planner{
     };
 
     void BiConvexMP::create_cost_X(Eigen::VectorXd W_X, Eigen::VectorXd W_X_ter, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom){
-        //Set Hessian
+        //Set Hessians
+
         for (unsigned int i = 0; i < num_com_states_ - 9; ++i){
             prob_data_x.Q_.coeffRef(i,i) = W_X[i];
         }
-
-        std::cout << "About to do some stuff" << std::endl;
 
         //Fix this...it's ugly
         int j = 0;
@@ -154,8 +153,6 @@ namespace motion_planner{
             prob_data_x.Q_.coeffRef(i,i) = W_X_ter[j];
             ++j;
         }
-
-        std::cout << "Terminal Constraints" << std::endl;
 
         if (variable_footsteps_) {
             for (unsigned int i = num_com_states_; i < prob_data_x.num_vars_; ++i) {
@@ -167,9 +164,7 @@ namespace motion_planner{
 
         prob_data_x.q_.head(9*(n_col_+1)) = -2*X_nom.cwiseProduct(W_X);
         //prob_data_x.q_.tail(9) = -2*X_ter.cwiseProduct(W_X_ter);
-        std::cout << "Terminal Constraints again" << std::endl;
         prob_data_x.q_.segment(9*(n_col_), 9) = -2*X_ter.cwiseProduct(W_X_ter);
-        std::cout << "terminal constraints set" << std::endl;
     };
 
     void BiConvexMP::create_cost_F(Eigen::VectorXd W_F) {
@@ -238,32 +233,24 @@ namespace motion_planner{
 
         for (unsigned i = 0; i < num_iters; ++i){
             // optimizing for F
-            std::cout << "Optimizing for F" << std::endl;
             centroidal_dynamics.compute_x_mat(prob_data_x.x_k);
             prob_data_f.set_data(centroidal_dynamics.A_x, centroidal_dynamics.b_x, P_k_, rho_);
 
             if (i == 0) {
-                std::cout << "Setting Hessian for F" << std::endl;
                 osqp_f.data()->setHessianMatrix(prob_data_f.ATA_);
                 osqp_f.data()->setGradient(prob_data_f.ATbPk_);
                 osqp_f.initSolver();
-                std::cout << "Set solver for F" << std::endl;
             }
             else {
                 osqp_f.updateHessianMatrix(prob_data_f.ATA_);
                 osqp_f.updateGradient(prob_data_f.ATbPk_);
             }
-            std::cout << "Solving... for F" << std::endl;
             osqp_f.solve();
-            std::cout << "Solved for F" << std::endl;
             prob_data_f.x_k = osqp_f.getSolution();
 
             // optimizing for X
-            std::cout << "Optimizing for X" << std::endl;
             centroidal_dynamics.compute_f_mat(prob_data_f.x_k);
-            std::cout << "Setting data for X" << std::endl;
             prob_data_x.set_data(centroidal_dynamics.A_f, centroidal_dynamics.b_f, P_k_, rho_);
-            std::cout << "Set X Data" << std::endl;
 
             if (i == 0) {
                 osqp_x.data()->setHessianMatrix(prob_data_x.ATA_);
@@ -275,9 +262,7 @@ namespace motion_planner{
                 osqp_x.updateGradient(prob_data_x.ATbPk_);
             }
 
-            std::cout << "Solving for X" << std::endl;
             osqp_x.solve();
-            std::cout << "Solved for X" << std::endl;
             prob_data_x.x_k = osqp_x.getSolution();
 
             //Calculate dynamic violation

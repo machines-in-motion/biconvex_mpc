@@ -1,4 +1,4 @@
-#This is a robot model class to get and set 
+#This is a robot model class to get and set information from the kinematics and dynamics of a robot given a URDF
 import pinocchio as pin
 import numpy as np
 
@@ -18,14 +18,15 @@ class RobotModel:
         #Offsets which are used in contact planner
         self.offsets = robot_info.offsets
 
-        self.initial_configuration =  robot_info.initial_configuration
+        self.initial_configuration = robot_info.initial_configuration
 
-        self.pin.forwardKinematics(self.pin_model, self.pin_data, self.initial_configuration)
-        self.pin.framesForwardKinematics(self.pin_model, self.pin_data, self.initial_configuration)
-        self.pin.computeJointJacobians(self.pin_model, self.pin_data, self.initial_configuration)
-        self.pin.computeCentroidalMomentum(self.pin_model, self.pin_data, \
+        pin.forwardKinematics(self.pin_model, self.pin_data, self.initial_configuration)
+        pin.framesForwardKinematics(self.pin_model, self.pin_data, self.initial_configuration)
+        pin.computeJointJacobians(self.pin_model, self.pin_data, self.initial_configuration)
+        pin.computeCentroidalMomentum(self.pin_model, self.pin_data, \
             self.initial_configuration, np.zeros_like(self.initial_configuration))
 
         #Composite inertia of entire robot
-        self.pin.crba(self.rmodel, self.rdata, q0)
+        pin.crba(self.rmodel, self.rdata, self.initial_configuration)
         self.I_comp_b = self.pin_data.Ycrb[1].inertia
+        self.mass = pin.computeTotalMass(self.robot_rmodel)

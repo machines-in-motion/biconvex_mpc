@@ -138,36 +138,55 @@ class BiConvexMP{
             m_ = m;
         };
 
+        void set_variable_footsteps(bool var_footsteps) {
+            variable_footsteps_ = var_footsteps;
+        }
+
     private:
         // mass of the robot 
         double m_;
+
         // centroidal dynamics class
         dynamics::CentroidalDynamics centroidal_dynamics;
-        // penalty term on dynamic violation
-        double rho_ = 1e+5;
-        // initial step length
+
+        /*
+         * FISTA specific Variables
+         */
+
+        // initial step length for FISTA
         double L0_ = 1e2;
         // line search parameter
         double beta_ = 1.5;
         // max iters in Fista
         int init_maxit = 150;
-        // max iters in Fista reduced based on outer loops
-        int maxit = 150;
         // tolerance for exit criteria of Fista
         double tol = 1e-5;
-        // tolerance for exiting biconvex
+
+        /*
+         * BiConvex Specific Variables
+         */
+        // tolerance for exiting BiConvex Algorithm
         double exit_tol = 1e-3;
-
+        // Maximum Iterations for BiConvex Algorithm
+        int maxit = 50;
+        // penalty term on dynamic violation
+        double rho_ = 1e+5;
+        //Friction Coefficient
         double mu_ = 1.0;
-
+        //Number of collocation Points
+        //TODO: Change this to num_collocation_
         int n_col_ = 0;
+        //Number of End Effectors
         int n_eff_ = 0;
+        //Number of CoM States
         int num_com_states_ = 0;
+        //Number of Friction Constraints
         int num_friction_constraints_ = 0;
+        //Total Time for algorithm
         double T_;
 
         //Sets footstep locations to be variables
-        bool variable_footsteps_ = false;
+        bool variable_footsteps_ = true;
         
         // problem data for x optimization (Used in optimization for Forces)
         function::ProblemData prob_data_x;
@@ -183,11 +202,14 @@ class BiConvexMP{
         Eigen::MatrixXd com_opt_;
         Eigen::MatrixXd mom_opt_;
 
+        //Dynamic Violation
         Eigen::VectorXd dyn_violation;
         Eigen::VectorXd P_k_;
 
+        //For Warm Starting
         bool use_prev_soln = false;
 
+        //Statistics Logging
         bool log_statistics = false;
         std::vector<double> dyn_violation_hist_;
 

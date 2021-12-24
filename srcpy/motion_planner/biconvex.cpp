@@ -1,6 +1,4 @@
 // This file contains python bindings for biconvex motion planner
-
-
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <pybind11/eigen.h>
@@ -37,12 +35,13 @@ PYBIND11_MODULE(biconvex_mpc_cpp, m)
     mp.def("return_opt_mom", &motion_planner::BiConvexMP::return_opt_mom);
     mp.def("update_initial_states", &motion_planner::BiConvexMP::update_initial_states);
     mp.def("set_friction_coefficient", &motion_planner::BiConvexMP::set_friction_coefficient);
-
     mp.def("set_warm_start_vars", &motion_planner::BiConvexMP::set_warm_start_vars);
     mp.def("optimize", &motion_planner::BiConvexMP::optimize);
+    mp.def("set_variable_footsteps", &motion_planner::BiConvexMP::set_variable_footsteps);
     #ifdef USE_OSQP
         mp.def("optimize_osqp", &motion_planner::BiConvexMP::optimize_osqp);
     #endif
+
     py::class_<dynamics::CentroidalDynamics> dyn (m, "CentroidalDynamics");
     dyn.def(py::init<double, int, int>());
     // dyn.def("create_contact_array", &dynamics::CentroidalDynamics::create_contact_array);

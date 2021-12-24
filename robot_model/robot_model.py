@@ -3,7 +3,6 @@ import pinocchio as pin
 import numpy as np
 
 class RobotModel:
-
     def __init__(self, urdf, robot_info):
         """
         Input:
@@ -15,7 +14,7 @@ class RobotModel:
                                                 pin.JointModelFreeFlyer())
         self.pin_data = self.pin_model.createData()
 
-        #Offsets which are used in contact planner
+        # Offsets which are used in contact planner
         self.offsets = robot_info.offsets
 
         self.initial_configuration = robot_info.initial_configuration
@@ -26,7 +25,9 @@ class RobotModel:
         pin.computeCentroidalMomentum(self.pin_model, self.pin_data, \
             self.initial_configuration, np.zeros_like(self.initial_configuration))
 
-        #Composite inertia of entire robot
+        # Composite inertia of entire robot
         pin.crba(self.rmodel, self.rdata, self.initial_configuration)
         self.I_comp_b = self.pin_data.Ycrb[1].inertia
+
+        #Mass of robot
         self.mass = pin.computeTotalMass(self.robot_rmodel)

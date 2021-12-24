@@ -35,6 +35,11 @@ namespace dynamics{
             //Update the binary contact array
             void update_contact_array();
 
+            //Set variable footstep boolean
+            void set_variable_footsteps(bool var_footsteps) {
+                variable_footsteps_ = var_footsteps;
+            }
+
             Eigen::SparseMatrix<double> A_x;
             Eigen::VectorXd b_x;
             Eigen::SparseMatrix<double> A_f;

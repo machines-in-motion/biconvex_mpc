@@ -29,6 +29,5 @@ PYBIND11_MODULE(fista_py, m)
      problem_data.def("compute_grad", &function::ProblemData::compute_grad_obj);
      problem_data.def("compute_proj", &function::ProblemData::proj);
      problem_data.def("set_bounds", &function::ProblemData::set_bounds);
-
 }
 

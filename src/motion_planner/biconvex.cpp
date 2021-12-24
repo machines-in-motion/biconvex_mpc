@@ -12,11 +12,16 @@ namespace motion_planner{
             mom_opt_.resize(n_col_ + 1, 6);
             mom_opt_.setZero();
 
+            //Number of State Constraints
             num_com_states_ = 9*(n_col_+1);
+
+            //Number of Friction Constraints
             num_friction_constraints_ = 5*n_eff_*n_col_;
 
             if (variable_footsteps_) {
                 prob_data_x.resize((9+(3*n_eff_))*(n_col_+1));
+                centroidal_dynamics.resize_f_mat(9+(3*n_eff_));
+                centroidal_dynamics.set_variable_footsteps(true);
                 std::cout << "Prob Data Resized for variable footsteps" << std::endl;
             }
 
@@ -37,32 +42,6 @@ namespace motion_planner{
             // OSQP Specific Setup
             #ifdef USE_OSQP
                 // Set number of variables and constraints for osqp
-                Eigen::SparseMatrix<double> constraintMatF =
-                        Eigen::MatrixXd::Identity(prob_data_f.num_vars_, prob_data_f.num_vars_).sparseView();
-
-                Eigen::SparseMatrix<double> constraintMatFTrue =
-                        Eigen::MatrixXd::Zero(num_friction_constraints_, prob_data_f.num_vars_).sparseView();
-
-                //Set up friction cone constraints properly
-                for (unsigned int i = 0; i < n_col_; ++i) {
-                    for (unsigned int j = 0; j < n_eff_; ++j) {
-                        //Friction Cone Constraints on Fx (i.e. mu*Fz <= Fx <= mu*Fz)
-                        constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 0, i*(n_eff_*3) + 3*j + 0) = 1.0;
-                        constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 0, i*(n_eff_*3) + 3*j + 2) = mu_;
-                        constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 1, i*(n_eff_*3) + 3*j + 0) = 1.0;
-                        constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 1, i*(n_eff_*3) + 3*j + 2) = -mu_;
-
-                        //Friction Cone Constraints on Fy (i.e. mu*Fz <= Fy <= mu*Fz)
-                        constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 2, i*(n_eff_*3) + 3*j + 1) = 1.0;
-                        constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 2, i*(n_eff_*3) + 3*j + 2) = mu_;
-                        constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 3, i*(n_eff_*3) + 3*j + 1) = 1.0;
-                        constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 3, i*(n_eff_*3) + 3*j + 2) = -mu_;
-
-                        //Friction Cone Constraints on Fz (i.e. 0 <= Fz <= Fz_max)
-                        constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 4, i*(n_eff_*3) + 3*j + 2) = 1.0;
-                    }
-                }
-
                 Eigen::SparseMatrix<double> constraintMatX =
                         Eigen::MatrixXd::Identity(prob_data_x.num_vars_, prob_data_x.num_vars_).sparseView();
 
@@ -80,14 +59,42 @@ namespace motion_planner{
                 osqp_x.settings()->setVerbosity(false);
 
                 osqp_f.data()->setNumberOfVariables(3*n_eff_* n_col_);
+
                 if (use_proper_constraints_) {
+                    Eigen::SparseMatrix<double> constraintMatFTrue =
+                        Eigen::MatrixXd::Zero(num_friction_constraints_, prob_data_f.num_vars_).sparseView();
+
+                    //Set up friction cone constraints properly
+                    for (unsigned int i = 0; i < n_col_; ++i) {
+                        for (unsigned int j = 0; j < n_eff_; ++j) {
+                            //Friction Cone Constraints on Fx (i.e. mu*Fz <= Fx <= mu*Fz)
+                            constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 0, i*(n_eff_*3) + 3*j + 0) = 1.0;
+                            constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 0, i*(n_eff_*3) + 3*j + 2) = mu_;
+                            constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 1, i*(n_eff_*3) + 3*j + 0) = 1.0;
+                            constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 1, i*(n_eff_*3) + 3*j + 2) = -mu_;
+
+                            //Friction Cone Constraints on Fy (i.e. mu*Fz <= Fy <= mu*Fz)
+                            constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 2, i*(n_eff_*3) + 3*j + 1) = 1.0;
+                            constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 2, i*(n_eff_*3) + 3*j + 2) = mu_;
+                            constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 3, i*(n_eff_*3) + 3*j + 1) = 1.0;
+                            constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 3, i*(n_eff_*3) + 3*j + 2) = -mu_;
+
+                            //Friction Cone Constraints on Fz (i.e. 0 <= Fz <= Fz_max)
+                            constraintMatFTrue.coeffRef(i*(n_eff_*5) + 5*j + 4, i*(n_eff_*3) + 3*j + 2) = 1.0;
+                        }
+                    }
+
                     osqp_f.data()->setNumberOfConstraints(5*n_eff_* n_col_);
                     osqp_f.data()->setLinearConstraintsMatrix(constraintMatFTrue);
                 }
                 else {
+                    Eigen::SparseMatrix<double> constraintMatF =
+                        Eigen::MatrixXd::Identity(prob_data_f.num_vars_, prob_data_f.num_vars_).sparseView();
+
                     osqp_f.data()->setNumberOfConstraints(3*n_eff_* n_col_);
                     osqp_f.data()->setLinearConstraintsMatrix(constraintMatF);
                 }
+
                 osqp_f.data()->setLowerBound(prob_data_f.lb_);
                 osqp_f.data()->setUpperBound(prob_data_f.ub_);
                 osqp_f.settings()->setAbsoluteTolerance(1e-5);

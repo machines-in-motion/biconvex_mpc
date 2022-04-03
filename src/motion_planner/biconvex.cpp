@@ -22,7 +22,6 @@ namespace motion_planner{
 
             //Use Second Order Cone Projection
             fista_f.set_soc_true();
-
     };
 
     void BiConvexMP::create_bound_constraints(Eigen::MatrixXd b, double fx_max, double fy_max, double fz_max){
@@ -102,7 +101,6 @@ namespace motion_planner{
             //Keep track of any statistics that may be useful
             if (log_statistics) {
                 dyn_violation_hist_.push_back(dyn_violation.norm());
-                std::cout << dyn_violation.norm() << std::endl;
             };
 
             if(std::isnan(dyn_violation.norm())){

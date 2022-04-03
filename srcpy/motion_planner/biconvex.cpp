@@ -1,6 +1,6 @@
 // This file contains python bindings for biconvex motion planner
 
-
+#include <pybind11/stl.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <pybind11/eigen.h>
@@ -40,9 +40,14 @@ PYBIND11_MODULE(biconvex_mpc_cpp, m)
 
     mp.def("set_warm_start_vars", &motion_planner::BiConvexMP::set_warm_start_vars);
     mp.def("optimize", &motion_planner::BiConvexMP::optimize);
+    mp.def("return_dyn_viol_hist", &motion_planner::BiConvexMP::return_dyn_viol_hist);
+    mp.def("collect_statistics", &motion_planner::BiConvexMP::collect_statistics);
+
     #ifdef USE_OSQP
         mp.def("optimize_osqp", &motion_planner::BiConvexMP::optimize_osqp);
     #endif
+
+
     py::class_<dynamics::CentroidalDynamics> dyn (m, "CentroidalDynamics");
     dyn.def(py::init<double, int, int>());
     // dyn.def("create_contact_array", &dynamics::CentroidalDynamics::create_contact_array);
@@ -54,6 +59,8 @@ PYBIND11_MODULE(biconvex_mpc_cpp, m)
     kd.def("optimize", &motion_planner::KinoDynMP::optimize);
     kd.def("set_com_tracking_weight", &motion_planner::KinoDynMP::set_com_tracking_weight);
     kd.def("set_mom_tracking_weight", &motion_planner::KinoDynMP::set_mom_tracking_weight);
+    kd.def("compute_solve_times", &motion_planner::KinoDynMP::compute_solve_times);
+    kd.def("return_solve_times", &motion_planner::KinoDynMP::return_solve_times, py::return_value_policy::reference);
 
 
 

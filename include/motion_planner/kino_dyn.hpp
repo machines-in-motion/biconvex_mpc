@@ -7,6 +7,7 @@
 #include "ik/inverse_kinematics.hpp"
 
 #include "pinocchio/algorithm/centroidal.hpp"
+#include <stdio.h>
 
 namespace motion_planner{
 
@@ -23,9 +24,12 @@ namespace motion_planner{
 
             void set_com_tracking_weight(double wt_com){wt_com_ = wt_com;};
             void set_mom_tracking_weight(double wt_mom){wt_mom_ = wt_mom;};
+            void compute_solve_times(){profile_code = 1;};
+            Eigen::VectorXd return_solve_times(){return solve_times;};
 
             BiConvexMP dyn;
             ik::InverseKinematics ik;
+
 
         private:
             // robot model
@@ -54,5 +58,8 @@ namespace motion_planner{
             double wt_com_ = 0; // com tracking weight
             double wt_mom_ = 0; // momentum tracking weight
 
+            // profiling the code
+            bool profile_code = 0;
+            Eigen::VectorXd solve_times;
     };  
 }

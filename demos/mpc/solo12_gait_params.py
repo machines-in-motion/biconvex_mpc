@@ -208,7 +208,7 @@ walk.kp = 3.5
 walk.kd = 0.15
 
 #### Bound #######################################
-bound = BiconvexMotionParams("solo12", "bound")
+bound = BiconvexMotionParams("solo12", "Bound")
 # 
 # Cnt
 bound.gait_period = 0.3
@@ -230,7 +230,7 @@ bound.reg_wt = [7e-3, 7e-5]
 # Dyn 
 bound.W_X =        np.array([1e-5, 1e-5, 5e+4, 1e1, 1e1, 1e+3, 5e+3, 1e+4, 5e+3])
 bound.W_X_ter = 10*np.array([1e-5, 1e-5, 5e+4, 1e1, 1e1, 1e+3, 1e+4, 1e+4, 1e+4])
-bound.W_F = np.array(4*[1e1, 1e+1, 1e+1])
+bound.W_F = np.array(4*[1e1, 1e+1, 1.5e+1])
 bound.nom_ht = 0.25
 bound.rho = 5e+4
 bound.ori_correction = [0.2, 0.8, 0.8]
@@ -263,7 +263,7 @@ bound_turn.reg_wt = [7e-3, 7e-5]
 # Dyn 
 bound_turn.W_X =        np.array([1e-5, 1e-5, 5e+4, 1e1, 1e1, 1e+3, 5e+3, 1e+4, 5e+3])
 bound_turn.W_X_ter = 10*np.array([1e-5, 1e-5, 5e+4, 1e1, 1e1, 1e+3, 1e+4, 1e+4, 1e+4])
-bound_turn.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
+bound_turn.W_F = np.array(4*[1e+1, 1e+1, 1.5e+1])
 bound_turn.nom_ht = 0.25
 bound_turn.rho = 5e+4
 bound_turn.ori_correction = [0.2, 0.8, 0.8]
@@ -330,7 +330,7 @@ jump.reg_wt = [5e-2, 1e-5]
 # Dyn 
 jump.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+4, 1e4])
 jump.W_X_ter = 10*np.array([1e+5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e+5])
-jump.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
+jump.W_F = np.array(4*[1e+1, 1e+1, 1.5e+1])
 jump.rho = 5e+4
 jump.ori_correction = [0.2, 0.5, 0.4]
 jump.gait_horizon = 1.0

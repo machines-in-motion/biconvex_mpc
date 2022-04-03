@@ -135,6 +135,9 @@ class BiConvexMP{
         void set_robot_mass(double m) {
             m_ = m;
         };
+        
+        void collect_statistics(){log_statistics = 1;};
+
 
     private:
         // mass of the robot 

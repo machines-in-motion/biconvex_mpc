@@ -103,12 +103,13 @@ class SoloMpcGaitGen:
         #Height Map (for contacts)
         self.height_map = height_map
 
-    def update_gait_params(self, weight_abstract, t):
+    def update_gait_params(self, weight_abstract, t, ik_hor_ratio = 0.5):
         """
         Updates the gaits
         Input:
             weight_abstract : the parameters of the gaits
             t : time
+            ik_hor_ratio : ik horion/dyn horizon 
         """
         self.params = weight_abstract
         # --- Set up gait parameters ---
@@ -120,7 +121,7 @@ class SoloMpcGaitGen:
         self.horizon = int(np.round(self.params.gait_horizon*self.params.gait_period/self.params.gait_dt,2))
         
         # --- Set up Inverse Kinematics ---
-        self.ik_horizon = int(np.round(0.5*self.params.gait_horizon*self.params.gait_period/self.params.gait_dt, 2))
+        self.ik_horizon = int(np.round(ik_hor_ratio*self.params.gait_horizon*self.params.gait_period/self.params.gait_dt, 2))
         self.dt_arr = np.zeros(self.horizon)
 
         # kino dyn
@@ -361,7 +362,7 @@ class SoloMpcGaitGen:
 
         t2 = time.time()
 
-        self.kd.optimize(q, v, 50, 1)
+        self.kd.optimize(q, v, 150, 1)
 
         t3 = time.time()
 

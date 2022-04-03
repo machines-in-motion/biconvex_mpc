@@ -362,13 +362,13 @@ class SoloMpcGaitGen:
 
         t2 = time.time()
 
-        self.kd.optimize(q, v, 150, 1)
+        self.kd.optimize(q, v, 100, 1)
 
         t3 = time.time()
 
-        print("Cost Time :", t2 - t1)
-        print("Solve Time : ", t3 - t2)
-        print(" ================================== ")
+        # print("Cost Time :", t2 - t1)
+        # print("Solve Time : ", t3 - t2)
+        # print(" ================================== ")
 
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()
@@ -399,54 +399,76 @@ class SoloMpcGaitGen:
 
         return self.xs_int, self.us_int, self.f_int
 
-    def plot(self, com_real=None):
-        """
-        This function plots the iterative mpc plans for the COM and Forces
-        """
-        self.com_traj = np.array(self.com_traj)
-        self.q_traj = np.array(self.q_traj)
-        self.v_traj = np.array(self.v_traj)
-        x = self.dt*np.arange(0, len(self.com_traj[1]) + int((self.planning_time/self.dt))*len(self.com_traj), 1)
-        # com plots
+    def plot(self, q, v, plot_force = True):
+        com_opt = self.mp.return_opt_com()
+        mom_opt = self.mp.return_opt_mom()
+        optimized_forces = self.mp.return_opt_f()
+        ik_com_opt = self.ik.return_opt_com()
+        ik_mom_opt = self.ik.return_opt_mom()
+        com = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
+
+        # Plot Center of Mass
         fig, ax = plt.subplots(3,1)
-        for i in range(0, len(self.com_traj)):
-            st_hor = i*int(self.planning_time/self.dt)
-
-            if i == 0:
-                com = pin.centerOfMass(self.rmodel, self.rdata, self.q_traj[i], self.v_traj[i])
-                ax[0].plot(x[st_hor], com[0], "o", label = "real com x")
-                ax[1].plot(x[st_hor], com[1], "o", label = "real com y")
-                ax[2].plot(x[st_hor], com[2], "o", label = "real com z")
-
-
-                ax[0].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,0], label = "com x")
-                ax[1].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,1], label = "com y")
-                ax[2].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,2], label = "com z")
-
-            else:
-                com = pin.centerOfMass(self.rmodel, self.rdata, self.q_traj[i], self.v_traj[i])
-                ax[0].plot(x[st_hor], com[0], "o")
-                ax[1].plot(x[st_hor], com[1], "o")
-                ax[2].plot(x[st_hor], com[2], "o")
-        
-                ax[0].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,0])
-                ax[1].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,1])
-                ax[2].plot(x[st_hor:st_hor + len(self.com_traj[i])], self.com_traj[i][:,2])
-
-        if isinstance(com_real, np.ndarray):  
-            com_real = np.array(com_real)[::int(self.dt/0.001)]
-            ax[0].plot(x[:len(com_real)], com_real[:,0], "--",  label = "com real_x")
-            ax[1].plot(x[:len(com_real)], com_real[:,1], "--",  label = "com real_y")
-            ax[2].plot(x[:len(com_real)], com_real[:,2], "--",  label = "com real_z")
+        ax[0].plot(com_opt[:, 0], label="Dyn com x")
+        ax[0].plot(ik_com_opt[:, 0], label="IK com x")
+        ax[0].plot(com[0], 'o', label="Current Center of Mass x")
+        ax[1].plot(com_opt[:, 1], label="Dyn com y")
+        ax[1].plot(ik_com_opt[:, 1], label="IK com y")
+        ax[1].plot(com[1], 'o', label="Current Center of Mass y")
+        ax[2].plot(com_opt[:, 2], label="Dyn com z")
+        ax[2].plot(ik_com_opt[:, 2], label="IK com z")
+        ax[2].plot(com[2], 'o', label="Current Center of Mass z")
 
         ax[0].grid()
         ax[0].legend()
-
         ax[1].grid()
         ax[1].legend()
-
         ax[2].grid()
         ax[2].legend()
+
+        # Plot End-Effector Forces
+        if plot_force:
+            fig, ax_f = plt.subplots(self.n_eff, 1)
+            for n in range(self.n_eff):
+                ax_f[n].plot(optimized_forces[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
+                ax_f[n].plot(optimized_forces[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
+                ax_f[n].plot(optimized_forces[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
+                ax_f[n].grid()
+                ax_f[n].legend()
+
+        # Plot Linear Momentum
+        fig, ax_m = plt.subplots(3,1)
+        ax_m[0].plot(mom_opt[:, 0], label = "Dyn linear_momentum x")
+        ax_m[0].plot(ik_mom_opt[:, 0], label="IK linear_momentum x")
+        ax_m[1].plot(mom_opt[:, 1], label = "linear_momentum y")
+        ax_m[1].plot(ik_mom_opt[:, 1], label="IK linear_momentum y")
+        ax_m[2].plot(mom_opt[:, 2], label = "linear_momentum z")
+        ax_m[2].plot(ik_mom_opt[:, 2], label="IK linear_momentum z")
+        ax_m[0].grid()
+        ax_m[0].legend()
+
+        ax_m[1].grid()
+        ax_m[1].legend()
+
+        ax_m[2].grid()
+        ax_m[2].legend()
+
+        # Plot Linear Momentum
+        fig, ax_am = plt.subplots(3,1)
+        ax_am[0].plot(mom_opt[:, 3], label = "Dynamics Angular Momentum around X")
+        ax_am[0].plot(ik_mom_opt[:, 3], label="Kinematic Angular Momentum around X")
+        ax_am[1].plot(mom_opt[:, 4], label = "Dynamics Angular Momentum around Y")
+        ax_am[1].plot(ik_mom_opt[:, 4], label="Kinematic Angular Momentum around Y")
+        ax_am[2].plot(mom_opt[:, 5], label = "Dynamics Angular Momentum around Z")
+        ax_am[2].plot(ik_mom_opt[:, 5], label="Kinematic Angular Momentum around Z")
+        ax_am[0].grid()
+        ax_am[0].legend()
+
+        ax_am[1].grid()
+        ax_am[1].legend()
+
+        ax_am[2].grid()
+        ax_am[2].legend()
 
         plt.show()
 

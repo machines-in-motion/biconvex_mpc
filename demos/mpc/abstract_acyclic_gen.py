@@ -65,7 +65,8 @@ class SoloAcyclicGen:
         self.size = min(self.ik_horizon, int(self.freq/self.params.dt_arr[0]) + 2)
         # don't know if this is a good / robust way for interpolation (need a way to do this properly)
         if self.freq > self.params.dt_arr[0]:
-            self.size -= 1
+            self.size += 1
+
         self.xs_int = np.zeros((self.rmodel.nq + self.rmodel.nv, self.size))
         self.us_int = np.zeros((self.rmodel.nv, self.size))
         self.f_int = np.zeros((4*len(self.eff_names), self.size))
@@ -74,7 +75,7 @@ class SoloAcyclicGen:
         """
         Creates contact plan based on moving horizon
         Input:
-            q : current joint configuration
+            q : current joint configurationself.dt_arr
             v : current joint velocity
             t : current time into the plan
         """
@@ -119,7 +120,7 @@ class SoloAcyclicGen:
                 dt = self.params.dt_arr[i]
 
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
-        
+
     def create_costs(self, q, v, t, make_cyclic = False):
         """
         Creates cost for the plan optimization
@@ -189,7 +190,8 @@ class SoloAcyclicGen:
         self.mp.create_cost_F(np.tile(self.params.W_F, self.horizon))
 
         ## IK Costs ##
-        self.dt_arr = np.zeros(self.ik_horizon)
+        # Fix this
+        self.dt_arr = np.zeros(self.ik_horizon+1)
 
         # adding contact costs
         for i in range(self.ik_horizon):
@@ -322,19 +324,23 @@ class SoloAcyclicGen:
         print("Solve Time : ", t3 - t2)
         print(" ================================== ")
 
-        F_opt = self.mp.return_opt_f()
+        optimized_forces = self.mp.return_opt_f()
         xs = self.ik.get_xs()
         us = self.ik.get_us()
 
+        #Interpolation of optimized variables
         n_eff = 3*len(self.eff_names)
-        for i in range(len(xs)-2):
+        for i in range(len(xs)):
             if i == 0:
-                self.f_int = np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i):n_eff*(i+1)], int(self.dt_arr[i]/0.001))
+                self.f_int = np.linspace(optimized_forces[i*n_eff:n_eff*(i+1)], optimized_forces[n_eff*(i):n_eff*(i+1)], int(self.dt_arr[i]/0.001))
                 self.xs_int = np.linspace(xs[i], xs[i], int(self.dt_arr[i]/0.001))
                 self.us_int = np.linspace(us[i], us[i], int(self.dt_arr[i]/0.001))
 
+            elif i == len(xs)-1:
+                self.xs_int = np.vstack((self.xs_int, np.linspace(xs[i], xs[i], int(self.dt_arr[i]/0.001))))
+            
             else:
-                self.f_int =  np.vstack((self.f_int, np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i):n_eff*(i+1)], int(self.dt_arr[i]/0.001))))
+                self.f_int =  np.vstack((self.f_int, np.linspace(optimized_forces[i*n_eff:n_eff*(i+1)], optimized_forces[n_eff*(i):n_eff*(i+1)], int(self.dt_arr[i]/0.001))))
                 self.xs_int = np.vstack((self.xs_int, np.linspace(xs[i], xs[i], int(self.dt_arr[i]/0.001))))
                 self.us_int = np.vstack((self.us_int, np.linspace(us[i], us[i], int(self.dt_arr[i]/0.001))))
 
@@ -382,7 +388,7 @@ class SoloAcyclicGen:
     def plot(self, q, v, plot_force = True):
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()
-        F_opt = self.mp.return_opt_f()
+        optimized_forces = self.mp.return_opt_f()
         ik_com_opt = self.ik.return_opt_com()
         ik_mom_opt = self.ik.return_opt_mom()
         com = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
@@ -410,9 +416,9 @@ class SoloAcyclicGen:
         if plot_force:
             fig, ax_f = plt.subplots(self.n_eff, 1)
             for n in range(self.n_eff):
-                ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
-                ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
-                ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
+                ax_f[n].plot(optimized_forces[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
+                ax_f[n].plot(optimized_forces[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
+                ax_f[n].plot(optimized_forces[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
                 ax_f[n].grid()
                 ax_f[n].legend()
 
@@ -442,5 +448,22 @@ class SoloAcyclicGen:
         ax_m[4].legend()
         ax_m[5].grid()
         ax_m[5].legend()
+
+        # Plot Linear Momentum
+        fig, ax_am = plt.subplots(3,1)
+        ax_am[0].plot(mom_opt[:, 3], label = "Dynamics Angular Momentum around X")
+        ax_am[0].plot(ik_mom_opt[:, 3], label="Kinematic Angular Momentum around X")
+        ax_am[1].plot(mom_opt[:, 4], label = "Dynamics Angular Momentum around Y")
+        ax_am[1].plot(ik_mom_opt[:, 4], label="Kinematic Angular Momentum around Y")
+        ax_am[2].plot(mom_opt[:, 5], label = "Dynamics Angular Momentum around Z")
+        ax_am[2].plot(ik_mom_opt[:, 5], label="Kinematic Angular Momentum around Z")
+        ax_am[0].grid()
+        ax_am[0].legend()
+
+        ax_am[1].grid()
+        ax_am[1].legend()
+
+        ax_am[2].grid()
+        ax_am[2].legend()
 
         plt.show()

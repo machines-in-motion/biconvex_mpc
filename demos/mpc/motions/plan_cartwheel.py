@@ -41,29 +41,36 @@ plan.cnt_plan = [[[ 1.,      0.3946,   0.14695,  0., 0.,  st    ],
                 [ 1.,      0.8054,  -0.14695,  0., st + flip_time, T ]]]
 
 plan.n_col = int(np.round(T/dt))
-plan.dt_arr = plan.n_col*[dt,]
-plan.plan_freq = [[1.0, 0, st +flip_time],
-                  [0.2, st + flip_time, T]]
+plan.dt_arr = (plan.n_col+1)*[dt,]
+plan.plan_freq = [[0.6, 0, T],
+                  [1.0, T, T+1.5]]
 #  dynamic optimization params
 plan.W_X =        np.array([1e-2, 1e-2, 1e+5, 1e-2, 1e-2, 1e-4, 1e+3, 1e+3, 1e+4])
 plan.W_X_ter = 10*np.array([1e-2, 1e-2, 1e+5, 1e-2, 1e-2, 1e-4, 1e+3, 1e+4, 1e+4])
 plan.W_F = np.array(4*[1e+1, 1e+1, 2e+0])
 plan.rho = 5e+4
 
-plan.X_nom = [[0.5, 0, 0.2, 0, 0, 0, 0, 0.1, 0., 0, st],
-              [0.5, 0, 0.5, 0, 0, 0, 0, 0.6, 0., st, st+flip_time],
-              [0.5, 0, 0.2, 0, 0, 0, 0, 0.0, 0., st+flip_time, T]]
+plan.X_nom = [[0.2, 0, 0.2, 0, 0, 0, 0, 0.1, 0., 0, st],
+              [0.4, 0, 0.3, 0, 0, 0, 0, 0.6, 0., st, st+flip_time],
+              [0.6, 0, 0.2, 0, 0, 0, 0, 0.0, 0., st+flip_time, T]]
 
-plan.X_ter = [0.5, 0, 0.2, 0, 0, 0, 0, 0.0, 0.0]
+plan.X_ter = [0.2, 0, 0.2, 0, 0, 0, 0, 0.0, 0.0]
 
 plan.bounds = [[-0.45, -0.45, 0.0, 0.45, 0.45, 0.3, 0, st],
                [-0.45, -0.45, 0.0, 0.45, 0.45, 0.45, st, T]]
 
 # ik optimization params
 
-plan.cent_wt = [1, 3e2]
+plan.cent_wt = [1, 3e3]
 plan.cnt_wt = 1e4
 plan.swing_wt = None # no via points in this motion
+
+
+# plan.swing_wt = [[[1e2, 0.4,   0.14695,  0.6, st + 0.25*rear_time, st + 0.5*rear_time],
+#                   [1e2, 0.4,   -0.14695,  0.3, st + 0.25*rear_time, st + rear_time],
+#                   [0,  0.0054,   0.14695,  0., st + 0.25*rear_time, st + 0.5*rear_time],
+#                   [0,  0.0054,   -0.14695,  0., st + 0.25*rear_time, st + 0.5*rear_time]]]
+
 
 x_reg1 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
 x_reg1[2] = 0.3
@@ -83,7 +90,7 @@ plan.state_reg = [np.hstack((x_reg1, [0, st+flip_time])), np.hstack((x_reg2, [st
 plan.state_wt = [np.hstack((state_wt_1, [0, st+flip_time])), np.hstack((state_wt_2, [st+flip_time, T]))]
 plan.state_scale = [[1e-2, 0, st+flip_time], [500*1e-2, st+flip_time, T]]
 
-ctrl_wt = [0, 0, 10] + [1, 1, 1] + [50.0] *(rmodel.nv - 6)
+ctrl_wt = [0, 0, 10] + [1, 1, 1] + [70.0] *(rmodel.nv - 6)
 plan.ctrl_wt = [np.hstack((ctrl_wt, [0, T]))]
 plan.ctrl_reg = [np.hstack((np.zeros(rmodel.nv), [0, T]))]
 plan.ctrl_scale = [[7e-4, 0, T]]

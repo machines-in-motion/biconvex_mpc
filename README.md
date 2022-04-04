@@ -12,7 +12,7 @@ This repo contains the centroidal motion planner based on a Biconvex solver and 
 ```
 ## Installation
 ```
-git@github.com:machines-in-motion/biconvex_mpc.git
+git clone --recurse-submodules git@github.com:machines-in-motion/biconvex_mpc.git
 cd biconvex_mpc
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release

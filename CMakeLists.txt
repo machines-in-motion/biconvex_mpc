@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Configure packages
 
-add_subdirectory(extern/pybind11)
+add_subdirectory(extern) # for pybind11
 find_package(pybind11 CONFIG REQUIRED)
 find_package(Eigen3 REQUIRED)
 

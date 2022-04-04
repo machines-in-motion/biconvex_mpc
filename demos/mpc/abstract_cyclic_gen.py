@@ -362,6 +362,9 @@ class SoloMpcGaitGen:
 
         t2 = time.time()
 
+        # pinocchio complains otherwise 
+        q = pin.normalize(self.rmodel, q)
+
         self.kd.optimize(q, v, 100, 1)
 
         t3 = time.time()

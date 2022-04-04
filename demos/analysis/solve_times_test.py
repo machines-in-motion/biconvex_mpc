@@ -10,7 +10,7 @@ from robot_properties_solo.config import Solo12Config
 from abstract_cyclic_gen import SoloMpcGaitGen
 from solo12_gait_params import trot, walk, air_bound, bound, still, gallop, jump, balance, bound_turn, trot_turn
 
-from py_biconvex_mpc.bullet_utils.solo_mpc_env import AbstractEnv
+from solo_mpc_env import AbstractEnv
 from blmc_controllers.robot_id_controller import InverseDynamicsController
 
 from matplotlib import pyplot as plt

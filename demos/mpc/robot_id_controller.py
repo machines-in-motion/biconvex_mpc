@@ -6,8 +6,6 @@ import numpy as np
 import pinocchio as pin
 import time
 
-#from . qp_solver import quadprog_solve_qp
-
 arr = lambda a: np.array(a).reshape(-1)
 mat = lambda a: np.matrix(a).reshape((-1, 1))
 
@@ -20,13 +18,8 @@ class InverseDynamicsController():
             eff_arr : end effector name arr
             real_robot : bool true if controller running on real robot
         """
-
         if pinModel == None:
-            if real_robot:
-                self.pin_robot = robot
-            else:
-                self.pin_robot = robot.pin_robot
-
+            self.pin_robot = robot
             self.pinModel = self.pin_robot.model
             self.pinData = self.pin_robot.data
             self.nq = self.pin_robot.nq
@@ -38,8 +31,8 @@ class InverseDynamicsController():
             self.nq = pinModel.nq
             self.nv = pinModel.nv
 
-        self.wt = 1e-6
-        self.mu = 0.8
+        self.robot_mass = pin.computeTotalMass(self.pinModel)
+        self.eff_arr = eff_arr
 
     def set_gains(self, kp, kd):
         """
@@ -76,23 +69,20 @@ class InverseDynamicsController():
         assert len(q) == self.nq
         self.J_arr = []
 
-        # w_com = self.compute_com_wrench(q, dq, des_q, des_v.copy())
         tau_id = self.compute_id_torques(des_q, des_v, des_a)
 
         ## creating QP matrices
-        N = int(len(self.cnt_array))
+        N = int(len(self.eff_arr))
+        tau_eff = np.zeros(self.nv)
 
         for j in range(N):
             self.J_arr.append(pin.computeFrameJacobian(self.pinModel, self.pinData, des_q,\
                      self.pinModel.getFrameId(self.eff_arr[j]), pin.LOCAL_WORLD_ALIGNED).T)
-            tau_eff = np.zeros(self.nv)
-    
-        for j in range(N):
-            if fff[(j*3)+2] > 0:
-                tau_eff += np.matmul(self.J_arr[j], np.hstack((fff[j*3:(j+1)*3], np.zeros(3))))
+            tau_eff += np.matmul(self.J_arr[j], np.hstack((fff[j*3:(j+1)*3], np.zeros(3))))
 
         tau = (tau_id - tau_eff)[6:]
 
         tau_gain = -self.kp*(np.subtract(q[7:].T, des_q[7:].T)) - self.kd*(np.subtract(dq[6:].T, des_v[6:].T))
 
         return tau + tau_gain.T
+

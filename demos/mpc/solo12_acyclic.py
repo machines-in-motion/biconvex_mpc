@@ -6,8 +6,8 @@ import time
 import numpy as np
 import pinocchio as pin
 from robot_properties_solo.config import Solo12Config
-from blmc_controllers.robot_id_controller import InverseDynamicsController
-from py_biconvex_mpc.bullet_utils.solo_mpc_env import AbstractEnv
+from robot_id_controller import InverseDynamicsController
+from solo_mpc_env import AbstractEnv
 from abstract_acyclic_gen import SoloAcyclicGen
 from data_plotter import DataRecorder
 

@@ -4,11 +4,10 @@
 
 from bullet_utils.env import BulletEnvWithGround
 from robot_properties_solo.solo12wrapper import Solo12Robot, Solo12Config
-from raisim_utils.rai_env import RaiEnv
 
 class AbstractEnv:
 
-    def __init__(self, q0, v0, vis_ghost = False, loadBullet = False):
+    def __init__(self, q0, v0, vis_ghost = False, loadBullet = True):
 
         # urdf_path =  "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf/solo12.urdf"
         # model_path = "/home/pshah/Applications/raisim_utils/urdf/solo12/urdf"
@@ -22,10 +21,11 @@ class AbstractEnv:
         if self.bullet:
             print("loading bullet")
             self.env = BulletEnvWithGround()
-            self.robot = self.env.add_robot(Solo12Robot)
+            self.robot = self.env.add_robot(Solo12Robot())
             self.robot.reset_state(q0, v0)
 
         else:
+            from raisim_utils.rai_env import RaiEnv
             print("loading rai")
             self.env = RaiEnv()
             self.robot = self.env.add_robot(Solo12Config, urdf_path, vis_ghost = self.vis_ghost)

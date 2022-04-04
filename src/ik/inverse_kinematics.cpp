@@ -15,7 +15,7 @@ namespace ik{
     
         state_ = boost::make_shared<crocoddyl::StateMultibody>(boost::make_shared<pinocchio::Model>(rmodel_));
 
-        // actuation_ = boost::make_shared<crocoddyl::ActuationModelFloatingBase>(state_);
+        // actuation_ = boost::ZZZmake_shared<crocoddyl::ActuationModelFloatingBase>(state_);
         actuation_ = boost::make_shared<crocoddyl::ActuationModelFull>(state_);
 
         for (unsigned i = 0; i < n_col_; i++){

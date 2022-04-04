@@ -10,8 +10,8 @@ from robot_properties_solo.config import Solo12Config
 from abstract_cyclic_gen import SoloMpcGaitGen
 from solo12_gait_params import trot, walk, air_bound, bound, still, gallop, jump, balance, bound_turn, trot_turn
 
-from py_biconvex_mpc.bullet_utils.solo_mpc_env import AbstractEnv
-from blmc_controllers.robot_id_controller import InverseDynamicsController
+from solo_mpc_env import AbstractEnv
+from robot_id_controller import InverseDynamicsController
 
 ## robot config and init
 pin_robot = Solo12Config.buildRobotWrapper()
@@ -22,7 +22,7 @@ v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
 
-robot = AbstractEnv(q0, v0, False, False)
+robot = AbstractEnv(q0, v0, False, True)
 robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
 
 
@@ -94,7 +94,7 @@ for o in range(int(500*(plan_freq/sim_dt))):
                                 , us[index], f[index], contact_configuration)
     robot.send_joint_command(tau)
 
-    time.sleep(0.001)
+    # time.sleep(0.001)
     sim_t += sim_dt
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1

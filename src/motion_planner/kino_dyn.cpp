@@ -41,7 +41,6 @@ namespace motion_planner{
         const auto t1 = std::chrono::steady_clock::now();    
         pinocchio::computeCentroidalMomentum(rmodel_, rdata_, q, v);
         x0.head(rmodel_.nq) = q; x0.tail(rmodel_.nv) = v;
-
         set_warm_starts();
 
         const auto t2 = std::chrono::steady_clock::now();    
@@ -52,12 +51,10 @@ namespace motion_planner{
         dyn_mom_opt = dyn.return_opt_mom();
 
         ik.add_centroidal_momentum_tracking_task(0, ik_col_, dyn_mom_opt.topRows(ik_col_), wt_mom_, "mom_track", false);
-        ik.add_centroidal_momentum_tracking_task(0, ik_col_, dyn_mom_opt.row(ik_col_), wt_mom_, "mom_track", true);
-
+        ik.add_centroidal_momentum_tracking_task(0, ik_col_, dyn_mom_opt.row(ik_col_), wt_mom_, "mom_track_ter", true);
         ik.add_com_position_tracking_task(0, ik_col_, dyn_com_opt.topRows(ik_col_), wt_com_, "com_track", false);
         ik.add_com_position_tracking_task(0, ik_col_, dyn_com_opt.row(ik_col_), wt_com_, "com_track", true);
         const auto t4 = std::chrono::steady_clock::now();    
-
         ik.optimize(x0);
         const auto t5 = std::chrono::steady_clock::now();    
         // Todo: add kino dyn iteration requirement later

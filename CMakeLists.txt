@@ -14,9 +14,6 @@ find_package(Eigen3 REQUIRED)
 find_package(pinocchio REQUIRED)
 find_package(crocoddyl REQUIRED)
 
-#Only Required for Mac OSX (TODO: Find out why)
-find_package(Python REQUIRED COMPONENTS Interpreter Development)
-
 # for benchmarking
 if ( OSQP )
     message("Building with OSQP")
@@ -24,9 +21,9 @@ if ( OSQP )
 endif()
 
 # TODO: Create individual directories for each sub-module (i.e. optimizer, etc.)
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+# include_directories(
+#   ${CMAKE_CURRENT_SOURCE_DIR}/include
+# )
 
 add_library(${PROJECT_NAME} SHARED
     src/solvers/fista.cpp
@@ -44,13 +41,22 @@ add_library(${PROJECT_NAME} SHARED
     src/motion_planner/kino_dyn.cpp
     )
 
-target_link_libraries(biconvex_mpc Eigen3::Eigen)
-target_link_libraries(biconvex_mpc pinocchio::pinocchio)
-target_link_libraries(biconvex_mpc crocoddyl::crocoddyl)
+target_link_libraries(${PROJECT_NAME} Eigen3::Eigen)
+target_link_libraries(${PROJECT_NAME} pinocchio::pinocchio)
+target_link_libraries(${PROJECT_NAME} crocoddyl::crocoddyl)
+
+# Includes. Add the include dependencies
+target_include_directories(
+    ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                           )
+
+install(
+TARGETS ${PROJECT_NAME}
+DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 
 if ( OsqpEigen_FOUND )
-    target_link_libraries(biconvex_mpc OsqpEigen::OsqpEigen)
-    target_compile_definitions(biconvex_mpc PUBLIC USE_OSQP="True")
+    target_link_libraries(${PROJECT_NAME} OsqpEigen::OsqpEigen)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC USE_OSQP="True")
 endif()
 
 #Pybind setup
@@ -68,6 +74,6 @@ target_include_directories(gait_planner_cpp PRIVATE ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(gait_planner_cpp PRIVATE biconvex_mpc)
 
 #Install PyBind library
-install(TARGETS biconvex_mpc_cpp LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+install(TARGETS biconvex_mpc_cpp DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 install(TARGETS inverse_kinematics_cpp LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 install(TARGETS gait_planner_cpp LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})

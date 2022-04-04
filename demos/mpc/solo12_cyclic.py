@@ -10,8 +10,8 @@ from robot_properties_solo.config import Solo12Config
 from abstract_cyclic_gen import SoloMpcGaitGen
 from solo12_gait_params import trot, walk, air_bound, bound, still, gallop, jump, balance, bound_turn, trot_turn
 
-from py_biconvex_mpc.bullet_utils.solo_mpc_env import AbstractEnv
-from blmc_controllers.robot_id_controller import InverseDynamicsController
+from solo_mpc_env import AbstractEnv
+from robot_id_controller import InverseDynamicsController
 
 ## robot config and init
 pin_robot = Solo12Config.buildRobotWrapper()
@@ -43,7 +43,7 @@ gg = SoloMpcGaitGen(pin_robot, urdf_path, x0, plan_freq, q0, None)
 
 gg.update_gait_params(gait_params, sim_t)
 
-robot = AbstractEnv(q0, v0, False, False)
+robot = AbstractEnv(q0, v0, False, True)
 robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
 robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
@@ -51,7 +51,7 @@ plot_time = 0 #Time to start plotting
 
 solve_times = []
 
-for o in range(int(50*(plan_freq/sim_dt))):
+for o in range(int(150*(plan_freq/sim_dt))):
     # this bit has to be put in shared memory
     q, v = robot.get_state()
     
@@ -67,9 +67,9 @@ for o in range(int(50*(plan_freq/sim_dt))):
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(sim_t,3), v_des, w_des)
 
         # Plot if necessary
-        if sim_t >= plot_time:
+        # if sim_t >= plot_time:
             # gg.plot_plan(q, v)
-            gg.save_plan("trot")
+            # gg.save_plan("trot")
 
         pr_et = time.time()
         solve_times.append(pr_et - pr_et)

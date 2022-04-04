@@ -9,21 +9,14 @@ This repo contains the centroidal motion planner based on a Biconvex solver and 
 - OsqpEigen (Optional, to use OSQP as the solver) [Link here: https://github.com/robotology/osqp-eigen]
 - Matplotlib (Optional, needed to run demos)
 - Robot_Properties_Solo (Optional, needed to run demos)
-- Robot_Properties_Bolt (Optional, needed to run demos)
 ```
 ## Installation
 ```
 git@github.com:machines-in-motion/biconvex_mpc.git
 cd biconvex_mpc
-pip3 install .
-```
-
-For C++:
-
-```
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
-make install
+make install -j16
 ```
 
 If you want to use OSQP, the cmake instructions should be modified to the following:

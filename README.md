@@ -3,17 +3,17 @@
 This repo contains the centroidal motion planner based on a Biconvex solver and DDP based non linear IK
 
 ## Dependencies
-```
+### Required
 - Pinocchio (Version 2.6.4 or greater)
 - Crocoddyl (Version 1.8.1 or greater)
-- OsqpEigen (Optional, to use OSQP as the solver) [Link here: https://github.com/robotology/osqp-eigen]
-- Matplotlib (Optional, needed to run demos)
-- bullet_utils (Optional, needed to run examples and tutorials) :
-        [Installation link](https://github.com/machines-in-motion/bullet_utils)
-- Robot_Properties_Solo (Optional, needed to run examples and tutorials) :
-        [Installtion link](https://github.com/open-dynamic-robot-initiative/robot_properties_solo)
-    
-```
+- Pybind11
+### Optional
+- bullet_utils (needed to run examples and tutorials) : [Installation link](https://github.com/machines-in-motion/bullet_utils)
+- Robot_Properties_Solo (needed to run examples and tutorials) : [Installation link](https://github.com/open-dynamic-robot-initiative/robot_properties_solo)
+- OsqpEigen (to use OSQP as the solver): [Installation Link](https://github.com/robotology/osqp-eigen)
+- Meshcat (To visualize soltutions) : [Installation Link](https://github.com/rdeits/meshcat-python)
+- Matplotlib (to plot results)
+  
 ## Installation
 
 ### Step 1

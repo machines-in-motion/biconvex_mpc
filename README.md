@@ -8,8 +8,10 @@ This repo contains the centroidal motion planner based on a Biconvex solver and 
 - Crocoddyl (Version 1.8.1 or greater)
 - OsqpEigen (Optional, to use OSQP as the solver) [Link here: https://github.com/robotology/osqp-eigen]
 - Matplotlib (Optional, needed to run demos)
-- bullet_utils (Optional, needed to run examples and tutorials) - [Installation link : https://github.com/machines-in-motion/bullet_utils]
-- Robot_Properties_Solo (Optional, needed to run examples and tutorials) - [Installtion link : https://github.com/open-dynamic-robot-initiative/robot_properties_solo]
+- bullet_utils (Optional, needed to run examples and tutorials) :
+        [Installation link](https://github.com/machines-in-motion/bullet_utils)
+- Robot_Properties_Solo (Optional, needed to run examples and tutorials) :
+        [Installtion link](https://github.com/open-dynamic-robot-initiative/robot_properties_solo)
     
 ```
 ## Installation
@@ -43,7 +45,12 @@ export PYTHONPATH=$PYTHONPATH:path/to/the/biconvex/build/folder
 ## Citing
 
 ```
-Meduri, Avadesh, Paarth Shah, Julian Viereck, Majid Khadiv, Ioannis Havoutis, and Ludovic Righetti. "BiConMP: A Nonlinear Model Predictive Control Framework for Whole Body Motion Planning." arXiv preprint arXiv:2201.07601 (2022).
+@article{meduri2022biconmp,
+  title={BiConMP: A Nonlinear Model Predictive Control Framework for Whole Body Motion Planning},
+  author={Meduri, Avadesh and Shah, Paarth and Viereck, Julian and Khadiv, Majid and Havoutis, Ioannis and Righetti, Ludovic},
+  journal={arXiv preprint arXiv:2201.07601},
+  year={2022}
+}
 ```
 
 ## Copyrights

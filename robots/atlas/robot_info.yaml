@@ -1,0 +1,26 @@
+robot_name: "atlas"
+num_eef: 4
+eef_names: ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
+hip_names: ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]
+initial_configuration: [0.0, 0.0, 0.95,        #X, Y, Z
+                        0.0, 0.0, 0.0, 1.0,     #Orientation (quaternion) in pinocchio coordinates (x,y,z,w)
+                        0.0, 0.487, 0.0,     #Pelvis
+                        0.0, -1.2, 0.0, 0.0, 0.0, 0.0, 0.0,
+                        0.0, 1.2, 0.0, 0.0, 0.0, 0.0, 0.0, 
+                        0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+foot_size: 0.005
+flat_foot: true
+flat_foot_dims: [0.07, -0.07], [0.07, 0.07], [0.17, 0.03], [0.17, -0.03] #measured from Blender #Offsets to use for contact points
+offsets: [[0.0, 0.005, 0.0], [0.0, 0.005, 0.0] #Not used for Atlas
+dt: 0.001
+steps: 10000000
+friction_coefficient: 1.0
+max_eef_force: 5000
+kinematic_limits: [0.5, 0.5, 0.5]
+torque_limits: [1000, 1000, 1000, 1000, 1000, #35 Controllable Joints
+                1000, 1000, 1000, 1000, 1000,
+                1000, 1000, 1000, 1000, 1000,
+                1000, 1000, 1000, 1000, 1000,
+                1000, 1000, 1000, 1000, 1000,
+                1000, 1000, 1000, 1000, 1000]

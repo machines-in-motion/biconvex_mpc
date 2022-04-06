@@ -10,7 +10,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="head.stl" />
+        <mesh filename="../meshes/head.stl" />
       </geometry>
       <material name="">
         <color rgba="0.9098 0.44314 0.031373 1" />
@@ -264,7 +264,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_clav.stl"/>
+        <mesh filename="../meshes/r_clav.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -282,7 +282,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="l_foot.stl"/>
+        <mesh filename="../meshes/l_foot.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -313,7 +313,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_larm.stl"/>
+        <mesh filename="../meshes/r_larm.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -362,7 +362,7 @@
     <visual>
       <origin rpy="0 3.14159265359 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="r_hand.stl"/>
+        <mesh filename="../meshes/r_hand.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -398,7 +398,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="l_lglut.stl"/>
+        <mesh filename="../meshes/l_lglut.stl"/>
       </geometry>
     </visual>
   </link>
@@ -410,7 +410,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="l_lleg.stl"/>
+        <mesh filename="../meshes/l_lleg.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -428,7 +428,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_scap.stl"/>
+        <mesh filename="../meshes/r_scap.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -464,7 +464,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="l_talus.stl"/>
+        <mesh filename="../meshes/l_talus.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -488,7 +488,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_uarm.stl"/>
+        <mesh filename="../meshes/r_uarm.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -512,7 +512,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_farm.stl"/>
+        <mesh filename="../meshes/r_farm.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -542,7 +542,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="l_uglut.stl"/>
+        <mesh filename="../meshes/l_uglut.stl"/>
       </geometry>
     </visual>
   </link>
@@ -554,7 +554,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="l_uleg.stl"/>
+        <mesh filename="../meshes/l_uleg.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -599,7 +599,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="ltorso.stl"/>
+        <mesh filename="../meshes/ltorso.stl"/>
       </geometry>
     </visual>
   </link>
@@ -611,7 +611,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="mtorso.stl"/>
+        <mesh filename="../meshes/mtorso.stl"/>
       </geometry>
     </visual>
   </link>
@@ -623,7 +623,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="pelvis.stl"/>
+        <mesh filename="../meshes/pelvis.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -647,7 +647,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_clav.stl"/>
+        <mesh filename="../meshes/r_clav.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -677,7 +677,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_foot.stl"/>
+        <mesh filename="../meshes/r_foot.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -708,7 +708,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_larm.stl"/>
+        <mesh filename="../meshes/r_larm.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -757,7 +757,7 @@
     <visual>
       <origin rpy="0 3.14159265359 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="r_hand.stl"/>
+        <mesh filename="../meshes/r_hand.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -793,7 +793,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_lglut.stl"/>
+        <mesh filename="../meshes/r_lglut.stl"/>
       </geometry>
     </visual>
   </link>
@@ -805,7 +805,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_lleg.stl"/>
+        <mesh filename="../meshes/r_lleg.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -823,7 +823,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_scap.stl"/>
+        <mesh filename="../meshes/r_scap.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -859,7 +859,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_talus.stl"/>
+        <mesh filename="../meshes/r_talus.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -883,7 +883,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_uarm.stl"/>
+        <mesh filename="../meshes/r_uarm.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -907,7 +907,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_farm.stl"/>
+        <mesh filename="../meshes/r_farm.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -931,7 +931,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_uglut.stl"/>
+        <mesh filename="../meshes/r_uglut.stl"/>
       </geometry>
     </visual>
   </link>
@@ -943,7 +943,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="r_uleg.stl"/>
+        <mesh filename="../meshes/r_uleg.stl"/>
       </geometry>
     </visual>
     <collision>
@@ -988,7 +988,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="utorso.stl"/>
+        <mesh filename="../meshes/utorso.stl"/>
       </geometry>
     </visual>
     <collision>

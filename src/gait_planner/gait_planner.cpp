@@ -2,32 +2,39 @@
 
 namespace gait_planner
 {
-    QuadrupedGait::QuadrupedGait(double gait_period, Eigen::Vector4d stance_percent,
-                                 Eigen::Vector4d phase_offset, double step_height)
+    QuadrupedGait::QuadrupedGait(double gait_period, Eigen::VectorXd stance_percent,
+                                 Eigen::VectorXd phase_offset, double step_height)
             : gait_period_(gait_period)
     {
         // TODO: Cannot initialise all of these yet directly due to reorder (!)
+        n_eff = stance_percent.size();
         this->stance_percent_ = stance_percent;
         this->stance_time_ = gait_period_ * stance_percent_;
-        this->swing_percent_ << 1.0 - stance_percent_[0], 1.0 - stance_percent_[1], 1.0 - stance_percent_[2], 1.0 - stance_percent_[3];
-        this->swing_time_ << gait_period_ - stance_time_[0], gait_period_ - stance_time_[1],
-                gait_period_ - stance_time_[2], gait_period_ - stance_time_[3];
+        
+        swing_percent_.resize(n_eff); swing_percent_.setZero();
+        swing_time_.resize(n_eff); swing_time_.setZero();
+        phi_.resize(n_eff); phi_.setZero();
+        phase_percent_.resize(n_eff); phase_percent_.setZero();
+        phase_.resize(n_eff); phase_.setZero();
+
+        for (unsigned i = 0; i < n_eff; ++i){
+            swing_percent_[i] = 1.0 - stance_percent_[i];
+            swing_time_[i] = gait_period_ - stance_time_[i];
+        }
+
         this->phase_offset_ = phase_offset;
         this->step_height_ = step_height;
-
-        // Initialise internal members: assumes starting at "0" time
-        (void)get_phi(0);
-        (void)get_phase(0);
 
         this->min_rel_height_ = 0;
     }
 
-    Eigen::Vector4d QuadrupedGait::get_phi(double time_in)
+    Eigen::VectorXd QuadrupedGait::get_phi(double time_in)
     {
-        phi_ << std::fmod(time_in + phase_offset_[0] * gait_period_, gait_period_),
-                std::fmod(time_in + phase_offset_[1] * gait_period_, gait_period_),
-                std::fmod(time_in + phase_offset_[2] * gait_period_, gait_period_),
-                std::fmod(time_in + phase_offset_[3] * gait_period_, gait_period_);
+        
+        for (unsigned i = 0; i < n_eff; ++i){
+            phi_[0] = std::fmod(time_in + phase_offset_[i] * gait_period_, gait_period_);
+        }
+
         return phi_;
     }
 
@@ -50,10 +57,10 @@ namespace gait_planner
         return phase_[foot_ID];
     }
 
-    Eigen::Vector4i QuadrupedGait::get_phase(double time_in)
+    Eigen::VectorXi QuadrupedGait::get_phase(double time_in)
     {
         //there's probably a more elegant way to do this (binary modulo operator on the Eigen vectors...)
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < n_eff; ++i)
         {
             if (get_phi(time_in, i) <= stance_time_[i])
             {
@@ -67,10 +74,10 @@ namespace gait_planner
         return phase_;
     }
 
-    Eigen::Vector4d QuadrupedGait::get_percent_in_phase(double time_in)
+    Eigen::VectorXd QuadrupedGait::get_percent_in_phase(double time_in)
     {
         auto current_phi = get_phi(time_in);
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < n_eff; ++i)
         {
             if (current_phi[i] <= stance_time_[i])
             {

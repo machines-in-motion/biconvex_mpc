@@ -10,31 +10,32 @@ from biconvex_mpc_cpp import BiconvexMP, KinoDynMP
 from gait_planner_cpp import GaitPlanner
 from matplotlib import pyplot as plt
 
-class SoloMpcGaitGen:
+class AbstractGaitGen:
 
-    def __init__(self, robot, r_urdf, x_reg, planning_time, q0, height_map = None):
+    def __init__(self, r_urdf, eff_names, hip_names, x_reg, planning_time, q0, foot_size = 0.018, height_map = None, ):
         """
         Input:
-            robot : robot model
             r_urdf : urdf of robot
+            eff_names : end effector names of the robot (number of contact points)
+            hip_names : names of the hip joints for each end effector
             dt : discretization
             x_reg : joint config about which regulation is done
             plan_freq : planning frequency in seconds
+            foot_size : 3d vec if its a full foot or just z hieght if its a point contact
         """
 
         ## Note : only creates plan for horizon of 2*st
-        self.rmodel = robot.model
-        self.rdata = robot.data
+        self.rmodel = pin.buildModelFromUrdf(r_urdf, pin.JointModelFreeFlyer())
+        self.rdata = self.rmodel.createData()
         self.r_urdf = r_urdf
-        self.foot_size = 0.018
+        self.foot_size = foot_size
         
         #TODO: DEPRECATE THIS...
         #Use for a fixed frequency planning time
         self.planning_time = planning_time
 
-        self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
-        self.hip_names = ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]
-        self.n_eff = 4
+        self.eff_names = eff_names
+        self.hip_names = hip_names
 
         pin.forwardKinematics(self.rmodel, self.rdata, q0, np.zeros(self.rmodel.nv))
         pin.updateFramePlacements(self.rmodel, self.rdata)
@@ -51,20 +52,9 @@ class SoloMpcGaitGen:
         for i in range(len(self.eff_names)):
             self.ee_frame_id.append(self.rmodel.getFrameId(self.eff_names[i]))
             self.offsets[i] = self.rdata.oMf[self.rmodel.getFrameId(self.hip_names[i])].translation - com_init.copy()
+            self.offsets[i] += self.rdata.oMf[self.rmodel.getFrameId(self.eff_names[i])].translation - self.rdata.oMf[self.rmodel.getFrameId(self.hip_names[i])].translation
             self.offsets[i] = np.round(self.offsets[i], 3)
 
-        # Contact-planning offsets
-        self.offsets[0][0] -= 0.00 #Front Left_X
-        self.offsets[0][1] += 0.04 #Front Left_Y
-        
-        self.offsets[1][0] -= 0.00 #Front Right_X
-        self.offsets[1][1] -= 0.04 #Front Right_Y
-        
-        self.offsets[2][0] += 0.00 #Hind Left_X
-        self.offsets[2][1] += 0.04 #Hind Left_Y
-        
-        self.offsets[3][0] += 0.00 #Hind Right X
-        self.offsets[3][1] -= 0.04 #Hind Right Y
         self.apply_offset = True
 
         #Rotate offsets to local frame
@@ -115,6 +105,7 @@ class SoloMpcGaitGen:
         # --- Set up gait parameters ---
         self.gait_planner = GaitPlanner(self.params.gait_period, np.array(self.params.stance_percent), \
                                         np.array(self.params.phase_offset), self.params.step_ht)
+
         #Different horizon parameterizations; only self.params.gait_horizon works for now
         self.gait_horizon = self.params.gait_horizon
         self.horizon = int(np.round(self.params.gait_horizon*self.params.gait_period/self.params.gait_dt,2))

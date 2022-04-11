@@ -1,24 +1,24 @@
 ## This is a demo for jump motion in mpc
-## Author : Avadesh Meduri & Paarth Shah
+## Author : Majid Khadiv
 ## Date : 21/04/2021
 
 import time
 import numpy as np
 import pinocchio as pin
 
-from robot_properties_solo.solo12wrapper import Solo12Robot, Solo12Config
-from mpc.abstract_cyclic_gen import SoloMpcGaitGen
+from robot_properties_bolt.bolt_humanoid_wrapper import BoltHumanoidRobot, BoltHumanoidConfig
+from mpc.abstract_cyclic_gen import BoltHumanoidMpcGaitGen
 from motions.cyclic.solo12_jump import jump
 
 from envs.pybullet_env import PyBulletEnv
 from controllers.robot_id_controller import InverseDynamicsController
 
 ## robot config and init
-pin_robot = Solo12Config.buildRobotWrapper()
-urdf_path = Solo12Config.urdf_path
+pin_robot = BoltHumanoidConfig.buildRobotWrapper()
+urdf_path = BoltHumanoidConfig.urdf_path
 
 n_eff = 4
-q0 = np.array(Solo12Config.initial_configuration)
+q0 = np.array(BoltHumanoidConfig.initial_configuration)
 q0[0:2] = 0.0
 
 v0 = pin.utils.zero(pin_robot.model.nv)
@@ -39,11 +39,11 @@ pln_ctr = 0
 ## Motion
 gait_params = jump
 lag = int(update_time/sim_dt)
-gg = SoloMpcGaitGen(pin_robot, urdf_path, x0, plan_freq, q0, None)
+gg = BoltHumanoidMpcGaitGen(pin_robot, urdf_path, x0, plan_freq, q0, None)
 
 gg.update_gait_params(gait_params, sim_t)
 
-robot = PyBulletEnv(Solo12Robot, q0, v0)
+robot = PyBulletEnv(BoltHumanoidRobot, q0, v0)
 robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
 robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 

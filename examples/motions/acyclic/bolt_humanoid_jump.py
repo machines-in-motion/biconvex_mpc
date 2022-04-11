@@ -1,27 +1,27 @@
-## This file contains the motion plan for caflight_timewheel
-## Author : Avadesh Meduri
+## This file contains the motion plan for jump motion
+## Author : Majid Khadiv
 ## Date : 21/09/2021
 
 import numpy as np
-from robot_properties_solo.config import Solo12Config
+from robot_properties_bolt.config import BoltHumanoidConfig
 from motions.weight_abstract import ACyclicMotionParams
 import pinocchio as pin
 ###########################################################################################
 
-robot = Solo12Config.buildRobotWrapper()
+robot = BoltHumanoidConfig.buildRobotWrapper()
 rmodel = robot.model
 rdata = robot.data
 
-q0 = np.array(Solo12Config.initial_configuration)
+q0 = np.array(BoltHumanoidConfig.initial_configuration)
 v0 = pin.utils.zero(rmodel.nv)
 x0 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
 
 
 ###########################################################################################
-plan = ACyclicMotionParams("solo12", "jump_fwd")
+plan = ACyclicMotionParams("bolt", "jump")
 
 st = 0.4
-flight_time = 0.3
+flight_time = 0.1
 T = 1.2
 dt = 5e-2
 dt = T/30
@@ -33,18 +33,18 @@ plan.plan_freq = [[0.3, 0, st + flight_time],
 
 plan.cnt_plan = [[[ 1.,      0.3946,   0.14695,  0., 0.,  st    ],
                   [ 1.,      0.3946,  -0.14695,  0., 0.,  st    ],
-                  [ 1.,      0.0054,   0.14695,  0., 0.,  st    ],
-                  [ 1.,      0.0054,  -0.14695,  0., 0.,  st    ]],
+                  [ 0.,      0.0054,   0.14695,  0., 0.,  st    ],
+                  [ 0.,      0.0054,  -0.14695,  0., 0.,  st    ]],
 
-                 [[ 0.,      0.3946,   0.14695,  0.,st, st + flight_time   ],
-                  [ 0.,      0.3946,  -0.14695,  0., st, st + flight_time   ],
-                  [ 0.,      0.0054,   0.14695,  0., st, st + flight_time   ],
-                  [ 0.,      0.0054,  -0.14695,  0., st, st + flight_time   ]],
+                 [[ 0.,      0.3946,   0.14695,  0.,st, st + flight_time],
+                  [ 0.,      0.3946,  -0.14695,  0., st, st + flight_time],
+                  [ 0.,      0.0054,   0.14695,  0., st, st + flight_time],
+                  [ 0.,      0.0054,  -0.14695,  0., st, st + flight_time]],
 
                  [[ 1.,      0.3946,   0.14695,  0.,st + flight_time, T ],
                   [ 1.,      0.3946,  -0.14695,  0., st + flight_time, T ],
-                  [ 1.,      0.0054,   0.14695,  0., st + flight_time, T ],
-                  [ 1.,      0.0054,  -0.14695,  0., st + flight_time, T ]]]
+                  [ 0.,      0.0054,   0.14695,  0., st + flight_time, T ],
+                  [ 0.,      0.0054,  -0.14695,  0., st + flight_time, T ]]]
 
 
 #  dynamic optimization params

@@ -29,7 +29,7 @@ class SoloAcyclicGen:
         self.ee_frame_id = []
         for i in range(len(self.eff_names)):
             self.ee_frame_id.append(self.rmodel.getFrameId(self.eff_names[i]))
-        
+
         # Set up constraints for Dynamics
         self.fx_max = 25.0
         self.fy_max = 25.0
@@ -44,7 +44,7 @@ class SoloAcyclicGen:
         Updates the gaits
         Input:
             weight_abstract : the parameters of the gaits
-            q0 : joint config to bias 
+            q0 : joint config to bias
             t : time to bias
         """
         self.q0 = q0
@@ -111,7 +111,7 @@ class SoloAcyclicGen:
 
                 else:
                     pass
-        
+
             if i == 0:
                 dt = self.params.dt_arr[i] - np.round(np.remainder(t,self.params.dt_arr[i]),2)
                 if dt == 0:
@@ -131,7 +131,7 @@ class SoloAcyclicGen:
         """
         # initial and terminal state
         self.x0 = np.hstack((q,v))
-        
+
         X_init = np.zeros(9)
         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
         X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
@@ -142,7 +142,7 @@ class SoloAcyclicGen:
         X_nom = np.zeros((9*self.horizon))
         ft = t - self.params.dt_arr[0] - self.t0
         i = 0
-        while i < self.params.n_col:    
+        while i < self.params.n_col:
             ft += self.params.dt_arr[i]
             ft = np.round(ft, 3)
             if ft < self.params.X_nom[-1][-1]:
@@ -166,7 +166,7 @@ class SoloAcyclicGen:
         self.bounds = np.zeros((self.horizon, 6))
         ft = t - self.params.dt_arr[0] - self.t0
         i = 0
-        while i < self.params.n_col:    
+        while i < self.params.n_col:
             ft += self.params.dt_arr[i]
             ft = np.round(ft, 3)
             if ft < self.params.bounds[-1][-1]:
@@ -204,7 +204,7 @@ class SoloAcyclicGen:
         if isinstance(self.params.swing_wt, np.ndarray) or isinstance(self.params.swing_wt, list):
             ft = t - self.params.dt_arr[0] - self.t0
             i = 0
-            while i < self.ik_horizon:    
+            while i < self.ik_horizon:
                 ft += self.params.dt_arr[min(i, self.ik_horizon-1)]
                 ft = np.round(ft, 3)
                 if ft < self.params.swing_wt[-1][0][5]:
@@ -307,9 +307,9 @@ class SoloAcyclicGen:
         pin.updateFramePlacements(self.rmodel, self.rdata)
         pin.framesForwardKinematics(self.rmodel, self.rdata, q)
 
-        t1 = time.time()        
-        # q[0:2] -= self.q0[0:2] - [0.2,0] 
-        
+        t1 = time.time()
+        # q[0:2] -= self.q0[0:2] - [0.2,0]
+
         self.create_contact_plan(q, v, t)
         #Creates costs for IK and Dynamics
         self.create_costs(q, v, t)
@@ -338,7 +338,7 @@ class SoloAcyclicGen:
 
             elif i == len(xs)-1:
                 self.xs_int = np.vstack((self.xs_int, np.linspace(xs[i], xs[i], int(self.dt_arr[i]/0.001))))
-            
+
             else:
                 self.f_int =  np.vstack((self.f_int, np.linspace(optimized_forces[i*n_eff:n_eff*(i+1)], optimized_forces[n_eff*(i):n_eff*(i+1)], int(self.dt_arr[i]/0.001))))
                 self.xs_int = np.vstack((self.xs_int, np.linspace(xs[i], xs[i], int(self.dt_arr[i]/0.001))))
@@ -381,7 +381,7 @@ class SoloAcyclicGen:
                                  ik_com_opt = self.ik.return_opt_com(),\
                                  ik_mom_opt = self.ik.return_opt_mom(),\
                                  xs = self.ik.get_xs())
-                                 
+
         print("finished saving ...")
         assert False
 

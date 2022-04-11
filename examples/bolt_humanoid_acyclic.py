@@ -1,33 +1,29 @@
-## Demo for robot doing a cartwheel
-## Author : Avadesh Meduri & Paarth Shah
-## Date : 04/08/2021
+## Demo for bolt humanoid doing a jumping motion
+## Author : Majid Khadiv
+## Date : 05/04/2022
 
 import time
 import numpy as np
 import pinocchio as pin
 
-from robot_properties_solo.solo12wrapper import Solo12Robot, Solo12Config
+from robot_properties_bolt.bolt_humanoid_wrapper import BoltHumanoidRobot, BoltHumanoidConfig
 from controllers.robot_id_controller import InverseDynamicsController
 from envs.pybullet_env import PyBulletEnv
 from mpc.abstract_acyclic_gen import SoloAcyclicGen
 from mpc.data_plotter import DataRecorder
 
-# from motions.acyclic.plan_cartwheel import plan
-# from motions.acyclic.rearing import plan
-# from motions.acyclic.plan_hifive import plan
-from motions.acyclic.stand import plan
-# from motions.acyclic.plan_jump import plan
+from motions.acyclic.bolt_humanoid_stand import plan
 
-pin_robot = Solo12Config.buildRobotWrapper()
+pin_robot = BoltHumanoidConfig.buildRobotWrapper()
 rmodel = pin_robot.model
-urdf = Solo12Config.urdf_path
+urdf = BoltHumanoidConfig.urdf_path
 
-q0 = np.array(Solo12Config.initial_configuration)
+q0 = np.array(BoltHumanoidConfig.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
-f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
+f_arr = ["L_FOOT", "R_FOOT", "L_HAND", "R_HAND"]
 
-robot = PyBulletEnv(Solo12Robot, q0, v0)
+robot = PyBulletEnv(BoltHumanoidRobot, q0, v0)
 robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
 dr = DataRecorder(pin_robot)
 
@@ -44,10 +40,11 @@ mg.update_motion_params(plan, q, sim_t)
 
 plot_time = np.inf
 
-for o in range(int(10/sim_dt)):
+for o in range(int(14/sim_dt)):
 
     contact_configuration = robot.get_current_contacts()
     q, v = robot.get_state()
+    print(q)
     kp, kd = mg.get_gains(sim_t)
     robot_id_ctrl.set_gains(kp, kd)
 

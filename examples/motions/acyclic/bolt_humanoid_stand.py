@@ -18,22 +18,19 @@ x0 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
 
 
 ###########################################################################################
-plan = ACyclicMotionParams("solo12", "jump_fwd")
+plan = ACyclicMotionParams("bolt_humanoid", "stand")
 
-st = 0.4
-flight_time = 0.3
 T = 10
 dt = 5e-2
 plan.n_col = 30
 dt = T/30
 plan.dt_arr = plan.n_col*[dt,]
-plan.plan_freq = [[0.3, 0, st + flight_time],
-                  [0.5, st + flight_time, T]]
+plan.plan_freq = [[0.3, 0, T]]
 
-plan.cnt_plan = [[[ 1.,      0.3946,   0.14695,  0., 0.,  T    ],
-                  [ 1.,      0.3946,  -0.14695,  0., 0.,  T    ],
-                  [ 1.,      0.0054,   0.14695,  0., 0.,  T    ],
-                  [ 1.,      0.0054,  -0.14695,  0., 0.,  T    ]]]
+plan.cnt_plan = [[[ 1.,      0.0,   0.139,  0., 0.,  T    ],
+                  [ 1.,      0.0,  -0.139,  0., 0.,  T    ],
+                  [ 0.,      0.0,   0.139,  0., 0.,  T    ],
+                  [ 0.,      0.0,  -0.139,  0., 0.,  T    ]]]
 
 
 #  dynamic optimization params
@@ -42,12 +39,10 @@ plan.W_X_ter = 10*np.array([1e-5, 1e-5, 1e+5, 1e-1, 1e-1, 2e2, 1e+5, 1e+5, 1e+5]
 plan.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 plan.rho = 5e+4
 
-plan.X_nom = [[0.2, 0, 0.22, 0, 0, 0, 0, 0.00, 0.0, 0.0, st],
-              [0.2, 0, 0.22, 0, 0, 0, 0, 0.0, 0., st, st+flight_time],
-              [0.2, 0, 0.22, 0, 0, 0, 0, 0.0, 0., st+flight_time, T]]
+plan.X_nom = [[0., 0, 0.35, 0, 0, 0, 0, 0.00, 0.0, 0.0, T]]
 
-plan.X_ter = [0.2, 0, 0.22, 0, 0, 0, 0, 0.0, 0.0]
-plan.bounds = [[-0.25, -0.25, 0.1, 0.25, 0.25, 0.3, 0., T]]
+plan.X_ter = [0., 0, 0.35, 0, 0, 0, 0, 0.0, 0.0]
+plan.bounds = [[-0.25, 0.25, -0.25, 0.25, 0.3, 0.4, 0., T]]
 
 # ik optimization params
 

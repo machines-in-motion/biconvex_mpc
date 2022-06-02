@@ -21,9 +21,11 @@ viz = pin.visualize.MeshcatVisualizer(robot.model, robot.collision_model, robot.
 pin_robot = AtlasConfig.buildRobotWrapper()
 urdf_path = AtlasConfig.urdf_path
 
-n_eff = 8
+
 eff_names = ["l_foot_lt", "l_foot_rt", "l_foot_lb", "l_foot_rb", "r_foot_lt", "r_foot_rt", "r_foot_lb", "r_foot_rb"]
 hip_names = ["l_leg_hpz", "l_leg_hpz", "l_leg_hpz", "l_leg_hpz", "r_leg_hpz", "r_leg_hpz", "r_leg_hpz", "r_leg_hpz"]
+n_eff = len(eff_names)
+
 q0 = np.array(AtlasConfig.initial_configuration)
 q0[0:2] = 0.0
 
@@ -48,22 +50,24 @@ still.gait_dt = 0.05
 still.phase_offset = int(n_eff)*[0.0,]
 
 # IK
-still.state_wt = np.array([0., 0, 10] + [1000] * 3 + [1.0] * (pin_robot.model.nv - 6) \
+still.state_wt = np.array([1e2, 1e2, 1e2] + [1000] * 3 + [1.0] * (pin_robot.model.nv - 6) \
                          + [0.00] * 3 + [100] * 3 + [0.5] *(pin_robot.model.nv - 6))
 
-still.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
+still.ctrl_wt = [0, 0, 1] + [1, 1, 1] + [5.0] *(rmodel.nv - 6)
 
 still.swing_wt = [1e5, 1e5]
 still.cent_wt = [0*5e+1, 5e+2]
-still.step_ht = 0.4
-still.nom_ht = 0.95
+still.step_ht = 0.
+still.nom_ht = 1.12
 still.reg_wt = [5e-2, 1e-5]
 
 # Dyn
-still.W_X =        np.array([1e+5, 1e+5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+4, 1e4])
-still.W_X_ter = 10*np.array([1e+5, 1e+5, 1e-5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e+5])
-still.W_F = np.array(4*[5e+4, 5e+4, 5e+8])
+still.W_X =        np.array([1e+3, 1e+3, 1e+3, 0., 0., 0., 0., 0., 0.])
+still.W_X_ter = 10*np.array([1e+3, 1e+3, 1e+3, 0., 0., 0., 0., 0., 0.])
+still.W_F = np.array(8*[0., 0., 0.])
 still.rho = 5e+4
+
+
 still.ori_correction = [0.0, 0.0, 0.0]
 still.gait_horizon = 1.0
 
@@ -97,7 +101,7 @@ v = v0
 
 lag = int(update_time/sim_dt)
 
-for o in range(10):
+for o in range(100):
     xs, us, f = gg.optimize(q, v, sim_t, v_des, w_des)
     xs = xs[lag:]
     us = us[lag:]
@@ -112,4 +116,4 @@ for o in range(10):
 
     sim_t += plan_freq
 
-    gg.plot(q, v, plot_force=False)
+    gg.plot(q, v, plot_force=True)

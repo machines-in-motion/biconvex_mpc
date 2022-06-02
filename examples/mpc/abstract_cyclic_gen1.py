@@ -79,7 +79,7 @@ class AbstractGaitGen:
         # Set up constraints for Dynamics
         self.bx = 0.45
         self.by = 0.45
-        self.bz = 0.45
+        self.bz = 1.3
         self.fx_max = 15.0
         self.fy_max = 15.0
         self.fz_max = 15.0
@@ -231,13 +231,13 @@ class AbstractGaitGen:
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
 
-        print("time", t)
-        for i in range(self.horizon):
-            print("\n \n", i,"'th node in the horizon")
-            for j in range(len(self.eff_names)):
-                print(self.eff_names[j])
-                print(self.cnt_plan[i][j][:])
-        return self.cnt_plan
+        # print("time", t)
+        # for i in range(self.horizon):
+        #     print("\n \n node #", i," in the horizon")
+        #     for j in range(len(self.eff_names)):
+        #         print(self.eff_names[j])
+        #         print(self.cnt_plan[i][j][:])
+        # return self.cnt_plan
 
         return self.cnt_plan
 
@@ -321,6 +321,9 @@ class AbstractGaitGen:
 
         # Setup dynamic optimization costs
         bounds = np.tile([-self.bx, -self.by, 0, self.bx, self.by, self.bz], (self.horizon,1))
+        print("X_init", self.X_init)
+        print("x_nom", self.X_nom)
+        print("X_ter", X_ter)
         self.mp.create_bound_constraints(bounds, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(np.tile(self.params.W_X, self.horizon), self.params.W_X_ter, X_ter, self.X_nom)
         self.mp.create_cost_F(np.tile(self.params.W_F, self.horizon))
@@ -428,48 +431,49 @@ class AbstractGaitGen:
         ax[2].legend()
 
         # Plot End-Effector Forces
-        if plot_force:
-            fig, ax_f = plt.subplots(self.n_eff, 1)
-            for n in range(self.n_eff):
-                ax_f[n].plot(optimized_forces[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
-                ax_f[n].plot(optimized_forces[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
-                ax_f[n].plot(optimized_forces[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
-                ax_f[n].grid()
-                ax_f[n].legend()
-
-        # Plot Linear Momentum
-        fig, ax_m = plt.subplots(3,1)
-        ax_m[0].plot(mom_opt[:, 0], label = "Dyn linear_momentum x")
-        ax_m[0].plot(ik_mom_opt[:, 0], label="IK linear_momentum x")
-        ax_m[1].plot(mom_opt[:, 1], label = "linear_momentum y")
-        ax_m[1].plot(ik_mom_opt[:, 1], label="IK linear_momentum y")
-        ax_m[2].plot(mom_opt[:, 2], label = "linear_momentum z")
-        ax_m[2].plot(ik_mom_opt[:, 2], label="IK linear_momentum z")
-        ax_m[0].grid()
-        ax_m[0].legend()
-
-        ax_m[1].grid()
-        ax_m[1].legend()
-
-        ax_m[2].grid()
-        ax_m[2].legend()
-
-        # Plot Linear Momentum
-        fig, ax_am = plt.subplots(3,1)
-        ax_am[0].plot(mom_opt[:, 3], label = "Dynamics Angular Momentum around X")
-        ax_am[0].plot(ik_mom_opt[:, 3], label="Kinematic Angular Momentum around X")
-        ax_am[1].plot(mom_opt[:, 4], label = "Dynamics Angular Momentum around Y")
-        ax_am[1].plot(ik_mom_opt[:, 4], label="Kinematic Angular Momentum around Y")
-        ax_am[2].plot(mom_opt[:, 5], label = "Dynamics Angular Momentum around Z")
-        ax_am[2].plot(ik_mom_opt[:, 5], label="Kinematic Angular Momentum around Z")
-        ax_am[0].grid()
-        ax_am[0].legend()
-
-        ax_am[1].grid()
-        ax_am[1].legend()
-
-        ax_am[2].grid()
-        ax_am[2].legend()
+        # n_eff = len(self.eff_names)
+        # if plot_force:
+        #     fig, ax_f = plt.subplots(n_eff, 1)
+        #     for n in range(n_eff):
+        #         ax_f[n].plot(optimized_forces[3*n::3*n_eff], label = self.eff_names[n] + " Fx")
+        #         ax_f[n].plot(optimized_forces[3*n+1::3*n_eff], label = self.eff_names[n] + " Fy")
+        #         ax_f[n].plot(optimized_forces[3*n+2::3*n_eff], label = self.eff_names[n] + " Fz")
+        #         ax_f[n].grid()
+        #         ax_f[n].legend()
+        #
+        # # Plot Linear Momentum
+        # fig, ax_m = plt.subplots(3,1)
+        # ax_m[0].plot(mom_opt[:, 0], label = "Dyn linear_momentum x")
+        # ax_m[0].plot(ik_mom_opt[:, 0], label="IK linear_momentum x")
+        # ax_m[1].plot(mom_opt[:, 1], label = "linear_momentum y")
+        # ax_m[1].plot(ik_mom_opt[:, 1], label="IK linear_momentum y")
+        # ax_m[2].plot(mom_opt[:, 2], label = "linear_momentum z")
+        # ax_m[2].plot(ik_mom_opt[:, 2], label="IK linear_momentum z")
+        # ax_m[0].grid()
+        # ax_m[0].legend()
+        #
+        # ax_m[1].grid()
+        # ax_m[1].legend()
+        #
+        # ax_m[2].grid()
+        # ax_m[2].legend()
+        #
+        # # Plot Linear Momentum
+        # fig, ax_am = plt.subplots(3,1)
+        # ax_am[0].plot(mom_opt[:, 3], label = "Dynamics Angular Momentum around X")
+        # ax_am[0].plot(ik_mom_opt[:, 3], label="Kinematic Angular Momentum around X")
+        # ax_am[1].plot(mom_opt[:, 4], label = "Dynamics Angular Momentum around Y")
+        # ax_am[1].plot(ik_mom_opt[:, 4], label="Kinematic Angular Momentum around Y")
+        # ax_am[2].plot(mom_opt[:, 5], label = "Dynamics Angular Momentum around Z")
+        # ax_am[2].plot(ik_mom_opt[:, 5], label="Kinematic Angular Momentum around Z")
+        # ax_am[0].grid()
+        # ax_am[0].legend()
+        #
+        # ax_am[1].grid()
+        # ax_am[1].legend()
+        #
+        # ax_am[2].grid()
+        # ax_am[2].legend()
 
         plt.show()
 

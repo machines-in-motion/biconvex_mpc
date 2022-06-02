@@ -591,14 +591,14 @@ class BoltHumanoidMpcGaitGen:
         self.rmodel = robot.model
         self.rdata = robot.data
         self.r_urdf = r_urdf
-        self.foot_size = 0.018
+        self.foot_size = 0.033
 
         #TODO: DEPRECATE THIS...
         #Use for a fixed frequency planning time
         self.planning_time = planning_time
 
-        self.eff_names = ["L_FOOT", "R_FOOT", "L_HAND", "R_HAND"]
-        self.hip_names = ["FL_HFE", "FR_HFE", "R_SFE", "R_SFE"]
+        self.eff_names = ["FL_ANKLE", "FR_ANKLE", "L_WRIST", "R_WRIST"]
+        self.hip_names = ["FL_HFE", "FR_HFE", "L_SFE", "R_SFE"]
         self.n_eff = 4
 
         pin.forwardKinematics(self.rmodel, self.rdata, q0, np.zeros(self.rmodel.nv))
@@ -620,10 +620,10 @@ class BoltHumanoidMpcGaitGen:
 
         # Contact-planning offsets
         self.offsets[0][0] -= 0.00 #Left_X
-        self.offsets[0][1] += 0.04 #Left_Y
+        self.offsets[0][1] += 0.06 #Left_Y
 
         self.offsets[1][0] -= 0.00 #Right_X
-        self.offsets[1][1] -= 0.04 #Right_Y
+        self.offsets[1][1] -= 0.06 #Right_Y
 
         self.apply_offset = True
 
@@ -719,8 +719,8 @@ class BoltHumanoidMpcGaitGen:
         rpy_vector[1] = 0.0
         R = pin.rpy.rpyToMatrix(rpy_vector)
 
-        vtrack = v_des[0:2] # this effects the step location (if set to vcom it becomes raibert)
-        #vtrack = vcom[0:2]
+        # vtrack = v_des[0:2] # this effects the step location (if set to vcom it becomes raibert)
+        vtrack = vcom[0:2]
 
         self.cnt_plan = np.zeros((self.horizon, len(self.eff_names), 4))
         # This array determines when the swing foot cost should be enforced in the ik
@@ -731,7 +731,7 @@ class BoltHumanoidMpcGaitGen:
         # i.e. the last vector should be [1/0, x, y, z] where 1/0 gives a boolean for contact (1 = contact, 0 = no cnt)
 
         for i in range(self.horizon):
-            for j in range(len(self.eff_names)):
+            for j in range(len(self.eff_names) - 2): # -2 since we are not making contact with hands
                 if i == 0:
                     if self.gait_planner.get_phase(t, j) == 1:
                         self.cnt_plan[i][j][0] = 1
@@ -754,7 +754,7 @@ class BoltHumanoidMpcGaitGen:
                             self.cnt_plan[i][j][1:4] = self.cnt_plan[i-1][j][1:4]
                         else:
                             hip_loc = com + np.matmul(R, self.offsets[j])[0:2] + i*self.params.gait_dt*vtrack
-                            raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
+                            raibert_step = 0.55*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
                             ang_step = 0.5*np.sqrt(z_height/self.gravity)*vtrack
                             ang_step = np.cross(ang_step, [0.0, 0.0, w_des])
 
@@ -801,6 +801,11 @@ class BoltHumanoidMpcGaitGen:
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
 
+        print("time", t)
+        for i in range(self.horizon):
+            for j in range(len(self.eff_names) - 2):
+                print(self.eff_names[j])
+                print(self.cnt_plan[i][j][:])
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, w_des, ori_des):
@@ -817,7 +822,7 @@ class BoltHumanoidMpcGaitGen:
         # --- Set Up IK --- #
         #Right now this is only setup to go for the *next* gait period only
         for i in range(self.ik_horizon):
-            for j in range(len(self.eff_names)):
+            for j in range(len(self.eff_names) - 2): # no need to set this task for hands
                 if self.cnt_plan[i][j][0] == 1:
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], self.params.swing_wt[0],
                                                               "cnt_" + str(0) + self.eff_names[j], i)

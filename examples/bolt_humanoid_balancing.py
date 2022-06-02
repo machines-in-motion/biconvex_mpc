@@ -40,43 +40,29 @@ mg.update_motion_params(plan, q, sim_t)
 
 plot_time = np.inf
 
-for o in range(500):
-    # print(o)
-    contact_configuration = robot.get_current_contacts()
+for o in range(int(5/sim_dt)):
     q, v = robot.get_state()
     kp, kd = mg.get_gains(sim_t)
     robot_id_ctrl.set_gains(kp, kd)
 
-    if pln_ctr == 0 or sim_t == 0:
-        xs, us, f = mg.optimize(q, v, sim_t)
-        xs = xs[lag:]
-        us = us[lag:]
-        f = f[lag:]
-        index = 0
-        dr.record_plan(xs, us, f, sim_t)
-
-        if sim_t >= plot_time:
-            print(mg.cnt_plan[0:3])
-            # mg.plot(q, v, plot_force=True)
-            mg.save_plan("hifive")
-            assert False
-
     # controller
-    q_des = xs[index][:pin_robot.model.nq].copy()
-    dq_des = xs[index][pin_robot.model.nq:].copy()
-    # print("u:", us[index])
-    # print("f:", f[index])
-    tau = robot_id_ctrl.id_joint_torques(q, v, q_des, dq_des, us[index], f[index], contact_configuration)
+    q_des = np.array([ 0., 0., 0.35, 0., 0., 0., 1., 0., 0.78539816, -1.57079633, 0., 0.78539816, -1.57079633, 0., 0., 0.])
+    dq_des = np.array([ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+    us = np.array([ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+    # f = np.zeros(12)
+    robot_mass  = pin.computeTotalMass(pin_robot.model, pin_robot.data)
+    f = np.array([0., 0., 0.5 * robot_mass * 9.81, 0., 0., 0.5 * robot_mass * 9.81, 0., 0., 0., 0., 0., 0.])
+    tau = robot_id_ctrl.id_joint_torques(q, v, q_des, dq_des, us, f, [])
     robot.send_joint_command(tau)
 
     # plotting
     # grf = robot.get_ground_reaction_forces()
-    dr.record_data(q, v, tau, f[index], q_des, dq_des, us[index], f[index])
+    # dr.record_data(q, v, tau, grf, q_des, dq_des, us[index], f[index])
     time.sleep(0.001)
 
     sim_t += np.round(sim_dt,3)
     pln_ctr = int((pln_ctr + 1)%(mg.get_plan_freq(sim_t)/sim_dt))
     index += 1
 
-dr.plot_plans()
-dr.plot(False)
+# dr.plot_plans()
+# dr.plot(False)

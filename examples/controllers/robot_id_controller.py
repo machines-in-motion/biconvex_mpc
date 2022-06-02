@@ -85,4 +85,3 @@ class InverseDynamicsController():
         tau_gain = -self.kp*(np.subtract(q[7:].T, des_q[7:].T)) - self.kd*(np.subtract(dq[6:].T, des_v[6:].T))
 
         return tau + tau_gain.T
-

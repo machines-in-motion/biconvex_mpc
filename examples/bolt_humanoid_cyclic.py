@@ -1,4 +1,4 @@
-## This is a demo for jump motion in mpc
+## This is a demo for cyclic motions using mpc
 ## Author : Majid Khadiv
 ## Date : 21/04/2021
 
@@ -8,7 +8,8 @@ import pinocchio as pin
 
 from robot_properties_bolt.bolt_humanoid_wrapper import BoltHumanoidRobot, BoltHumanoidConfig
 from mpc.abstract_cyclic_gen import BoltHumanoidMpcGaitGen
-from motions.cyclic.solo12_jump import jump
+from motions.cyclic.bolt_humanoid_walk import walk
+from motions.cyclic.bolt_humanoid_jump import jump
 
 from envs.pybullet_env import PyBulletEnv
 from controllers.robot_id_controller import InverseDynamicsController
@@ -23,9 +24,9 @@ q0[0:2] = 0.0
 
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
-f_arr = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
+f_arr = ["FL_ANKLE", "FR_ANKLE", "L_WRIST", "R_WRIST"]
 
-v_des = np.array([0.5,0.0,0.0])
+v_des = np.array([-0.0, 0.0, 0.0])
 w_des = 0.0
 
 plan_freq = 0.05 # sec
@@ -37,7 +38,7 @@ index = 0
 pln_ctr = 0
 
 ## Motion
-gait_params = jump
+gait_params = walk
 lag = int(update_time/sim_dt)
 gg = BoltHumanoidMpcGaitGen(pin_robot, urdf_path, x0, plan_freq, q0, None)
 
@@ -51,7 +52,7 @@ plot_time = 0 #Time to start plotting
 
 solve_times = []
 
-for o in range(int(150*(plan_freq/sim_dt))):
+for o in range(500):
     # this bit has to be put in shared memory
     q, v = robot.get_state()
 
@@ -67,9 +68,9 @@ for o in range(int(150*(plan_freq/sim_dt))):
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(sim_t,3), v_des, w_des)
 
         # Plot if necessary
-        # if sim_t >= plot_time:
-            # gg.plot_plan(q, v)
-            # gg.save_plan("jump")
+        # if sim_t >= .0:
+        gg.plot(q, v)
+        #     gg.save_plan("jump")
 
         pr_et = time.time()
         solve_times.append(pr_et - pr_et)
@@ -98,6 +99,6 @@ for o in range(int(150*(plan_freq/sim_dt))):
     sim_t += sim_dt
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
-
-np.savez("./bound_" + str(gg.horizon))
+# gg.plot(q, v)
+np.savez("./jump_" + str(gg.horizon))
 print("done")

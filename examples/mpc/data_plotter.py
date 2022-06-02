@@ -57,7 +57,7 @@ class DataRecorder:
         self.record_time.append(sim_t)
 
     def plot_plans(self):
-        
+
         t_arr = 0.001*np.arange(1, 1000*self.record_time[-1] + len(self.xs_plan[-1][:,0])+1)
         self.q = np.asarray(self.q)
         fig, ax = plt.subplots(3,1)
@@ -70,7 +70,7 @@ class DataRecorder:
         ax[0].plot(t_arr[0:len(self.q[:,0])], self.q[:, 0], label="actual base x")
         ax[1].plot(t_arr[0:len(self.q[:,0])], self.q[:, 1], label="actual base y")
         ax[2].plot(t_arr[0:len(self.q[:,0])], self.q[:, 2], label="actual base z")
-        
+
         ax[0].grid()
         ax[0].legend()
 
@@ -81,7 +81,7 @@ class DataRecorder:
         ax[2].legend()
 
         eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
-        
+
         fig, ax_f = plt.subplots(4, 1, sharex=True, sharey=True)
         t_arr = 0.001*np.arange(1, 1000*self.record_time[-1] + len(self.f_plan[-1][:,0])+1)
         for i in range(len(self.f_plan)):
@@ -93,9 +93,9 @@ class DataRecorder:
 
                 ax_f[n].grid()
                 ax_f[n].legend()
-        
+
         F_arr = np.asarray(self.f)
-        for n in range(4):     
+        for n in range(4):
             # ax_f[n].plot(t_arr[0:len(F_arr[:,3*n])], F_arr[:,3*n], label = "real " + eff_names[n] + " Fx")
             # ax_f[n].plot(t_arr[0:len(F_arr[:,3*n])], F_arr[:,3*n+1], label = "real " + eff_names[n] + " Fy")
             ax_f[n].plot(t_arr[0:len(F_arr[:,3*n])], F_arr[:,3*n+2], label = "real " + eff_names[n] + " Fz")
@@ -109,7 +109,7 @@ class DataRecorder:
         f_des = np.asarray(self.des_f)
         com = np.asarray(self.com)
         des_com = np.asarray(self.des_com)
-        
+
         fig, ax = plt.subplots(3,1)
         ax[0].plot(com[:, 0], label="actual com x")
         ax[0].plot(des_com[:, 0], label="des com x")
@@ -125,9 +125,9 @@ class DataRecorder:
         ax[2].plot(des_com[:, 2], label="des com z")
         ax[2].grid()
         ax[2].legend()
-        
+
         eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
-        
+
         fig, ax_f = plt.subplots(4, 1, sharex=True, sharey=True)
         for n in range(4):
             ax_f[n].plot(f_des[:,3*n], label = eff_names[n] + " Fx")
@@ -140,5 +140,5 @@ class DataRecorder:
 
             ax_f[n].grid()
             ax_f[n].legend()
-        
+
         plt.show()

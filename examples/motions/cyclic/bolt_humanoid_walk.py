@@ -36,7 +36,7 @@ walk.W_X_ter = 10*np.array([1e+5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+5, 2e+5, 1e+5
 walk.W_F = np.array(4*[1e+1, 1e+1, 1.5e+1])
 walk.rho = 5e+4
 walk.ori_correction = [0.2, 0.5, 0.4]
-walk.gait_horizon = 2.0
+walk.gait_horizon = 10
 
 # Gains
 walk.kp = 2.5

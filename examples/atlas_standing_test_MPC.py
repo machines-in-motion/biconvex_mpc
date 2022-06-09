@@ -35,7 +35,7 @@ x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 v_des = np.array([0.0,0.0,0.0])
 w_des = 0.0
 
-plan_freq = 0.05 # sec
+plan_freq = 0.5 # sec
 update_time = 0.0 # sec (time of lag)
 
 gg = AbstractGaitGen(urdf_path, eff_names, hip_names, x0, plan_freq, q0)
@@ -50,23 +50,22 @@ still.gait_dt = 0.05
 still.phase_offset = int(n_eff)*[0.0,]
 
 # IK
-still.state_wt = np.array([1e2, 1e2, 1e2] + [1000] * 3 + [1.0] * (pin_robot.model.nv - 6) \
+still.state_wt = np.array([1e2, 1e2, 1e2] + [1000] * 3 + [10.0] * (pin_robot.model.nv - 6) \
                          + [0.00] * 3 + [100] * 3 + [0.5] *(pin_robot.model.nv - 6))
 
 still.ctrl_wt = [0, 0, 1] + [1, 1, 1] + [5.0] *(rmodel.nv - 6)
 
 still.swing_wt = [1e5, 1e5]
-still.cent_wt = [0*5e+1, 5e+2]
+still.cent_wt = [5e+5, 5e+4]
 still.step_ht = 0.
 still.nom_ht = 1.12
 still.reg_wt = [5e-2, 1e-5]
 
 # Dyn
-still.W_X =        np.array([1e+3, 1e+3, 1e+3, 0., 0., 0., 0., 0., 0.])
-still.W_X_ter = 10*np.array([1e+3, 1e+3, 1e+3, 0., 0., 0., 0., 0., 0.])
+still.W_X =     np.array([0., 0., 0., 0., 0., 0., 0., 0., 0.])
+still.W_X_ter = np.array([0., 0., 0., 0., 0., 100., 0., 0., 0.])
 still.W_F = np.array(8*[0., 0., 0.])
-still.rho = 5e+4
-
+still.rho = 5e5
 
 still.ori_correction = [0.0, 0.0, 0.0]
 still.gait_horizon = 1.0
@@ -94,14 +93,13 @@ sim_t = 0.0
 sim_dt = 0.05
 index = 0
 pln_ctr = 0
-plan_freq = 0.8 # sec
-update_time = 0.0 # sec (time of lag)
 q = q0
 v = v0
 
 lag = int(update_time/sim_dt)
 
 for o in range(100):
+    print("time(ms)", o * plan_freq/sim_dt)
     xs, us, f = gg.optimize(q, v, sim_t, v_des, w_des)
     xs = xs[lag:]
     us = us[lag:]

@@ -27,7 +27,7 @@ update_time = 0.0  # sec (time of lag) #TODO: Should go inside robot_info?
 lag_counter = int(update_time / sim_dt)  # TODO: Can I remove this?
 
 # Choose Motion
-gait_params = bound
+gait_params = trot
 gait_generator = AbstractMpcGaitGen(project_paths.URDF_PATH, project_paths.ROBOT_INFO, plan_freq, None)
 gait_generator.update_gait_params(gait_params, sim_t)
 
@@ -36,7 +36,7 @@ robot_id_ctrl = InverseDynamicsController(project_paths.URDF_PATH, project_paths
 robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
 # Plotting
-plot_time = 0.0
+plot_time = 800.0
 
 for o in range(int(500 * (plan_freq / sim_dt))):
     q, v = robot_interface.get_state()

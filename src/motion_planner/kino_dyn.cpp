@@ -38,7 +38,7 @@ namespace motion_planner{
         pinocchio::computeCentroidalMomentum(rmodel_, rdata_, q, v);
         x0.head(rmodel_.nq) = q;
         x0.tail(rmodel_.nv) = v;
-        set_warm_starts();
+        //set_warm_starts();
 
         auto dyn_start = high_resolution_clock::now();
         if (osqp_) {

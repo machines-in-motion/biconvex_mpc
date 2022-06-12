@@ -1,6 +1,4 @@
 #This is a robot interface class to get states, interact with a virtual world, etc.
-
-import raisimpy as raisim
 import pinocchio as pin
 
 class AbstractInterface:
@@ -18,26 +16,8 @@ class AbstractInterface:
                                                 pin.JointModelFreeFlyer())
         self.pin_data = self.pin_model.createData()
 
-        if isRealRobot():
-            print("Not supported yet")
-        else:
-            # Set up Raisim World
-            self.world = raisim.World()
-            self.world.setTimeStep(self.dt)
-            self.server = raisim.RaisimServer(self.world)
-            self.ground = self.world.addGround()
-
-            # Set up Raisim Robot
-            self.robot = self.world.addArticulatedSystem(urdf)
-            self.robot.setName("cool_robot")
-            self.robot.setControlMode(raisim.ControlMode.FORCE_AND_TORQUE)
-
-            # Switching quaternion convention due to raisim/pinocchio differences
-            rq = gait_params.init_config
-            w = rq[6]
-            rq[4:7] = rq[3:6]
-            rq[3] = w
-            self.robot.setGeneralizedCoordinates(rq)
+        # Is this a real robot
+        self.isRealRobot = isRealRobot
     
     def create_height_map(self):
         """
@@ -54,12 +34,12 @@ class AbstractInterface:
         returns boolean array of which end-effectors are in contact
         """
 
-    def get_state():
+    def get_state(self):
         """
         Get robot state (q, v)
         """
 
-        if not isRealRobot:
+        if not self.isRealRobot:
             rq, rv = self.robot.getState()
             # Switching quaternion convention due to raisim/pinocchio differences
             w = rq[3]
@@ -77,7 +57,7 @@ class AbstractInterface:
         """
         Sends joint torques to robot and integrates
         """
-        if not isRealRobot:
+        if not self.isRealRobot:
             self.robot.setGeneralizedForce(tau)
             self.server.integrateWorldThreadSafe()
 

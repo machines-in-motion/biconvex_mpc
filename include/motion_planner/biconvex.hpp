@@ -186,7 +186,7 @@ class BiConvexMP{
         double T_;
 
         //Sets footstep locations to be variables
-        bool variable_footsteps_ = true;
+        bool variable_footsteps_ = false;
         
         // problem data for x optimization (Used in optimization for Forces)
         function::ProblemData prob_data_x;

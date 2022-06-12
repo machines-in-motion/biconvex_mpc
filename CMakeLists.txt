@@ -49,6 +49,7 @@ target_link_libraries(biconvex_mpc pinocchio::pinocchio)
 target_link_libraries(biconvex_mpc crocoddyl::crocoddyl)
 
 if ( OsqpEigen_FOUND )
+    message("OSQP eigen was found...building with it")
     target_link_libraries(biconvex_mpc OsqpEigen::OsqpEigen)
     target_compile_definitions(biconvex_mpc PUBLIC USE_OSQP="True")
 endif()
@@ -66,6 +67,7 @@ pybind11_add_module(gait_planner_cpp MODULE srcpy/gait_planner/py_gait_planner.c
 target_include_directories(gait_planner_cpp PRIVATE ${EIGEN3_INCLUDE_DIR})
 #target_link_directories(gait_planner_cpp PRIVATE pybind11::module)
 target_link_libraries(gait_planner_cpp PRIVATE biconvex_mpc)
+
 
 #Install PyBind library
 install(TARGETS biconvex_mpc_cpp LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})

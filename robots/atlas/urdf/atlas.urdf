@@ -298,6 +298,54 @@
       </geometry>
     </collision>
   </link>
+  <link name="l_foot_ee0">
+    <inertial>
+      <mass value="0.0"/>
+      <origin rpy="0 0 0" xyz="0.00 -0.00 -0.00"/>
+      <inertia ixx="0.000" ixy="0" ixz="0" iyy="0.000" iyz="0" izz="0.000"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="l_foot_ee1">
+    <inertial>
+      <mass value="0.0"/>
+      <origin rpy="0 0 0" xyz="0.00 -0.00 -0.00"/>
+      <inertia ixx="0.000" ixy="0" ixz="0" iyy="0.000" iyz="0" izz="0.000"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="l_foot_ee2">
+    <inertial>
+      <mass value="0.0"/>
+      <origin rpy="0 0 0" xyz="0.00 -0.00 -0.00"/>
+      <inertia ixx="0.000" ixy="0" ixz="0" iyy="0.000" iyz="0" izz="0.000"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="l_foot_ee3">
+    <inertial>
+      <mass value="0.0"/>
+      <origin rpy="0 0 0" xyz="0.00 -0.00 -0.00"/>
+      <inertia ixx="0.000" ixy="0" ixz="0" iyy="0.000" iyz="0" izz="0.000"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+    </visual>
+  </link>
   <link name="l_hand">
     <inertial>
       <mass value="0.5839"/>
@@ -692,6 +740,54 @@
         <box size="0.1 0.08 0.02"/>
       </geometry>
     </collision>
+  </link>
+  <link name="r_foot_ee0">
+    <inertial>
+      <mass value="0.0"/>
+      <origin rpy="0 0 0" xyz="0.00 -0.00 -0.00"/>
+      <inertia ixx="0.000" ixy="0" ixz="0" iyy="0.000" iyz="0" izz="0.000"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="r_foot_ee1">
+    <inertial>
+      <mass value="0.0"/>
+      <origin rpy="0 0 0" xyz="0.00 -0.00 -0.00"/>
+      <inertia ixx="0.000" ixy="0" ixz="0" iyy="0.000" iyz="0" izz="0.000"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="r_foot_ee2">
+    <inertial>
+      <mass value="0.0"/>
+      <origin rpy="0 0 0" xyz="0.00 -0.00 -0.00"/>
+      <inertia ixx="0.000" ixy="0" ixz="0" iyy="0.000" iyz="0" izz="0.000"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="r_foot_ee3">
+    <inertial>
+      <mass value="0.0"/>
+      <origin rpy="0 0 0" xyz="0.00 -0.00 -0.00"/>
+      <inertia ixx="0.000" ixy="0" ixz="0" iyy="0.000" iyz="0" izz="0.000"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+    </visual>
   </link>
   <link name="r_hand">
     <inertial>
@@ -1187,6 +1283,26 @@
     <limit effort="360" lower="-0.8" upper="0.8" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.8" soft_upper_limit="10.8"/>
   </joint>
+  <joint name="l_leg_ee0" type="fixed">
+    <origin rpy="0 0 0" xyz="0.17 -0.03 -0.08"/>
+    <parent link="l_talus"/>
+    <child link="l_foot_ee0"/>
+  </joint>
+  <joint name="l_leg_ee1" type="fixed">
+    <origin rpy="0 0 0" xyz="0.17 0.03 -0.08"/>
+    <parent link="l_talus"/>
+    <child link="l_foot_ee1"/>
+  </joint>
+  <joint name="l_leg_ee2" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.09 -0.035 -0.08"/>
+    <parent link="l_talus"/>
+    <child link="l_foot_ee2"/>
+  </joint>
+  <joint name="l_leg_ee3" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.09 0.035 -0.08"/>
+    <parent link="l_talus"/>
+    <child link="l_foot_ee3"/>
+  </joint>
   <joint name="l_leg_aky" type="revolute">
     <origin rpy="0 0 0" xyz="0 0 -0.422"/>
     <axis xyz="0 1 0"/>
@@ -1312,6 +1428,26 @@
     <dynamics damping="0.1" friction="0"/>
     <limit effort="360" lower="-0.8" upper="0.8" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.8" soft_upper_limit="10.8"/>
+  </joint>
+  <joint name="r_leg_ee0" type="fixed">
+    <origin rpy="0 0 0" xyz="0.17 -0.03 -0.08"/>
+    <parent link="r_talus"/>
+    <child link="r_foot_ee0"/>
+  </joint>
+  <joint name="r_leg_ee1" type="fixed">
+    <origin rpy="0 0 0" xyz="0.17 0.03 -0.08"/>
+    <parent link="r_talus"/>
+    <child link="r_foot_ee1"/>
+  </joint>
+  <joint name="r_leg_ee2" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.09 -0.035 -0.08"/>
+    <parent link="r_talus"/>
+    <child link="r_foot_ee2"/>
+  </joint>
+  <joint name="r_leg_ee3" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.09 0.035 -0.08"/>
+    <parent link="r_talus"/>
+    <child link="r_foot_ee3"/>
   </joint>
   <joint name="r_leg_aky" type="revolute">
     <origin rpy="0 0 0" xyz="0 0 -0.422"/>

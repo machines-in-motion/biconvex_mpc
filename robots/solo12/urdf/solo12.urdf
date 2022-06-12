@@ -231,7 +231,7 @@
         <mesh filename="../meshes/stl/solo12/solo12_hip_fe_fr.stl"/>
       </geometry>
       <material name="grey">
-        <color rgba="0.8 0.8 0.8 1.0"/>
+        <color rgba="0.8 0.8 0.8 1.0"/>/home/pshah/Applications/sequence_network
       </material>
     </visual>
     <!-- HAA LINK COLLISION -->

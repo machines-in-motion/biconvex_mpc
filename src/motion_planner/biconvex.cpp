@@ -6,7 +6,7 @@ namespace motion_planner{
     BiConvexMP::BiConvexMP(double m, int n_col, int n_eff):
         m_(m), n_eff_(n_eff), n_col_(n_col), centroidal_dynamics(m, n_col, n_eff),
         prob_data_x(9, n_col+1), prob_data_f(3*n_eff, n_col),
-        fista_x(), fista_f(){
+        fista_x(), fista_f() {
             com_opt_.resize(n_col_ + 1, 3);
             com_opt_.setZero();
             mom_opt_.resize(n_col_ + 1, 6);
@@ -14,6 +14,7 @@ namespace motion_planner{
 
             //Number of State Constraints
             num_com_states_ = 9*(n_col_+1);
+            std::cout << "Number of State Constraints: " << num_com_states_ << std::endl;
 
             //Number of Friction Constraints
             num_friction_constraints_ = 5*n_eff_*n_col_;
@@ -41,6 +42,7 @@ namespace motion_planner{
 
             // OSQP Specific Setup
             #ifdef USE_OSQP
+                std::cout << "Using Osqp" << std::endl;
                 // Set number of variables and constraints for osqp
                 Eigen::SparseMatrix<double> constraintMatX =
                         Eigen::MatrixXd::Identity(prob_data_x.num_vars_, prob_data_x.num_vars_).sparseView();
@@ -108,8 +110,11 @@ namespace motion_planner{
 
     void BiConvexMP::create_bound_constraints(Eigen::MatrixXd b, double fx_max, double fy_max, double fz_max){
         // Add checks to use regular infinity and not osqp infinity when using FISTA
-        prob_data_x.lb_ = -1*OsqpEigen::INFTY*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
-        prob_data_x.ub_ = OsqpEigen::INFTY*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
+//        prob_data_x.lb_ = -1*OsqpEigen::INFTY*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
+//        prob_data_x.ub_ = OsqpEigen::INFTY*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
+
+        prob_data_x.lb_ = -1*100000000.0*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
+        prob_data_x.ub_ = 100000000.0*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
 
         if (variable_footsteps_) {
             prob_data_x.lb_.tail(3 * n_eff_ * (prob_data_x.horizon_)) = Eigen::VectorXd::Zero(
@@ -241,18 +246,36 @@ namespace motion_planner{
         for (unsigned i = 0; i < num_iters; ++i){
             // optimizing for F
             centroidal_dynamics.compute_x_mat(prob_data_x.x_k);
+
+            std::cout << "Setting Data" << std::endl;
+
             prob_data_f.set_data(centroidal_dynamics.A_x, centroidal_dynamics.b_x, P_k_, rho_);
 
+            std::cout << "Finished Setting Data" << std::endl;
+
             if (i == 0) {
+                std::cout << "setting hessian" << std::endl;
+
                 osqp_f.data()->setHessianMatrix(prob_data_f.ATA_);
+
+                std::cout << "setting gradient" << std::endl;
+
                 osqp_f.data()->setGradient(prob_data_f.ATbPk_);
+
+                std::cout << "initializing solver" << std::endl;
                 osqp_f.initSolver();
             }
             else {
                 osqp_f.updateHessianMatrix(prob_data_f.ATA_);
                 osqp_f.updateGradient(prob_data_f.ATbPk_);
             }
-            osqp_f.solve();
+
+            std::cout << "Solving Problem" << std::endl;
+
+            osqp_f.solveProblem();
+
+            std::cout << "Solved Problem" << std::endl;
+
             prob_data_f.x_k = osqp_f.getSolution();
 
             // optimizing for X
@@ -269,7 +292,7 @@ namespace motion_planner{
                 osqp_x.updateGradient(prob_data_x.ATbPk_);
             }
 
-            osqp_x.solve();
+            osqp_x.solveProblem();
             prob_data_x.x_k = osqp_x.getSolution();
 
             //Calculate dynamic violation

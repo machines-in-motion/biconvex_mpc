@@ -17,8 +17,8 @@ offsets: [[0.0, 0.000, 0.0], [0.0, 0.000, 0.0], [0.0, 0.000, 0.0], [0.0, 0.000, 
 dt: 0.001
 steps: 10000000
 friction_coefficient: 1.3
-max_eef_force: 5000
-kinematic_limits: [0.5, 0.5, 0.5]
+max_eef_force: 1000
+kinematic_limits: [0.5, 0.5, 2.0]
 torque_limits: [1000, 1000, 1000, 1000, 1000, #35 Controllable Joints
                 1000, 1000, 1000, 1000, 1000,
                 1000, 1000, 1000, 1000, 1000,

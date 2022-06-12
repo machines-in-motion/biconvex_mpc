@@ -18,9 +18,9 @@ balance.step_ht = 0.13
 
 # Inverse Kinematics
 balance.state_wt = np.array([0., 0, 10] + [1000.0] * 3 +
-                            [5.0] * (29) +
+                            [1.0] * (29) +
                             [0.00] * 3 + [100.0] * 3 +
-                            [8.0] * (29) )
+                            [1.0] * (29) )
 
 
 balance.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] * (29) # Penalty on control (aka accelerations)
@@ -33,9 +33,9 @@ balance.nom_ht = 0.935
 balance.reg_wt = [5e-2, 1e-5]
 
 # Dynamics
-balance.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+4, 1e4])
-balance.W_X_ter = 10*np.array([1e+5, 1e+5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e+5])
-balance.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
+balance.W_X =        np.array([1e-5, 1e-5, 5e+7, 1e+1, 1e+1, 2e+2, 1e+4, 1e+4, 1e4])
+balance.W_X_ter = 10*np.array([1e+5, 1e+5, 5e+5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e+5])
+balance.W_F = np.array(4*[1e-1, 1e-1, 1e-1])
 balance.rho = 5e+4
 balance.ori_correction = [0.4, 0.5, 0.4]
 balance.gait_horizon = 2.0

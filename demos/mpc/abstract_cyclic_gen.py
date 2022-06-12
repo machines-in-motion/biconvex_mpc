@@ -7,7 +7,7 @@ import numpy as np
 import pinocchio as pin
 from inverse_kinematics_cpp import InverseKinematics
 from biconvex_mpc_cpp import BiconvexMP, KinoDynMP
-from gait_planner_cpp import GaitPlanner
+from gait_planner_cpp import Quad_GaitPlanner
 from matplotlib import pyplot as plt
 
 
@@ -70,7 +70,7 @@ class AbstractMpcGaitGen:
             # Rotate offsets to local frame
             self.offsets[i] = np.matmul(R.T, self.offsets[i])
 
-        #Regularization for IK using nominal position
+        # Regularization for IK using nominal position
         self.x_reg = np.concatenate([self.q0, np.zeros(self.rmodel.nv)])
 
         # --- Set up Dynamics ---
@@ -92,14 +92,14 @@ class AbstractMpcGaitGen:
         self.q_traj = []
         self.v_traj = []
 
-        #Set up logging for average optimization time
+        # Set up logging for average optimization time
         self.dyn_comp_ave = 0.0
         self.dyn_comp_total = 0.0
         self.ik_comp_ave = 0.0
         self.ik_comp_total = 0.0
         self.num_optimization_ctr = 0 # Counter
 
-        #Height Map (for contacts)
+        # Height Map (for contacts)
         self.height_map = height_map
 
     def update_gait_params(self, weight_abstract, t):
@@ -111,7 +111,7 @@ class AbstractMpcGaitGen:
         """
         self.params = weight_abstract
         # --- Set up gait parameters ---
-        self.gait_planner = GaitPlanner(self.params.gait_period, np.array(self.params.stance_percent), \
+        self.gait_planner = Quad_GaitPlanner(self.params.gait_period, np.array(self.params.stance_percent), \
                                         np.array(self.params.phase_offset), self.params.step_ht)
 
         #Different horizon parameterizations; only self.params.gait_horizon works for now

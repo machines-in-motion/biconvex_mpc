@@ -7,7 +7,7 @@ import numpy as np
 import pinocchio as pin
 from inverse_kinematics_cpp import InverseKinematics
 from biconvex_mpc_cpp import BiconvexMP, KinoDynMP
-from gait_planner_cpp import Quad_GaitPlanner
+from gait_planner_cpp import Biped_GaitPlanner
 from matplotlib import pyplot as plt
 
 
@@ -31,7 +31,7 @@ class AtlasMpcGaitGen:
         self.planning_time = planning_time
         self.eef_names = robot_info['eef_names']
         self.hip_names = robot_info['hip_names']
-        self.n_eff = robot_info['num_eef']
+        self.n_eff = 2 #TODO: Read this from the robot_info field and then multiply for each 'contact' type (i.e. flat foot vs line contact)
         self.q0 = np.array(robot_info['initial_configuration'])
 
         pin.forwardKinematics(self.rmodel, self.rdata, self.q0, np.zeros(self.rmodel.nv))
@@ -44,10 +44,11 @@ class AtlasMpcGaitGen:
 
         self.gravity = 9.81
 
-        # self.offsets = np.zeros((len(self.eef_names), 3))
-        # self.ee_frame_id = []
-        # for i in range(len(self.eef_names)):
-        #     self.ee_frame_id.append(self.rmodel.getFrameId(self.eef_names[i]))
+        self.offsets = np.zeros((len(self.eef_names), 3))
+        self.ee_frame_id = []
+        self.cnt_map = np.zeros((self.n_eff, int(len(self.eef_names)/self.n_eff)))
+        for i in range(len(self.eef_names)):
+            self.ee_frame_id.append(self.rmodel.getFrameId(self.eef_names[i]))
         #     self.offsets[i] = self.rdata.oMf[self.rmodel.getFrameId(self.hip_names[i])].translation - com_init.copy()
         #     self.offsets[i] = np.round(self.offsets[i], 3)
 
@@ -71,6 +72,8 @@ class AtlasMpcGaitGen:
             self.offsets[i] = np.matmul(R.T, self.offsets[i])
 
         # Regularization for IK using nominal position
+        print("x_reg info: ", len(self.q0))
+        print("nv: ", self.rmodel.nv)
         self.x_reg = np.concatenate([self.q0, np.zeros(self.rmodel.nv)])
 
         # --- Set up Dynamics ---
@@ -111,7 +114,7 @@ class AtlasMpcGaitGen:
         """
         self.params = weight_abstract
         # --- Set up gait parameters ---
-        self.gait_planner = Quad_GaitPlanner(self.params.gait_period, np.array(self.params.stance_percent), \
+        self.gait_planner = Biped_GaitPlanner(self.params.gait_period, np.array(self.params.stance_percent), \
                                              np.array(self.params.phase_offset), self.params.step_ht)
 
         #Different horizon parameterizations; only self.params.gait_horizon works for now
@@ -166,13 +169,18 @@ class AtlasMpcGaitGen:
         self.swing_time = np.zeros((self.horizon, len(self.eef_names)))
         self.prev_cnt = np.zeros((len(self.eef_names), 3))
         self.curr_cnt = np.zeros(len(self.eef_names))
+
+
         # Contact Plan Matrix: horizon x num_eef x 4: The '4' gives the contact plan and location:
         # i.e. the last vector should be [1/0, x, y, z] where 1/0 gives a boolean for contact (1 = contact, 0 = no cnt)
 
+
+        #TODO: This needs to be changed for bipeds...only works for stance right now
         for i in range(self.horizon):
             for j in range(len(self.eef_names)):
                 if i == 0:
-                    if self.gait_planner.get_phase(t, j) == 1:
+                    # First timestep of horizon
+                    if self.gait_planner.get_phase(t, 0) == 1:
                         self.cnt_plan[i][j][0] = 1
                         self.cnt_plan[i][j][1:4] = np.round(self.rdata.oMf[self.ee_frame_id[j]].translation, 3)
                         self.prev_cnt[j] = self.cnt_plan[i][j][1:4]
@@ -182,10 +190,10 @@ class AtlasMpcGaitGen:
                         #     self.cnt_plan[i][j][1:3] += self.offsets[j]
 
                 else:
-                    #All other time steps
-                    ft = np.round(t + i*self.params.gait_dt,3)
+                    # All other time steps
+                    ft = np.round(t + i*self.params.gait_dt, 3)
 
-                    if self.gait_planner.get_phase(ft, j) == 1:
+                    if self.gait_planner.get_phase(ft, 0) == 1:
                         #If foot will be in contact
                         self.cnt_plan[i][j][0] = 1
 
@@ -193,7 +201,7 @@ class AtlasMpcGaitGen:
                             self.cnt_plan[i][j][1:4] = self.cnt_plan[i-1][j][1:4]
                         else:
                             hip_loc = com + np.matmul(R, self.offsets[j])[0:2] + i*self.params.gait_dt*vtrack
-                            raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
+                            raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[0] - 0.05*(vtrack - v_des[0:2])
                             ang_step = 0.5*np.sqrt(z_height/self.gravity)*vtrack
                             ang_step = np.cross(ang_step, [0.0, 0.0, w_des])
 
@@ -218,7 +226,7 @@ class AtlasMpcGaitGen:
                         if per_ph < 0.5:
                             self.cnt_plan[i][j][1:3] = hip_loc + ang_step[0:2]
                         else:
-                            raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
+                            raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[0] - 0.05*(vtrack - v_des[0:2])
                             self.cnt_plan[i][j][1:3] = hip_loc + ang_step[0:2]
 
                         # What is this?
@@ -231,8 +239,9 @@ class AtlasMpcGaitGen:
                         else:
                             self.cnt_plan[i][j][3] = self.foot_size
 
+            # Why do we have to do this?
             if i == 0:
-                dt = self.params.gait_dt - np.round(np.remainder(t,self.params.gait_dt),2)
+                dt = self.params.gait_dt - np.round(np.remainder(t,self.params.gait_dt), 2)
                 if dt == 0:
                     dt = self.params.gait_dt
             else:
@@ -240,7 +249,7 @@ class AtlasMpcGaitGen:
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
 
-        #print(self.cnt_plan)
+        print(self.cnt_plan)
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, w_des, ori_des):
@@ -252,7 +261,7 @@ class AtlasMpcGaitGen:
             t : time within the step
         """
 
-        self.x0 = np.hstack((q,v))
+        self.x0 = np.hstack((q, v))
 
         # --- Set Up IK --- #
         # Right now this is only setup to go for the *next* gait period only
@@ -267,9 +276,17 @@ class AtlasMpcGaitGen:
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, self.params.swing_wt[1],
                                                               "via_" + str(0) + self.eef_names[j], i)
 
+        print("x_reg")
+        print(len(self.x_reg))
+        print(self.x_reg)
+        print("state_wt")
+        print(len(self.params.state_wt))
+        print(self.params.state_wt)
+
         self.ik.add_state_regularization_cost(0, self.ik_horizon, self.params.reg_wt[0], "xReg", self.params.state_wt, self.x_reg, False)
         self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.params.reg_wt[1], "uReg", self.params.ctrl_wt, np.zeros(self.rmodel.nv), False)
 
+        # Terminal Cost Regularization
         self.ik.add_state_regularization_cost(0, self.ik_horizon, self.params.reg_wt[0], "xReg", self.params.state_wt, self.x_reg, True)
         self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.params.reg_wt[1], "uReg", self.params.ctrl_wt, np.zeros(self.rmodel.nv), True)
 

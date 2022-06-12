@@ -5,7 +5,7 @@ import numpy as np
 
 
 class RaisimEnv(AbstractEnv):
-    def __init__(self, urdf_path, robot_info, dt=0.001):
+    def __init__(self, urdf_path, robot_info, dt=0.001, overwrite_contact_links=True):
         # Set up Raisim
         self.dt = dt
 
@@ -33,10 +33,16 @@ class RaisimEnv(AbstractEnv):
 
         # Robot End Effector Configuration/Information
         # TODO: Get these from robot_info?
-        self.ee_body_names = ["FL_LOWER_LEG", "FR_LOWER_LEG", "HL_LOWER_LEG", "HR_LOWER_LEG"]
-        self.raisim_foot_idx = np.zeros(len(self.ee_body_names))
-        for i, eef_name in enumerate(self.ee_body_names):
-            self.raisim_foot_idx[i] = self.robot.getBodyIdx(eef_name)
+        if overwrite_contact_links == True:
+            self.ee_body_names = ["FL_LOWER_LEG", "FR_LOWER_LEG", "HL_LOWER_LEG", "HR_LOWER_LEG"]
+            self.raisim_foot_idx = np.zeros(len(self.ee_body_names))
+            for i, eef_name in enumerate(self.ee_body_names):
+                self.raisim_foot_idx[i] = self.robot.getBodyIdx(eef_name)
+        else:
+            self.ee_body_names = ["l_foot", "r_foot"]
+            self.raisim_foot_idx = np.zeros(len(self.ee_body_names))
+            for i, eef_name in enumerate(self.ee_body_names):
+                self.raisim_foot_idx[i] = self.robot.getBodyIdx(eef_name)
 
         # Initializations for Visualization
         self.visualize_array = []

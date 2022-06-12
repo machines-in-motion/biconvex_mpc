@@ -1,7 +1,7 @@
 robot_name: "atlas"
-num_eef: 4
-eef_names: ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
-hip_names: ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]
+num_eef: 8 #8 because we're using the corners of the foot
+eef_names: ["r_foot_ee0", "r_foot_ee1", "r_foot_ee2", "r_foot_ee3", "l_foot_ee0", "l_foot_ee1", "l_foot_ee2", "l_foot_ee3"]
+hip_names: ["r_scap", "l_scap"]
 initial_configuration: [0.0, 0.0, 0.95,        #X, Y, Z
                         0.0, 0.0, 0.0, 1.0,     #Orientation (quaternion) in pinocchio coordinates (x,y,z,w)
                         0.0, 0.487, 0.0,     #Pelvis
@@ -10,12 +10,13 @@ initial_configuration: [0.0, 0.0, 0.95,        #X, Y, Z
                         0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                         0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 foot_size: 0.005
-flat_foot: true
-flat_foot_dims: [0.07, -0.07], [0.07, 0.07], [0.17, 0.03], [0.17, -0.03] #measured from Blender #Offsets to use for contact points
-offsets: [[0.0, 0.005, 0.0], [0.0, 0.005, 0.0] #Not used for Atlas
+#flat_foot: true
+#flat_foot_dims: [0.07, -0.07], [0.07, 0.07], [0.17, 0.03], [0.17, -0.03] #measured from Blender #Offsets to use for contact points
+offsets: [[0.0, 0.000, 0.0], [0.0, 0.000, 0.0], [0.0, 0.000, 0.0], [0.0, 0.000, 0.0],
+          [0.0, 0.000, 0.0], [0.0, 0.000, 0.0], [0.0, 0.000, 0.0], [0.0, 0.000, 0.0]] #Not used for Atlas
 dt: 0.001
 steps: 10000000
-friction_coefficient: 1.0
+friction_coefficient: 1.3
 max_eef_force: 5000
 kinematic_limits: [0.5, 0.5, 0.5]
 torque_limits: [1000, 1000, 1000, 1000, 1000, #35 Controllable Joints

@@ -47,6 +47,8 @@ class RaisimEnv(AbstractEnv):
         # Initializations for Visualization
         self.visualize_array = []
 
+        self.joint_limit = 5000.0 #TODO: Read this from robot_info
+
         # Launch RAISIM server
         self.launch_server()
 
@@ -90,8 +92,8 @@ class RaisimEnv(AbstractEnv):
 
         #TODO: Read this from the robot_info file
 
-        if any(abs(i) >= 33.5 for i in tau):
-            print("Torque limits violated")
+        # if any(abs(i) >= self.joint_limit for i in tau):
+        #     print("Torque limits violated")
         self.robot.setGeneralizedForce(tau)
         self.step()
 
@@ -101,7 +103,7 @@ class RaisimEnv(AbstractEnv):
         """
         contact_config = np.zeros(self.num_eef)
         for contact in self.robot.getContacts():
-            for i in range(self.num_eef):
+            for i in range(len(self.raisim_foot_idx)):
                 if contact.getlocalBodyIndex() == self.raisim_foot_idx[i]:
                     contact_config[i] = 1.0
 

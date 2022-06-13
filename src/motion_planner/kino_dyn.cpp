@@ -60,6 +60,9 @@ namespace motion_planner{
         ik.add_com_position_tracking_task(0, ik_col_, dyn_com_opt.topRows(ik_col_), wt_com_, "com_track", false);
         ik.add_com_position_tracking_task(0, ik_col_, dyn_com_opt.row(ik_col_), wt_com_, "com_track", true);
 
+        std::cout << "CoM Tracking: " << std::endl;
+        std::cout << wt_com_ << std::endl;
+
         auto kin_start = high_resolution_clock::now();
         ik.optimize(x0);
         auto kin_end = high_resolution_clock::now();

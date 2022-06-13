@@ -4,7 +4,7 @@ eef_names: ["r_foot_ee0", "r_foot_ee1", "r_foot_ee2", "r_foot_ee3", "l_foot_ee0"
 hip_names: ["r_scap", "l_scap"]
 initial_configuration: [0.0, 0.0, 0.95,        #X, Y, Z
                         0.0, 0.0, 0.0, 1.0,     #Orientation (quaternion) in pinocchio coordinates (x,y,z,w)
-                        0.0, 0.487, 0.0,     #Pelvis
+                        0.0, 0.0, 0.0,     #Pelvis
                         0.0, -1.2, 0.0, 0.0, 0.0, 0.0, 0.0,
                         0.0, 1.2, 0.0, 0.0, 0.0, 0.0, 0.0, 
                         0.0, 0.0, 0.0, 0.0, 0.0, 0.0,

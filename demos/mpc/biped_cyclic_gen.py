@@ -72,8 +72,6 @@ class AtlasMpcGaitGen:
             self.offsets[i] = np.matmul(R.T, self.offsets[i])
 
         # Regularization for IK using nominal position
-        print("x_reg info: ", len(self.q0))
-        print("nv: ", self.rmodel.nv)
         self.x_reg = np.concatenate([self.q0, np.zeros(self.rmodel.nv)])
 
         # --- Set up Dynamics ---
@@ -174,7 +172,6 @@ class AtlasMpcGaitGen:
         # Contact Plan Matrix: horizon x num_eef x 4: The '4' gives the contact plan and location:
         # i.e. the last vector should be [1/0, x, y, z] where 1/0 gives a boolean for contact (1 = contact, 0 = no cnt)
 
-
         #TODO: This needs to be changed for bipeds...only works for stance right now
         for i in range(self.horizon):
             for j in range(len(self.eef_names)):
@@ -249,7 +246,7 @@ class AtlasMpcGaitGen:
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
 
-        print(self.cnt_plan)
+        #print(self.cnt_plan)
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, w_des, ori_des):
@@ -276,12 +273,6 @@ class AtlasMpcGaitGen:
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, self.params.swing_wt[1],
                                                               "via_" + str(0) + self.eef_names[j], i)
 
-        print("x_reg")
-        print(len(self.x_reg))
-        print(self.x_reg)
-        print("state_wt")
-        print(len(self.params.state_wt))
-        print(self.params.state_wt)
 
         self.ik.add_state_regularization_cost(0, self.ik_horizon, self.params.reg_wt[0], "xReg", self.params.state_wt, self.x_reg, False)
         self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.params.reg_wt[1], "uReg", self.params.ctrl_wt, np.zeros(self.rmodel.nv), False)
@@ -303,9 +294,9 @@ class AtlasMpcGaitGen:
         self.X_init[3:6] /= self.m
 
         self.X_nom[0::9] = self.X_init[0]
-        # for i in range(1, self.horizon):
-        #     self.X_nom[9*i+0] = self.X_nom[9*(i-1)+0] + v_des[0]*self.dt_arr[i]
-        #     self.X_nom[9*i+1] = self.X_nom[9*(i-1)+1] + v_des[1]*self.dt_arr[i]
+        for i in range(1, self.horizon):
+            self.X_nom[9*i+0] = self.X_nom[9*(i-1)+0] + v_des[0]*self.dt_arr[i]
+            self.X_nom[9*i+1] = self.X_nom[9*(i-1)+1] + v_des[1]*self.dt_arr[i]
 
         self.X_nom[2::9] = self.params.nom_ht
         self.X_nom[3::9] = v_des[0]
@@ -387,7 +378,7 @@ class AtlasMpcGaitGen:
         t2 = time.time()
 
         print("Optimizing: ")
-        self.kd.optimize(q, v, 50, 1)
+        self.kd.optimize(q, v, 10000, 1)
 
         t3 = time.time()
 
@@ -424,78 +415,78 @@ class AtlasMpcGaitGen:
 
         return self.xs_int, self.us_int, self.f_int
 
-    def plot(self, q, v, plot_force = True):
-        com_opt = self.mp.return_opt_com()
-        mom_opt = self.mp.return_opt_mom()
-        optimized_forces = self.mp.return_opt_f()
-        ik_com_opt = self.ik.return_opt_com()
-        ik_mom_opt = self.ik.return_opt_mom()
-        com = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
-
-        # Plot Center of Mass
-        fig, ax = plt.subplots(3,1)
-        ax[0].plot(com_opt[:, 0], label="Dyn com x")
-        ax[0].plot(ik_com_opt[:, 0], label="IK com x")
-        ax[0].plot(com[0], 'o', label="Current Center of Mass x")
-        ax[1].plot(com_opt[:, 1], label="Dyn com y")
-        ax[1].plot(ik_com_opt[:, 1], label="IK com y")
-        ax[1].plot(com[1], 'o', label="Current Center of Mass y")
-        ax[2].plot(com_opt[:, 2], label="Dyn com z")
-        ax[2].plot(ik_com_opt[:, 2], label="IK com z")
-        ax[2].plot(com[2], 'o', label="Current Center of Mass z")
-
-        ax[0].grid()
-        ax[0].legend()
-        ax[1].grid()
-        ax[1].legend()
-        ax[2].grid()
-        ax[2].legend()
-
-        # Plot End-Effector Forces
-        if plot_force:
-            fig, ax_f = plt.subplots(self.n_eff, 1)
-            for n in range(self.n_eff):
-                ax_f[n].plot(optimized_forces[3*n::3*self.n_eff], label = self.eef_names[n] + " Fx")
-                ax_f[n].plot(optimized_forces[3*n+1::3*self.n_eff], label = self.eef_names[n] + " Fy")
-                ax_f[n].plot(optimized_forces[3*n+2::3*self.n_eff], label = self.eef_names[n] + " Fz")
-                ax_f[n].grid()
-                ax_f[n].legend()
-
-        # Plot Linear Momentum
-        fig, ax_m = plt.subplots(3,1)
-        ax_m[0].plot(mom_opt[:, 0], label = "Dyn linear_momentum x")
-        ax_m[0].plot(ik_mom_opt[:, 0], label="IK linear_momentum x")
-        ax_m[1].plot(mom_opt[:, 1], label = "linear_momentum y")
-        ax_m[1].plot(ik_mom_opt[:, 1], label="IK linear_momentum y")
-        ax_m[2].plot(mom_opt[:, 2], label = "linear_momentum z")
-        ax_m[2].plot(ik_mom_opt[:, 2], label="IK linear_momentum z")
-        ax_m[0].grid()
-        ax_m[0].legend()
-
-        ax_m[1].grid()
-        ax_m[1].legend()
-
-        ax_m[2].grid()
-        ax_m[2].legend()
-
-        # Plot Linear Momentum
-        fig, ax_am = plt.subplots(3,1)
-        ax_am[0].plot(mom_opt[:, 3], label = "Dynamics Angular Momentum around X")
-        ax_am[0].plot(ik_mom_opt[:, 3], label="Kinematic Angular Momentum around X")
-        ax_am[1].plot(mom_opt[:, 4], label = "Dynamics Angular Momentum around Y")
-        ax_am[1].plot(ik_mom_opt[:, 4], label="Kinematic Angular Momentum around Y")
-        ax_am[2].plot(mom_opt[:, 5], label = "Dynamics Angular Momentum around Z")
-        ax_am[2].plot(ik_mom_opt[:, 5], label="Kinematic Angular Momentum around Z")
-        ax_am[0].grid()
-        ax_am[0].legend()
-
-        ax_am[1].grid()
-        ax_am[1].legend()
-
-        ax_am[2].grid()
-        ax_am[2].legend()
-
-        plt.show()
+    # def plot(self, q, v, plot_force = True):
+    #     com_opt = self.mp.return_opt_com()
+    #     mom_opt = self.mp.return_opt_mom()
+    #     optimized_forces = self.mp.return_opt_f()
+    #     ik_com_opt = self.ik.return_opt_com()
+    #     ik_mom_opt = self.ik.return_opt_mom()
+    #     com = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
+    #
+    #     # Plot Center of Mass
+    #     fig, ax = plt.subplots(3,1)
+    #     ax[0].plot(com_opt[:, 0], label="Dyn com x")
+    #     ax[0].plot(ik_com_opt[:, 0], label="IK com x")
+    #     ax[0].plot(com[0], 'o', label="Current Center of Mass x")
+    #     ax[1].plot(com_opt[:, 1], label="Dyn com y")
+    #     ax[1].plot(ik_com_opt[:, 1], label="IK com y")
+    #     ax[1].plot(com[1], 'o', label="Current Center of Mass y")
+    #     ax[2].plot(com_opt[:, 2], label="Dyn com z")
+    #     ax[2].plot(ik_com_opt[:, 2], label="IK com z")
+    #     ax[2].plot(com[2], 'o', label="Current Center of Mass z")
+    #
+    #     ax[0].grid()
+    #     ax[0].legend()
+    #     ax[1].grid()
+    #     ax[1].legend()
+    #     ax[2].grid()
+    #     ax[2].legend()
+    #
+    #     # Plot End-Effector Forces
+    #     if plot_force:
+    #         fig, ax_f = plt.subplots(self.n_eff, 1)
+    #         for n in range(self.n_eff):
+    #             ax_f[n].plot(optimized_forces[3*n::3*self.n_eff], label = self.eef_names[n] + " Fx")
+    #             ax_f[n].plot(optimized_forces[3*n+1::3*self.n_eff], label = self.eef_names[n] + " Fy")
+    #             ax_f[n].plot(optimized_forces[3*n+2::3*self.n_eff], label = self.eef_names[n] + " Fz")
+    #             ax_f[n].grid()
+    #             ax_f[n].legend()
+    #
+    #     # Plot Linear Momentum
+    #     fig, ax_m = plt.subplots(3,1)
+    #     ax_m[0].plot(mom_opt[:, 0], label = "Dyn linear_momentum x")
+    #     ax_m[0].plot(ik_mom_opt[:, 0], label="IK linear_momentum x")
+    #     ax_m[1].plot(mom_opt[:, 1], label = "linear_momentum y")
+    #     ax_m[1].plot(ik_mom_opt[:, 1], label="IK linear_momentum y")
+    #     ax_m[2].plot(mom_opt[:, 2], label = "linear_momentum z")
+    #     ax_m[2].plot(ik_mom_opt[:, 2], label="IK linear_momentum z")
+    #     ax_m[0].grid()
+    #     ax_m[0].legend()
+    #
+    #     ax_m[1].grid()
+    #     ax_m[1].legend()
+    #
+    #     ax_m[2].grid()
+    #     ax_m[2].legend()
+    #
+    #     # Plot Linear Momentum
+    #     fig, ax_am = plt.subplots(3,1)
+    #     ax_am[0].plot(mom_opt[:, 3], label = "Dynamics Angular Momentum around X")
+    #     ax_am[0].plot(ik_mom_opt[:, 3], label="Kinematic Angular Momentum around X")
+    #     ax_am[1].plot(mom_opt[:, 4], label = "Dynamics Angular Momentum around Y")
+    #     ax_am[1].plot(ik_mom_opt[:, 4], label="Kinematic Angular Momentum around Y")
+    #     ax_am[2].plot(mom_opt[:, 5], label = "Dynamics Angular Momentum around Z")
+    #     ax_am[2].plot(ik_mom_opt[:, 5], label="Kinematic Angular Momentum around Z")
+    #     ax_am[0].grid()
+    #     ax_am[0].legend()
+    #
+    #     ax_am[1].grid()
+    #     ax_am[1].legend()
+    #
+    #     ax_am[2].grid()
+    #     ax_am[2].legend()
+    #
+    #     plt.show()
 
     def plot_joints(self):
         self.xs_traj = np.array(self.xs_traj)
@@ -559,11 +550,11 @@ class AtlasMpcGaitGen:
 
         # Plot End-Effector Forces
         if plot_force:
-            fig, ax_f = plt.subplots(self.n_eff, 1)
-            for n in range(self.n_eff):
-                ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eef_names[n] + " Fx")
-                ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eef_names[n] + " Fy")
-                ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eef_names[n] + " Fz")
+            fig, ax_f = plt.subplots(len(self.eef_names), 1)
+            for n in range(len(self.eef_names)):
+                ax_f[n].plot(F_opt[3*n::3*len(self.eef_names)], label = self.eef_names[n] + " Fx")
+                ax_f[n].plot(F_opt[3*n+1::3*len(self.eef_names)], label = self.eef_names[n] + " Fy")
+                ax_f[n].plot(F_opt[3*n+2::3*len(self.eef_names)], label = self.eef_names[n] + " Fz")
                 ax_f[n].grid()
                 ax_f[n].legend()
 

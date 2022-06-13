@@ -11,6 +11,8 @@ namespace dynamics{
             dt_.resize(n_col_);
             dt_.setZero();
 
+            std::cout << "Centroidal Dynamics Number of End-Effectors: " << n_eff_ << std::endl;
+
             // setting up A_f, and b_f (For optimizing for CoM, Vel, AMOM)
             A_f.resize((9)*(n_col_+1), (9)*(n_col_+1));
             b_f.resize((9)*(n_col_+1));
@@ -59,7 +61,7 @@ namespace dynamics{
 
     void CentroidalDynamics::set_contact_arrays(Eigen::MatrixXd cnt_plan, double dt) {
         r_.push_back(r_t);
-        int i = r_.size() -1 ;
+        int i = r_.size() -1;
         for (unsigned j = 0; j < n_eff_; ++j) {
             dt_[i] = dt;
             cnt_arr_(i, j) = cnt_plan(j, 0);

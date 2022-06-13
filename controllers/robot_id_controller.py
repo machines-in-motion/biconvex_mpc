@@ -54,7 +54,7 @@ class InverseDynamicsController:
         """
         return np.reshape(pin.rnea(self.pinModel, self.pinData, q, v, a), (self.nv,))
 
-    def id_joint_torques(self, q, dq, des_q, des_v, des_a, fff, cnt_array=None):
+    def id_joint_torques(self, q, v, des_q, des_v, des_a, fff, cnt_array=None):
         """
         This function computes the input torques with gains
         Input:
@@ -82,7 +82,8 @@ class InverseDynamicsController:
                 tau_eff += np.matmul(self.J_arr[j], np.hstack((fff[j*3:(j+1)*3], np.zeros(3))))
 
         tau = (tau_id - tau_eff)[6:]
-
-        tau_gain = -self.kp*(np.subtract(q[7:].T, des_q[7:].T)) - self.kd*(np.subtract(dq[6:].T, des_v[6:].T))
+        tau_gain = -self.kp*(np.subtract(q[7:].T, des_q[7:].T)) - self.kd*(np.subtract(v[6:].T, des_v[6:].T))
+        # print("Tau: ")
+        # print(tau + tau_gain.T)
 
         return tau + tau_gain.T

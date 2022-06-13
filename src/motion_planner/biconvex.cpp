@@ -160,7 +160,7 @@ namespace motion_planner{
 
         //Fix this...it's ugly
         int j = 0;
-        std::cout << "initial i: " <<  num_com_states_ - 9 << std::endl;
+        //std::cout << "initial i: " <<  num_com_states_ - 9 << std::endl;
         for (unsigned int i = num_com_states_ - 9; i < num_com_states_; ++i){
             prob_data_x.Q_.coeffRef(i,i) = W_X_ter[j];
             ++j;
@@ -247,22 +247,22 @@ namespace motion_planner{
             // optimizing for F
             centroidal_dynamics.compute_x_mat(prob_data_x.x_k);
 
-            std::cout << "Setting Data" << std::endl;
+            //std::cout << "Setting Data" << std::endl;
 
             prob_data_f.set_data(centroidal_dynamics.A_x, centroidal_dynamics.b_x, P_k_, rho_);
 
-            std::cout << "Finished Setting Data" << std::endl;
+            //std::cout << "Finished Setting Data" << std::endl;
 
             if (i == 0) {
-                std::cout << "setting hessian" << std::endl;
+                //std::cout << "setting hessian" << std::endl;
 
                 osqp_f.data()->setHessianMatrix(prob_data_f.ATA_);
 
-                std::cout << "setting gradient" << std::endl;
+                //std::cout << "setting gradient" << std::endl;
 
                 osqp_f.data()->setGradient(prob_data_f.ATbPk_);
 
-                std::cout << "initializing solver" << std::endl;
+                //std::cout << "initializing solver" << std::endl;
                 osqp_f.initSolver();
             }
             else {
@@ -270,11 +270,11 @@ namespace motion_planner{
                 osqp_f.updateGradient(prob_data_f.ATbPk_);
             }
 
-            std::cout << "Solving Problem" << std::endl;
+            //std::cout << "Solving Problem" << std::endl;
 
             osqp_f.solveProblem();
 
-            std::cout << "Solved Problem" << std::endl;
+            //std::cout << "Solved Problem" << std::endl;
 
             prob_data_f.x_k = osqp_f.getSolution();
 
@@ -329,7 +329,7 @@ namespace motion_planner{
         osqp_f.data()->clearHessianMatrix();
         osqp_x.clearSolver();
         osqp_x.data()->clearHessianMatrix();
-        //std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
+        std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }
     #endif
 

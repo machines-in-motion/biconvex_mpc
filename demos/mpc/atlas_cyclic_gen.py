@@ -21,8 +21,6 @@ pln_ctr = 0
 # Environment
 robot_interface = RaisimEnv(project_paths.URDF_PATH, project_paths.ROBOT_INFO, dt=sim_dt, overwrite_contact_links=False)
 
-print("Robot Interface Loaded")
-
 # Set Motion Parameters
 v_des = np.array([0.0, 0.0, 0.0])
 w_des = 0.0
@@ -34,8 +32,6 @@ lag_counter = int(update_time / sim_dt)  # TODO: Can I remove this?
 gait_params = balance
 gait_generator = AtlasMpcGaitGen(project_paths.URDF_PATH, project_paths.ROBOT_INFO, plan_freq, None)
 gait_generator.update_gait_params(gait_params, sim_t)
-
-print("Finished loading motion")
 
 # Controller
 robot_id_ctrl = InverseDynamicsController(project_paths.URDF_PATH, project_paths.ROBOT_INFO['eef_names'])
@@ -79,8 +75,8 @@ for o in range(int(500 * (plan_freq / sim_dt))):
         ctrlr_index = 0
 
     #Calculate Torque
-    tau = robot_id_ctrl.id_joint_torques(q, v, xs[ctrlr_index][:19].copy(), \
-                                         xs[ctrlr_index][19:].copy(), \
+    tau = robot_id_ctrl.id_joint_torques(q, v, xs[ctrlr_index][:36].copy(), \
+                                         xs[ctrlr_index][36:].copy(), \
                                          us[ctrlr_index], f[ctrlr_index], contact_configuration)
 
     #Send Torque to Robot

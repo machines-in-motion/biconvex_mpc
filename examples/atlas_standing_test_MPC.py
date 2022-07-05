@@ -6,16 +6,19 @@ import time
 import numpy as np
 from mpc.abstract_cyclic_gen1 import AbstractGaitGen
 from robot_properties_atlas.config import AtlasConfig
+from robot_properties_atlas.atlaswrapper import AtlasRobot
+
+from controllers.robot_id_controller import InverseDynamicsController
+from envs.pybullet_env import PyBulletEnv
 
 import pinocchio as pin
 
 import numpy as np
-from motions.weight_abstract import BiconvexMotionParams
+from motions.cyclic.atlas_stand import still
 
 robot = AtlasConfig.buildRobotWrapper()
 rmodel = robot.model
 rdata = robot.data
-viz = pin.visualize.MeshcatVisualizer(robot.model, robot.collision_model, robot.visual_model)
 
 ## robot config and init
 pin_robot = AtlasConfig.buildRobotWrapper()
@@ -28,90 +31,80 @@ n_eff = len(eff_names)
 
 q0 = np.array(AtlasConfig.initial_configuration)
 q0[0:2] = 0.0
-
+# q0[2] = 1.0
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
 v_des = np.array([0.0,0.0,0.0])
 w_des = 0.0
 
-plan_freq = 0.5 # sec
+plan_freq = 2.0 # sec
 update_time = 0.0 # sec (time of lag)
 
+gait_params = still
+
+robot = PyBulletEnv(AtlasRobot, q0, v0)
+robot_id_ctrl = InverseDynamicsController(pin_robot, eff_names)
+robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
+
 gg = AbstractGaitGen(urdf_path, eff_names, hip_names, x0, plan_freq, q0)
+gg.update_gait_params(gait_params, 0)
 
-#### Stand Still #########################################
-still = BiconvexMotionParams("atlas", "Stand")
+q, v = robot.get_state()
 
-# Cnt
-still.gait_period = 0.5
-still.stance_percent = n_eff*[1.,]
-still.gait_dt = 0.05
-still.phase_offset = int(n_eff)*[0.0,]
-
-# IK
-still.state_wt = np.array([1e2, 1e2, 1e2] + [1000] * 3 + [10.0] * (pin_robot.model.nv - 6) \
-                         + [0.00] * 3 + [100] * 3 + [0.5] *(pin_robot.model.nv - 6))
-
-still.ctrl_wt = [0, 0, 1] + [1, 1, 1] + [5.0] *(rmodel.nv - 6)
-
-still.swing_wt = [1e5, 1e5]
-still.cent_wt = [5e+5, 5e+4]
-still.step_ht = 0.
-still.nom_ht = 1.12
-still.reg_wt = [5e-2, 1e-5]
-
-# Dyn
-still.W_X =     np.array([0., 0., 0., 0., 0., 0., 0., 0., 0.])
-still.W_X_ter = np.array([0., 0., 0., 0., 0., 100., 0., 0., 0.])
-still.W_F = np.array(8*[0., 0., 0.])
-still.rho = 5e5
-
-still.ori_correction = [0.0, 0.0, 0.0]
-still.gait_horizon = 1.0
-
-# Gains
-still.kp = 3.0
-still.kd = 0.1
-
-
-try:
-    viz.initViewer(open=True)
-except ImportError as err:
-    print(
-        "Error while initializing the viewer. It seems you should install Python meshcat"
-    )
-    print(err)
-    sys.exit(0)
-
-viz.loadViewerModel()
-viz.display(q0)
-gg.update_gait_params(still, 0)
-
-
+# simulation variables
 sim_t = 0.0
-sim_dt = 0.05
+sim_dt = .001
 index = 0
 pln_ctr = 0
-q = q0
-v = v0
+lag = 0
 
-lag = int(update_time/sim_dt)
+for o in range(int(150*(plan_freq/sim_dt))):
 
-for o in range(100):
-    print("time(ms)", o * plan_freq/sim_dt)
-    xs, us, f = gg.optimize(q, v, sim_t, v_des, w_des)
-    xs = xs[lag:]
-    us = us[lag:]
-    f = f[lag:]
+    # this bit has to be put in shared memory
+    q, v = robot.get_state()
+    
+    if pln_ctr == 0:
+        contact_configuration = robot.get_current_contacts()
+        
+        pr_st = time.time()
+        xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(sim_t,3), v_des, w_des)
+        # Plot if necessary
+        # if sim_t >= plot_time:
+        gg.plot(q, v, plot_force=True)
+            # gg.save_plan("trot")
 
-    for ind in range(int(plan_freq/(sim_dt))):
-        viz.display(xs[ind][:robot.model.nq])
-        time.sleep(0.001)
+        pr_et = time.time()
+        # solve_times.append(pr_et - pr_et)
 
-    q = xs[int(plan_freq/sim_dt)-1][0:pin_robot.model.nq]
-    v = xs[int(plan_freq/sim_dt)-1][pin_robot.model.nq:]
+    # first loop assume that trajectory is planned
+    if o < int(plan_freq/sim_dt) - 1:
+        xs = xs_plan
+        us = us_plan
+        f = f_plan
 
-    sim_t += plan_freq
+    # second loop onwards lag is taken into account
+    elif pln_ctr == lag and o > int(plan_freq/sim_dt)-1:
+        # Not the correct logic
+        # lag = int((1/sim_dt)*(pr_et - pr_st))
+        lag = 0
+        xs = xs_plan[lag:]
+        us = us_plan[lag:]
+        f = f_plan[lag:]
+        index = 0
 
-    gg.plot(q, v, plot_force=True)
+    # f[index][2] = 1e3
+    tau = robot_id_ctrl.id_joint_torques(q, v, xs[index][:pin_robot.model.nq].copy(), xs[index][pin_robot.model.nq:].copy()\
+                                , us[index], f[index], contact_configuration)
+    
+    robot.send_joint_command(tau)
+
+    # time.sleep(0.001)
+    sim_t += sim_dt
+    pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
+    index += 1
+
+
+
+# gg = AbstractGaitGen(urdf_path, eff_names, hip_names, x0, plan_freq, q0)
+

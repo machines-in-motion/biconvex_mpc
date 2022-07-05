@@ -24,7 +24,6 @@ pin_robot = AtlasConfig.buildRobotWrapper()
 q0 = np.array(AtlasConfig.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
-f_arr = ["FL_ANKLE", "FR_ANKLE", "L_WRIST", "R_WRIST"]
 
 plan_freq = 15
 sim_t = 0.0

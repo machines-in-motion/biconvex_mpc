@@ -17,8 +17,10 @@ namespace motion_planner{
             P_k_.setZero();
 
             // setting starting line search params
-            fista_x.set_l0(2.25e6);
-            fista_f.set_l0(506.25);
+            // fista_x.set_l0(2.25e6);
+            // fista_f.set_l0(506.25);
+
+
 
             //Use Second Order Cone Projection
             fista_f.set_soc_true();
@@ -85,11 +87,13 @@ namespace motion_planner{
             // We need to look into this line...it causes a very high dynamic violation...
             //maxit = init_maxit/(int(i)/10 + 1);
 
+            // std::cout << "optimizing F" << std::endl;
             // optimizing for F
             centroidal_dynamics.compute_x_mat(prob_data_x.x_k);
             prob_data_f.set_data(centroidal_dynamics.A_x, centroidal_dynamics.b_x, P_k_, rho_);
             fista_f.optimize(prob_data_f, maxit, tol);
 
+            // std::cout << "optimizing X" << std::endl;
             // optimizing for X
             centroidal_dynamics.compute_f_mat(prob_data_f.x_k);
             prob_data_x.set_data(centroidal_dynamics.A_f, centroidal_dynamics.b_f, P_k_, rho_);
@@ -116,7 +120,7 @@ namespace motion_planner{
     
         centroidal_dynamics.r_.clear();
 
-        std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
+        // std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }
 
     Eigen::MatrixXd BiConvexMP::return_opt_com(){

@@ -47,6 +47,8 @@ namespace solvers
 
             t_k = t_k_1;
         }
+        // std::cout << prob_data_.G_k_norm << std::endl;
+
     }
 
     void FISTA::SoC_projection(function::ProblemData & prob_data_) {

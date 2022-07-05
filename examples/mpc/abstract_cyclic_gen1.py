@@ -67,7 +67,7 @@ class AbstractGaitGen:
         self.x_reg = x_reg
 
         # --- Set up Dynamics ---
-        self.m = pin.computeTotalMass(self.rmodel)
+        self.m = 2.5 #pin.computeTotalMass(self.rmodel)
         print("robot_mass:", self.m)
 
         #Set up logging for average optimization time
@@ -83,7 +83,7 @@ class AbstractGaitGen:
         self.bz = 1.3
         self.fx_max = 15.0
         self.fy_max = 15.0
-        self.fz_max = 15.0
+        self.fz_max = 100.0
 
         # For plotting
         self.com_traj = []
@@ -238,7 +238,6 @@ class AbstractGaitGen:
         #     for j in range(len(self.eff_names)):
         #         print(self.eff_names[j])
         #         print(self.cnt_plan[i][j][:])
-
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, w_des, ori_des):
@@ -365,8 +364,8 @@ class AbstractGaitGen:
 
         # pinocchio complains otherwise
         q = pin.normalize(self.rmodel, q)
-
-        self.kd.optimize(q, v, 100, 1)
+        print("max iters")
+        self.kd.optimize(q, v, 150, 1)
 
         t3 = time.time()
 
@@ -411,17 +410,19 @@ class AbstractGaitGen:
         ik_mom_opt = self.ik.return_opt_mom()
         com = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
 
+        t = self.dt_arr[0]*np.arange(0, len(com_opt))
         # Plot Center of Mass
+        hor = len(ik_com_opt)
         fig, ax = plt.subplots(3,1)
-        ax[0].plot(com_opt[:, 0], label="Dyn com x")
-        ax[0].plot(ik_com_opt[:, 0], label="IK com x")
-        ax[0].plot(com[0], 'o', label="Current Center of Mass x")
-        ax[1].plot(com_opt[:, 1], label="Dyn com y")
-        ax[1].plot(ik_com_opt[:, 1], label="IK com y")
-        ax[1].plot(com[1], 'o', label="Current Center of Mass y")
-        ax[2].plot(com_opt[:, 2], label="Dyn com z")
-        ax[2].plot(ik_com_opt[:, 2], label="IK com z")
-        ax[2].plot(com[2], 'o', label="Current Center of Mass z")
+        ax[0].plot(t, com_opt[:, 0], label="Dyn com x")
+        ax[0].plot(t[:hor], ik_com_opt[:, 0], label="IK com x")
+        ax[0].plot(t[0], com[0], 'o', label="Current Center of Mass x")
+        ax[1].plot(t, com_opt[:, 1], label="Dyn com y")
+        ax[1].plot(t[:hor], ik_com_opt[:, 1], label="IK com y")
+        ax[1].plot(t[0], com[1], 'o', label="Current Center of Mass y")
+        ax[2].plot(t, com_opt[:, 2], label="Dyn com z")
+        ax[2].plot(t[:hor], ik_com_opt[:, 2], label="IK com z")
+        ax[2].plot(t[0], com[2], 'o', label="Current Center of Mass z")
 
         ax[0].grid()
         ax[0].legend()
@@ -435,20 +436,20 @@ class AbstractGaitGen:
         if plot_force:
             fig, ax_f = plt.subplots(n_eff, 1)
             for n in range(n_eff):
-                ax_f[n].plot(optimized_forces[3*n::3*n_eff], label = self.eff_names[n] + " Fx")
-                ax_f[n].plot(optimized_forces[3*n+1::3*n_eff], label = self.eff_names[n] + " Fy")
-                ax_f[n].plot(optimized_forces[3*n+2::3*n_eff], label = self.eff_names[n] + " Fz")
+                ax_f[n].plot(t[:-1], optimized_forces[3*n::3*n_eff], label = self.eff_names[n] + " Fx")
+                ax_f[n].plot(t[:-1], optimized_forces[3*n+1::3*n_eff], label = self.eff_names[n] + " Fy")
+                ax_f[n].plot(t[:-1], optimized_forces[3*n+2::3*n_eff], label = self.eff_names[n] + " Fz")
                 ax_f[n].grid()
                 ax_f[n].legend()
         #
         # # Plot Linear Momentum
         fig, ax_m = plt.subplots(3,1)
-        ax_m[0].plot(mom_opt[:, 0], label = "Dyn linear_momentum x")
-        ax_m[0].plot(ik_mom_opt[:, 0], label="IK linear_momentum x")
-        ax_m[1].plot(mom_opt[:, 1], label = "linear_momentum y")
-        ax_m[1].plot(ik_mom_opt[:, 1], label="IK linear_momentum y")
-        ax_m[2].plot(mom_opt[:, 2], label = "linear_momentum z")
-        ax_m[2].plot(ik_mom_opt[:, 2], label="IK linear_momentum z")
+        ax_m[0].plot(t, mom_opt[:, 0], label = "Dyn linear_momentum x")
+        ax_m[0].plot(t[:hor], ik_mom_opt[:, 0], label="IK linear_momentum x")
+        ax_m[1].plot(t, mom_opt[:, 1], label = "linear_momentum y")
+        ax_m[1].plot(t[:hor], ik_mom_opt[:, 1], label="IK linear_momentum y")
+        ax_m[2].plot(t, mom_opt[:, 2], label = "linear_momentum z")
+        ax_m[2].plot(t[:hor], ik_mom_opt[:, 2], label="IK linear_momentum z")
         ax_m[0].grid()
         ax_m[0].legend()
 
@@ -460,12 +461,12 @@ class AbstractGaitGen:
 
         # # Plot Angular Momentum
         fig, ax_am = plt.subplots(3,1)
-        ax_am[0].plot(mom_opt[:, 3], label = "Dynamics Angular Momentum around X")
-        ax_am[0].plot(ik_mom_opt[:, 3], label="Kinematic Angular Momentum around X")
-        ax_am[1].plot(mom_opt[:, 4], label = "Dynamics Angular Momentum around Y")
-        ax_am[1].plot(ik_mom_opt[:, 4], label="Kinematic Angular Momentum around Y")
-        ax_am[2].plot(mom_opt[:, 5], label = "Dynamics Angular Momentum around Z")
-        ax_am[2].plot(ik_mom_opt[:, 5], label="Kinematic Angular Momentum around Z")
+        ax_am[0].plot(t, mom_opt[:, 3], label = "Dynamics Angular Momentum around X")
+        ax_am[0].plot(t[:hor], ik_mom_opt[:, 3], label="Kinematic Angular Momentum around X")
+        ax_am[1].plot(t, mom_opt[:, 4], label = "Dynamics Angular Momentum around Y")
+        ax_am[1].plot(t[:hor], ik_mom_opt[:, 4], label="Kinematic Angular Momentum around Y")
+        ax_am[2].plot(t, mom_opt[:, 5], label = "Dynamics Angular Momentum around Z")
+        ax_am[2].plot(t[:hor], ik_mom_opt[:, 5], label="Kinematic Angular Momentum around Z")
         ax_am[0].grid()
         ax_am[0].legend()
 
@@ -511,6 +512,7 @@ class AbstractGaitGen:
         assert False
 
     def plot_plan(self, q, v, plot_force = True):
+
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()
         F_opt = self.mp.return_opt_f()
@@ -518,17 +520,19 @@ class AbstractGaitGen:
         ik_mom_opt = self.ik.return_opt_mom()
         com = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
 
+        t_arr = self.dt_arr[0]*np.arange(0, len(com_opt))
+
         # Plot Center of Mass
         fig, ax = plt.subplots(3,1)
-        ax[0].plot(com_opt[:, 0], label="Dyn com x")
-        ax[0].plot(ik_com_opt[:, 0], label="IK com x")
-        ax[0].plot(com[0], 'o', label="Current Center of Mass x")
-        ax[1].plot(com_opt[:, 1], label="Dyn com y")
-        ax[1].plot(ik_com_opt[:, 1], label="IK com y")
-        ax[1].plot(com[1], 'o', label="Current Center of Mass y")
-        ax[2].plot(com_opt[:, 2], label="Dyn com z")
-        ax[2].plot(ik_com_opt[:, 2], label="IK com z")
-        ax[2].plot(com[2], 'o', label="Current Center of Mass z")
+        ax[0].plot(t_arr, com_opt[:, 0], label="Dyn com x")
+        ax[0].plot(t_arr, ik_com_opt[:, 0], label="IK com x")
+        ax[0].plot(t_arr, com[0], 'o', label="Current Center of Mass x")
+        ax[1].plot(t_arr, com_opt[:, 1], label="Dyn com y")
+        ax[1].plot(t_arr, ik_com_opt[:, 1], label="IK com y")
+        ax[1].plot(t_arr, com[1], 'o', label="Current Center of Mass y")
+        ax[2].plot(t_arr, com_opt[:, 2], label="Dyn com z")
+        ax[2].plot(t_arr, ik_com_opt[:, 2], label="IK com z")
+        ax[2].plot(t_arr, com[2], 'o', label="Current Center of Mass z")
 
         ax[0].grid()
         ax[0].legend()
@@ -541,26 +545,26 @@ class AbstractGaitGen:
         if plot_force:
             fig, ax_f = plt.subplots(self.n_eff, 1)
             for n in range(self.n_eff):
-                ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
-                ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
-                ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
+                ax_f[n].plot(t_arr, F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
+                ax_f[n].plot(t_arr, F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
+                ax_f[n].plot(t_arr, F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
                 ax_f[n].grid()
                 ax_f[n].legend()
 
         # Plot Momentum
         fig, ax_m = plt.subplots(6,1)
-        ax_m[0].plot(mom_opt[:, 0], label = "Dyn linear_momentum x")
-        ax_m[0].plot(ik_mom_opt[:, 0], label="IK linear_momentum x")
-        ax_m[1].plot(mom_opt[:, 1], label = "linear_momentum y")
-        ax_m[1].plot(ik_mom_opt[:, 1], label="Dyn IK linear_momentum y")
-        ax_m[2].plot(mom_opt[:, 2], label = "linear_momentum z")
-        ax_m[2].plot(ik_mom_opt[:, 2], label="Dyn IK linear_momentum z")
-        ax_m[3].plot(mom_opt[:, 3], label = "Dyn Angular momentum x")
-        ax_m[3].plot(ik_mom_opt[:, 3], label="IK Angular momentum x")
-        ax_m[4].plot(mom_opt[:, 4], label = "Dyn Angular momentum y")
-        ax_m[4].plot(ik_mom_opt[:, 4], label="IK Angular momentum y")
-        ax_m[5].plot(mom_opt[:, 5], label = "Dyn Angular momentum z")
-        ax_m[5].plot(ik_mom_opt[:, 5], label="IK Angular momentum z")
+        ax_m[0].plot(t_arr, mom_opt[:, 0], label = "Dyn linear_momentum x")
+        ax_m[0].plot(t_arr, ik_mom_opt[:, 0], label="IK linear_momentum x")
+        ax_m[1].plot(t_arr, mom_opt[:, 1], label = "linear_momentum y")
+        ax_m[1].plot(t_arr, ik_mom_opt[:, 1], label="Dyn IK linear_momentum y")
+        ax_m[2].plot(t_arr, mom_opt[:, 2], label = "linear_momentum z")
+        ax_m[2].plot(t_arr, ik_mom_opt[:, 2], label="Dyn IK linear_momentum z")
+        ax_m[3].plot(t_arr, mom_opt[:, 3], label = "Dyn Angular momentum x")
+        ax_m[3].plot(t_arr, ik_mom_opt[:, 3], label="IK Angular momentum x")
+        ax_m[4].plot(t_arr, mom_opt[:, 4], label = "Dyn Angular momentum y")
+        ax_m[4].plot(t_arr, ik_mom_opt[:, 4], label="IK Angular momentum y")
+        ax_m[5].plot(t_arr, mom_opt[:, 5], label = "Dyn Angular momentum z")
+        ax_m[5].plot(t_arr, ik_mom_opt[:, 5], label="IK Angular momentum z")
         ax_m[0].grid()
         ax_m[0].legend()
         ax_m[1].grid()

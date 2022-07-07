@@ -40,14 +40,18 @@ namespace solvers
                 // std::cout << "terminated due to norm. Iters " << i << std::endl;
                 break;
             }
+            if(std::isnan(prob_data_.G_k_norm)){
+                std::cout << "ERROR: FISTA diverged, Dyn violation is NaN" << std::endl;
+                break;
+            };
 
+            // std::cout << prob_data_.G_k_norm << std::endl;
             // see if this step can be removed
             prob_data_.y_k = prob_data_.y_k_1;
             // prob_data_.y_k.swap(prob_data_.y_k_1);
 
             t_k = t_k_1;
         }
-        // std::cout << prob_data_.G_k_norm << std::endl;
 
     }
 

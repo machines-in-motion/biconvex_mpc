@@ -153,7 +153,7 @@ class BiConvexMP{
         // max iters in Fista
         int init_maxit = 150;
         // max iters in Fista reduced based on outer loops
-        int maxit = 20000; //150;
+        int maxit = 150;
         // tolerance for exit criteria of Fista
         double tol = 1e-5;
         // tolerance for exiting biconvex

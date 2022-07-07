@@ -95,6 +95,10 @@ namespace motion_planner{
             X_wm[9*i+7] = rdata_.hg.toVector()[4];
             X_wm[9*i+8] = rdata_.hg.toVector()[5];
         }
+        // for (unsigned i = 0; i < F_wm.size()/3; ++i){
+        //     F_wm[3*i] = 9.81;
+        // }
+
         dyn.set_warm_start_vars(X_wm, F_wm, P_wm);
     }
 

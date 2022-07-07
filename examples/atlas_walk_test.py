@@ -46,7 +46,7 @@ walk = BiconvexMotionParams("atlas", "walk")
 # Cnt
 walk.gait_period = 0.8
 walk.stance_percent = n_eff*[0.6,]
-walk.gait_dt = 0.05
+walk.gait_dt = 0.01
 walk.phase_offset = int(0.5*n_eff)*[0.0,] + int(0.5*n_eff)*[0.5,] 
 
 # IK
@@ -62,9 +62,9 @@ walk.nom_ht = 1.12
 walk.reg_wt = [5e-2, 1e-5]
 
 # Dyn
-walk.W_X =     np.array([5e0, 1e0, 1e+5, 1e-4, 1e-4, 2e0, 3e+0, 1e+0, 3e+0])
-walk.W_X_ter = 10.*np.array([5e0, 1e0, 1e+5, 1e-1, 1e-1, 2e2, 1e+1, 1e+1, 1e+1])
-walk.W_F = np.array(8*[1e1, 1e1, 1e1])
+walk.W_X =     np.array([1e0, 1e0, 1e+4, 1e-4, 1e-4, 2e0, 3e-1, 1e-1, 3e-1])
+walk.W_X_ter = 10.*np.array([1e0, 1e0, 1e+6, 1e-1, 1e-1, 2e3, 1e-1, 1e-1, 1e-1])
+walk.W_F = np.array(8*[1e2, 1e2, 1e2])
 walk.rho = 5e4
 
 walk.ori_correction = [0.0, 0.0, 0.0]

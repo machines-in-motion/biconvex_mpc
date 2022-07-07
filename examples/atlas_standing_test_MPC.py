@@ -38,7 +38,7 @@ x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 v_des = np.array([0.0,0.0,0.0])
 w_des = 0.0
 
-plan_freq = 2.0 # sec
+plan_freq = 0.1 # sec
 update_time = 0.0 # sec (time of lag)
 
 gait_params = still
@@ -65,15 +65,14 @@ for o in range(int(150*(plan_freq/sim_dt))):
     q, v = robot.get_state()
     
     if pln_ctr == 0:
-        contact_configuration = robot.get_current_contacts()
-        
+        contact_configuration = len(eff_names)*[1,]
         pr_st = time.time()
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(sim_t,3), v_des, w_des)
         # Plot if necessary
         # if sim_t >= plot_time:
-        gg.plot(q, v, plot_force=True)
+        # gg.plot(q, v, plot_force=True)
             # gg.save_plan("trot")
-
+        print(q, v)
         pr_et = time.time()
         # solve_times.append(pr_et - pr_et)
 
@@ -99,7 +98,7 @@ for o in range(int(150*(plan_freq/sim_dt))):
     
     robot.send_joint_command(tau)
 
-    # time.sleep(0.001)
+    time.sleep(0.005)
     sim_t += sim_dt
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1

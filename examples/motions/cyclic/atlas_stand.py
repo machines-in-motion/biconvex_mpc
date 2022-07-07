@@ -32,18 +32,18 @@ still.ctrl_wt = [0, 0, 1] + [1, 1, 1] + [5.0] *(rmodel.nv - 6)
 still.swing_wt = [1e5, 2e5]
 still.cent_wt = [5e+1, 1e+2]
 still.step_ht = 0.
-still.nom_ht = 0.5*1.12
+still.nom_ht = 1.12
 still.reg_wt = [5e-2, 1e-5]
 
 # Dyn
-still.W_X =     np.array([5e0, 1e0, 1e+5, 1e-4, 1e-4, 2e0, 3e+0, 1e+0, 3e+0])
-still.W_X_ter = 10.*np.array([1e-3, 1e-5, 1e+3, 1e-1, 1e-1, 2e2, 1e+1, 1e+1, 1e+1])
-still.W_F = np.array(8*[0.0, 0., .0])
+still.W_X =     np.array([5e0, 1e0, 1e+5, 1e-4, 1e-4, 1e0, 3e+0, 1e+0, 3e+0])
+still.W_X_ter = 10.*np.array([1e-3, 1e-5, 1e+5, 1e-1, 1e-1, 2e2, 1e+1, 1e+1, 1e+1])
+still.W_F = np.array(8*[1e1, 1e1,1e1])
 still.rho = 5e4
 
 still.ori_correction = [0.0, 0.0, 0.0]
-still.gait_horizon = 5
+still.gait_horizon = 2
 
 # Gains
-still.kp = 100.5
-still.kd = 5.0
+still.kp = 250.5
+still.kd = 4.0

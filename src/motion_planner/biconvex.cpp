@@ -82,18 +82,19 @@ namespace motion_planner{
     void BiConvexMP::optimize(Eigen::VectorXd x_init, int num_iters){
         // updating x_init
         centroidal_dynamics.update_x_init(x_init);
-
+        // std::cout << prob_data_f.x_k << std::endl;
         for (unsigned i = 0; i < num_iters; ++i){
             // We need to look into this line...it causes a very high dynamic violation...
             //maxit = init_maxit/(int(i)/10 + 1);
 
-            // std::cout << "optimizing F" << std::endl;
+            std::cout << "optimizing F" << std::endl;
             // optimizing for F
+            std::cout << prob_data_f.x_k.norm() << std::endl;
             centroidal_dynamics.compute_x_mat(prob_data_x.x_k);
             prob_data_f.set_data(centroidal_dynamics.A_x, centroidal_dynamics.b_x, P_k_, rho_);
             fista_f.optimize(prob_data_f, maxit, tol);
 
-            // std::cout << "optimizing X" << std::endl;
+            std::cout << "optimizing X" << std::endl;
             // optimizing for X
             centroidal_dynamics.compute_f_mat(prob_data_f.x_k);
             prob_data_x.set_data(centroidal_dynamics.A_f, centroidal_dynamics.b_f, P_k_, rho_);
@@ -101,7 +102,7 @@ namespace motion_planner{
             
             dyn_violation = centroidal_dynamics.A_f * prob_data_x.x_k - centroidal_dynamics.b_f;
             P_k_ += dyn_violation;
-            // std::cout << dyn_violation.norm() << std::endl;
+            std::cout << dyn_violation.norm() << std::endl;
             //Keep track of any statistics that may be useful
             if (log_statistics) {
                 dyn_violation_hist_.push_back(dyn_violation.norm());
@@ -116,11 +117,12 @@ namespace motion_planner{
                 // std::cout << "breaking outer loop due to norm ..." << std::endl;
                 break;
             };
+
         }
     
         centroidal_dynamics.r_.clear();
-
-        // std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
+        prob_data_f.x_k *= m_;
+        std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }
 
     Eigen::MatrixXd BiConvexMP::return_opt_com(){
@@ -138,9 +140,9 @@ namespace motion_planner{
             mom_opt_(i,0) =   m_*prob_data_x.x_k[9*i+3];
             mom_opt_(i,1) = m_*prob_data_x.x_k[9*i+4];
             mom_opt_(i,2) = m_*prob_data_x.x_k[9*i+5];
-            mom_opt_(i,3) = prob_data_x.x_k[9*i+6];
-            mom_opt_(i,4) = prob_data_x.x_k[9*i+7];
-            mom_opt_(i,5) = prob_data_x.x_k[9*i+8];
+            mom_opt_(i,3) = m_*prob_data_x.x_k[9*i+6]; // de normalizing the angular momentum
+            mom_opt_(i,4) = m_*prob_data_x.x_k[9*i+7]; // de normalizing the angular momentum
+            mom_opt_(i,5) = m_*prob_data_x.x_k[9*i+8]; // de normalizing the angular momentum
         };
         return mom_opt_;
     };

@@ -67,7 +67,7 @@ class AbstractGaitGen:
         self.x_reg = x_reg
 
         # --- Set up Dynamics ---
-        self.m = 2.5 #pin.computeTotalMass(self.rmodel)
+        self.m = pin.computeTotalMass(self.rmodel)
         print("robot_mass:", self.m)
 
         #Set up logging for average optimization time
@@ -80,7 +80,7 @@ class AbstractGaitGen:
         # Set up constraints for Dynamics
         self.bx = 0.45
         self.by = 0.45
-        self.bz = 1.3
+        self.bz = 1.5
         self.fx_max = 15.0
         self.fy_max = 15.0
         self.fz_max = 100.0
@@ -257,12 +257,12 @@ class AbstractGaitGen:
             for j in range(len(self.eff_names)):
                 if self.cnt_plan[i][j][0] == 1:
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], self.params.swing_wt[0],
-                                                              "cnt_" + str(0) + self.eff_names[j], i)
+                                                              "cnt_" + str(i) + self.eff_names[j], i)
                 elif self.swing_time[i][j] == 1:
                     pos = self.cnt_plan[i][j][1:4].copy()
                     pos[2] = self.params.step_ht
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, self.params.swing_wt[1],
-                                                              "via_" + str(0) + self.eff_names[j], i)
+                                                              "via_" + str(i) + self.eff_names[j], i)
 
         self.ik.add_state_regularization_cost(0, self.ik_horizon, self.params.reg_wt[0], "xReg", self.params.state_wt, self.x_reg, False)
         self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.params.reg_wt[1], "uReg", self.params.ctrl_wt, np.zeros(self.rmodel.nv), False)
@@ -365,21 +365,22 @@ class AbstractGaitGen:
         # pinocchio complains otherwise
         q = pin.normalize(self.rmodel, q)
         print("max iters")
-        self.kd.optimize(q, v, 150, 1)
-
+        self.kd.optimize(q, v, 50, 1)
         t3 = time.time()
 
         # print("Cost Time :", t2 - t1)
         # print("Solve Time : ", t3 - t2)
         # print(" ================================== ")
 
-        com_opt = self.mp.return_opt_com()
-        mom_opt = self.mp.return_opt_mom()
-        F_opt = self.mp.return_opt_f()
         xs = self.ik.get_xs()
         us = self.ik.get_us()
 
+        com_opt = self.mp.return_opt_com()
+        mom_opt = self.mp.return_opt_mom()
+
+        F_opt = self.mp.return_opt_f()
         n_eff = 3*len(self.eff_names)
+
         for i in range(self.size):
             if i == 0:
                 self.f_int = np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i+1):n_eff*(i+2)], int(self.dt_arr[i]/0.001))
@@ -402,6 +403,80 @@ class AbstractGaitGen:
 
         return self.xs_int, self.us_int, self.f_int
 
+    def compute_ik(self, q, v, t, v_des, w_des, X_wm = None, F_wm = None, P_wm = None):
+        # reseting origin (causes scaling issues I think otherwise)
+        q[0:2] = 0
+        ## TODO: Needs to be done properly so it is not in the demo file
+        if w_des != 0:
+            ori_des = q[3:7]
+        else:
+            ori_des = [0, 0, 0, 1]
+
+        #Move to local frame
+        R = pin.Quaternion(np.array(q[3:7])).toRotationMatrix()
+        v_des = np.matmul(R, v_des)
+
+        #TODO: Move to C++
+        t1 = time.time()
+        self.create_cnt_plan(q, v, t, v_des, w_des)
+        #Creates costs for IK and Dynamics
+        self.create_costs(q, v, v_des, w_des, ori_des)
+
+        t2 = time.time()
+
+        # pinocchio complains otherwise
+        q = pin.normalize(self.rmodel, q)
+        
+        print("max iters")
+        self.mp.optimize(self.X_init, 50)
+        dyn_com_opt = self.mp.return_opt_com()
+        dyn_mom_opt = self.mp.return_opt_mom()
+        print(self.params.cent_wt[1], self.params.cent_wt[0])
+
+        self.ik.add_centroidal_momentum_tracking_task(0, self.ik_horizon, dyn_mom_opt[0:self.ik_horizon], self.params.cent_wt[1], "mom_track", False);
+        self.ik.add_centroidal_momentum_tracking_task(0, self.ik_horizon, dyn_mom_opt[self.ik_horizon], self.params.cent_wt[1], "mom_track_ter", True);
+
+        self.ik.optimize(np.hstack((q,v)))
+        t3 = time.time()
+
+        # print("Cost Time :", t2 - t1)
+        # print("Solve Time : ", t3 - t2)
+        # print(" ================================== ")
+
+        xs = self.ik.get_xs()
+        us = self.ik.get_us()
+
+        n_eff = 3*len(self.eff_names)
+        
+        com_opt = self.mp.return_opt_com()
+        mom_opt = self.mp.return_opt_mom()
+
+        F_opt = self.mp.return_opt_f()
+        n_eff = 3*len(self.eff_names)
+
+        for i in range(self.size):
+            if i == 0:
+                self.f_int = np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i+1):n_eff*(i+2)], int(self.dt_arr[i]/0.001))
+                self.xs_int = np.linspace(xs[i], xs[i+1], int(self.dt_arr[i]/0.001))
+                self.us_int = np.linspace(us[i], us[i+1], int(self.dt_arr[i]/0.001))
+
+                self.com_int = np.linspace(com_opt[i], com_opt[i+1], int(self.dt_arr[i]/0.001))
+                self.mom_int = np.linspace(mom_opt[i], mom_opt[i+1], int(self.dt_arr[i]/0.001))
+            else:
+                self.f_int =  np.vstack((self.f_int, np.linspace(F_opt[i*n_eff:n_eff*(i+1)], F_opt[n_eff*(i+1):n_eff*(i+2)], int(self.dt_arr[i]/0.001))))
+                self.xs_int = np.vstack((self.xs_int, np.linspace(xs[i], xs[i+1], int(self.dt_arr[i]/0.001))))
+                self.us_int = np.vstack((self.us_int, np.linspace(us[i], us[i+1], int(self.dt_arr[i]/0.001))))
+
+                self.com_int = np.vstack((self.com_int, np.linspace(com_opt[i], com_opt[i+1], int(self.dt_arr[i]/0.001))))
+                self.mom_int = np.vstack((self.mom_int, np.linspace(mom_opt[i], mom_opt[i+1], int(self.dt_arr[i]/0.001))))
+
+        self.q_traj.append(q)
+        self.v_traj.append(v)
+        self.xs_traj.append(xs)
+
+        return self.xs_int, self.us_int, self.f_int
+
+        
     def plot(self, q, v, plot_force = True):
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()

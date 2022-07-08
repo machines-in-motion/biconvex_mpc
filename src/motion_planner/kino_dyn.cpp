@@ -91,9 +91,9 @@ namespace motion_planner{
             X_wm[9*i+4] = rdata_.vcom[0][1];
             X_wm[9*i+5] = rdata_.vcom[0][2];
 
-            X_wm[9*i+6] = rdata_.hg.toVector()[3];
-            X_wm[9*i+7] = rdata_.hg.toVector()[4];
-            X_wm[9*i+8] = rdata_.hg.toVector()[5];
+            X_wm[9*i+6] = rdata_.hg.toVector()[3]/dyn.m_;
+            X_wm[9*i+7] = rdata_.hg.toVector()[4]/dyn.m_;
+            X_wm[9*i+8] = rdata_.hg.toVector()[5]/dyn.m_;
         }
         // for (unsigned i = 0; i < F_wm.size()/3; ++i){
         //     F_wm[3*i] = 9.81;

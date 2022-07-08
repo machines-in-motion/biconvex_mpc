@@ -280,17 +280,17 @@ class AbstractGaitGen:
         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
         self.X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
         self.X_init[3:] = np.array(self.rdata.hg)
-        self.X_init[3:6] /= self.m
+        self.X_init[3:] /= self.m
 
         self.X_nom[0::9] = self.X_init[0]
-        for i in range(1, self.horizon):
-            self.X_nom[9*i+0] = self.X_nom[9*(i-1)+0] + v_des[0]*self.dt_arr[i]
-            self.X_nom[9*i+1] = self.X_nom[9*(i-1)+1] + v_des[1]*self.dt_arr[i]
+        # for i in range(1, self.horizon):
+        #     self.X_nom[9*i+0] = -2*self.X_nom[9*(i-1)+0]
+            # self.X_nom[9*i+1] = -10*self.X_nom[9*(i-1)+1]
 
         self.X_nom[2::9] = self.params.nom_ht
-        self.X_nom[3::9] = v_des[0]
-        self.X_nom[4::9] = v_des[1]
-        self.X_nom[5::9] = v_des[2]
+        self.X_nom[3::9] = -0.01*self.X_init[3]
+        self.X_nom[4::9] = -0.01*self.X_init[4]
+        # self.X_nom[5::9] = -10*self.X_init[5]
 
         #Compute angular momentum / orientation correction
         R = pin.Quaternion(np.array(ori_des)).toRotationMatrix()
@@ -302,9 +302,9 @@ class AbstractGaitGen:
         amom = self.compute_ori_correction(q, des_quat.coeffs())
 
         #Set terminal references
-        X_ter[0:2] = self.X_init[0:2] + (self.params.gait_horizon*self.params.gait_period*v_des)[0:2] #Changed this
+        X_ter[0:2] = -0.1*self.X_init[0:2] 
         X_ter[2] = self.params.nom_ht
-        X_ter[3:6] = v_des
+        X_ter[3:5] = -0.1*self.X_init[3:5]
         X_ter[6:] = amom
 
         self.X_nom[6::9] = amom[0]*self.params.ori_correction[0]
@@ -365,7 +365,7 @@ class AbstractGaitGen:
         # pinocchio complains otherwise
         q = pin.normalize(self.rmodel, q)
         print("max iters")
-        self.kd.optimize(q, v, 50, 1)
+        self.kd.optimize(q, v, 30, 1)
         t3 = time.time()
 
         # print("Cost Time :", t2 - t1)

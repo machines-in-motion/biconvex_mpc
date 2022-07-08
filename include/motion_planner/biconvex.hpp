@@ -138,10 +138,10 @@ class BiConvexMP{
         
         void collect_statistics(){log_statistics = 1;};
 
-
-    private:
         // mass of the robot 
         double m_;
+
+    private:
         // centroidal dynamics class
         dynamics::CentroidalDynamics centroidal_dynamics;
         // penalty term on dynamic violation

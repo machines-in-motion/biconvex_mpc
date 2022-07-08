@@ -60,9 +60,9 @@ namespace dynamics{
             b_x[9*t+3] = X[9*(t+1)+3] - X[9*t+3];
             b_x[9*t+4] = X[9*(t+1)+4] - X[9*t+4];
             b_x[9*t+5] = X[9*(t+1)+5] - X[9*t+5] + 9.81*dt_[t];
-            b_x[9*t+6] = (X[9*(t+1)+6] - X[9*t+6])/m_; // dividing by m to normalize
-            b_x[9*t+7] = (X[9*(t+1)+7] - X[9*t+7])/m_;
-            b_x[9*t+8] = (X[9*(t+1)+8] - X[9*t+8])/m_;
+            b_x[9*t+6] = (X[9*(t+1)+6] - X[9*t+6]); 
+            b_x[9*t+7] = (X[9*(t+1)+7] - X[9*t+7]);
+            b_x[9*t+8] = (X[9*(t+1)+8] - X[9*t+8]);
 
             for (unsigned n = 0; n < n_eff_; ++n){
                 // velocity constraints

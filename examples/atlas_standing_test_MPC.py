@@ -31,14 +31,18 @@ n_eff = len(eff_names)
 
 q0 = np.array(AtlasConfig.initial_configuration)
 q0[0:2] = 0.0
-# q0[2] = 1.0
+# q0[10] = +np.pi/4
+# q0[11] = -np.pi/4
+# q0[17] = -np.pi/4
+# q0[18] = +np.pi/4
+
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
 v_des = np.array([0.0,0.0,0.0])
 w_des = 0.0
 
-plan_freq = 0.1 # sec
+plan_freq = 0.05 # sec
 update_time = 0.0 # sec (time of lag)
 
 gait_params = still
@@ -59,20 +63,22 @@ index = 0
 pln_ctr = 0
 lag = 0
 
-for o in range(int(150*(plan_freq/sim_dt))):
+for o in range(int(550*(plan_freq/sim_dt))):
 
     # this bit has to be put in shared memory
     q, v = robot.get_state()
     
     if pln_ctr == 0:
+        print("time: ", o/1000)
         contact_configuration = len(eff_names)*[1,]
         pr_st = time.time()
         xs_plan, us_plan, f_plan = gg.optimize(q, v, np.round(sim_t,3), v_des, w_des)
         # Plot if necessary
         # if sim_t >= plot_time:
-        # gg.plot(q, v, plot_force=True)
+        # if o/1000 > 1:
+        #     gg.plot(q, v, plot_force=False)
             # gg.save_plan("trot")
-        print(q, v)
+
         pr_et = time.time()
         # solve_times.append(pr_et - pr_et)
 
@@ -98,7 +104,7 @@ for o in range(int(150*(plan_freq/sim_dt))):
     
     robot.send_joint_command(tau)
 
-    time.sleep(0.005)
+    time.sleep(0.001)
     sim_t += sim_dt
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1

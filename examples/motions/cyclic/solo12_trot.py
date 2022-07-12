@@ -62,7 +62,7 @@ trot_turn.nom_ht = 0.2
 trot_turn.reg_wt = [5e-2, 1e-5]
 
 # Dyn 
-trot_turn.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+4, 1e4])
+trot_turn.W_X =        np.array([1e-5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+4, 1e+4, 1e5])
 trot_turn.W_X_ter = 10*np.array([1e+5, 1e-5, 1e+5, 1e+1, 1e+1, 2e+2, 1e+5, 1e+5, 1e+5])
 trot_turn.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
 trot_turn.rho = 5e+4

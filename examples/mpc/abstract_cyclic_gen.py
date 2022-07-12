@@ -78,7 +78,8 @@ class SoloMpcGaitGen:
 
         # --- Set up Dynamics ---
         self.m = pin.computeTotalMass(self.rmodel)
-
+        # print(self.m)
+        # assert False
         #Set up logging for average optimization time
         self.dyn_comp_ave = 0.0
         self.dyn_comp_total = 0.0

@@ -123,7 +123,7 @@ namespace motion_planner{
     
         centroidal_dynamics.r_.clear();
         prob_data_f.x_k *= m_;
-        // std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
+        std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
     }
 
     Eigen::MatrixXd BiConvexMP::return_opt_com(){

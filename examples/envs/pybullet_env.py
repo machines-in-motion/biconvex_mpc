@@ -2,6 +2,7 @@
 ## Author : Avadesh Meduri
 ## Date : 7/05/2021
 
+import pybullet 
 from bullet_utils.env import BulletEnvWithGround
 
 class PyBulletEnv:
@@ -46,4 +47,12 @@ class PyBulletEnv:
         """
         forces = self.robot.get_contact_forces()
         return forces
+
+    def start_recording(self, file_name):
+        self.file_name = file_name
+        pybullet.startStateLogging(pybullet.STATE_LOGGING_VIDEO_MP4, self.file_name)
+
+    def stop_recording(self):
+        pybullet.stopStateLogging(pybullet.STATE_LOGGING_VIDEO_MP4, self.file_name)
+
 

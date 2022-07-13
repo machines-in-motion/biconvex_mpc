@@ -55,6 +55,19 @@ class AbstractGaitGen:
             self.offsets[i] += self.rdata.oMf[self.rmodel.getFrameId(self.eff_names[i])].translation - self.rdata.oMf[self.rmodel.getFrameId(self.hip_names[i])].translation
             self.offsets[i] = np.round(self.offsets[i], 3)
 
+        self.offsets[0][0] += 0.00 #Front right_X
+        self.offsets[0][1] -= 0.05 #Front right_Y
+        
+        self.offsets[1][0] -= 0.00 ##Hind right_X
+        self.offsets[1][1] -= 0.05 #Hind right_Y
+        
+        self.offsets[2][0] += 0.00 #Front Left_X  
+        self.offsets[2][1] += 0.05 #Front Left_Y 
+        
+        self.offsets[3][0] -= 0.00 #Hind Left X
+        self.offsets[3][1] += 0.05 #Hind Left Y
+        self.apply_offset = True
+
         self.apply_offset = True
 
         #Rotate offsets to local frame
@@ -94,7 +107,7 @@ class AbstractGaitGen:
         #Height Map (for contacts)
         self.height_map = height_map
 
-    def update_gait_params(self, weight_abstract, t, ik_hor_ratio = 1.0):
+    def update_gait_params(self, weight_abstract, t, ik_hor_ratio = 0.5):
         """
         Updates the gaits
         Input:
@@ -263,6 +276,7 @@ class AbstractGaitGen:
                     pos[2] = self.params.step_ht
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], pos, self.params.swing_wt[1],
                                                               "via_" + str(i) + self.eff_names[j], i)
+    
 
         self.ik.add_state_regularization_cost(0, self.ik_horizon, self.params.reg_wt[0], "xReg", self.params.state_wt, self.x_reg, False)
         self.ik.add_ctrl_regularization_cost(0, self.ik_horizon, self.params.reg_wt[1], "uReg", self.params.ctrl_wt, np.zeros(self.rmodel.nv), False)
@@ -278,20 +292,19 @@ class AbstractGaitGen:
         self.X_init = np.zeros(9)
         X_ter = np.zeros_like(self.X_init)
         pin.computeCentroidalMomentum(self.rmodel, self.rdata)
-        # self.X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
-        self.X_init[0:3] = np.array([0.014, 0, self.params.nom_ht]) 
-        # self.X_init[3:] = np.array(self.rdata.hg)
-        # self.X_init[3:] /= self.m
+        self.X_init[0:3] = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
+        self.X_init[3:] = np.array(self.rdata.hg)
+        self.X_init[3:6] /= self.m
 
         self.X_nom[0::9] = self.X_init[0]
         for i in range(1, self.horizon):
-            self.X_nom[9*i+0] = self.X_nom[9*(i-1)+0]
-            self.X_nom[9*i+1] = self.X_nom[9*(i-1)+1]
+            self.X_nom[9*i+0] = self.X_nom[9*(i-1)+0] + v_des[0]*self.dt_arr[i]
+            self.X_nom[9*i+1] = self.X_nom[9*(i-1)+1] + v_des[1]*self.dt_arr[i]
 
         self.X_nom[2::9] = self.params.nom_ht
-        # self.X_nom[3::9] = -0.5*self.X_init[3]
-        # self.X_nom[4::9] = -0.5*self.X_init[4]
-        # self.X_nom[5::9] = -10*self.X_init[5]
+        self.X_nom[3::9] = v_des[0]
+        self.X_nom[4::9] = v_des[1]
+        self.X_nom[5::9] = v_des[2]
 
         #Compute angular momentum / orientation correction
         R = pin.Quaternion(np.array(ori_des)).toRotationMatrix()
@@ -303,29 +316,24 @@ class AbstractGaitGen:
         amom = self.compute_ori_correction(q, des_quat.coeffs())
 
         #Set terminal references
-        X_ter[0:2] = np.array([0.014, 0]) 
+        X_ter[0:2] = self.X_init[0:2] + (self.params.gait_horizon*self.params.gait_period*v_des)[0:2] #Changed this
         X_ter[2] = self.params.nom_ht
-        # X_ter[3:5] = -0.1*self.X_init[3:5]
-        # X_ter[6:] = amom
+        X_ter[3:6] = v_des
+        X_ter[6:] = amom
 
-        # self.X_nom[6::9] = amom[0]*self.params.ori_correction[0]
-        # self.X_nom[7::9] = amom[1]*self.params.ori_correction[1]
+        self.X_nom[6::9] = amom[0]*self.params.ori_correction[0]
+        self.X_nom[7::9] = amom[1]*self.params.ori_correction[1]
 
-        # if w_des == 0:
-        #     self.X_nom[8::9] = amom[2]*self.params.ori_correction[2]
-        # else:
-        #     yaw_momentum = np.matmul(self.I_composite_b,[0.0, 0.0, w_des])[2]
-        #     self.X_nom[8::9] = yaw_momentum
-        #     X_ter[8] = yaw_momentum
+        if w_des == 0:
+            self.X_nom[8::9] = amom[2]*self.params.ori_correction[2]
+        else:
+            yaw_momentum = np.matmul(self.I_composite_b,[0.0, 0.0, w_des])[2]
+            self.X_nom[8::9] = yaw_momentum
+            X_ter[8] = yaw_momentum
             #print(yaw_momentum)
 
-        # print(self.X_nom, X_ter)
-
         # Setup dynamic optimization costs
-        bounds = np.tile([-self.bx, -self.by, self.bz/2, self.bx, self.by, self.bz], (self.horizon,1))
-        # print("X_init", self.X_init)
-        # print("x_nom", self.X_nom)
-        # print("X_ter", X_ter)
+        bounds = np.tile([-self.bx, -self.by, 0, self.bx, self.by, self.bz], (self.horizon,1))
         self.mp.create_bound_constraints(bounds, self.fx_max, self.fy_max, self.fz_max)
         self.mp.create_cost_X(np.tile(self.params.W_X, self.horizon), self.params.W_X_ter, X_ter, self.X_nom)
         self.mp.create_cost_F(np.tile(self.params.W_F, self.horizon))

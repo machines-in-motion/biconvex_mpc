@@ -52,8 +52,8 @@ robot = PyBulletEnv(AtlasRobot, q0, v0)
 robot_id_ctrl = InverseDynamicsController(pin_robot, eff_names)
 robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
 
-gg = AbstractGaitGen(urdf_path, eff_names, hip_names, x0, plan_freq, q0)
-gg.update_gait_params(gait_params, 0)
+# gg = AbstractGaitGen(urdf_path, eff_names, hip_names, x0, plan_freq, q0)
+# gg.update_gait_params(gait_params, 0)
 
 q, v = robot.get_state()
 
@@ -103,6 +103,7 @@ for o in range(int(550*(plan_freq/sim_dt))):
     # # f[index][2] = 1e3
     # tau = robot_id_ctrl.id_joint_torques(q, v, xs[index][:pin_robot.model.nq].copy(), xs[index][pin_robot.model.nq:].copy()\
     #                             , us[index], f[index], contact_configuration)
+    print(q.shape, rmodel.nq)
     tau = robot_id_ctrl.id_joint_torques(q, v, q0, v0, v0, np.zeros(3*2*4), contact_configuration)
     print(q[12+7], tau[0])
     # tau[3:] = 0

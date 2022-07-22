@@ -35,7 +35,7 @@ q0 = np.array(TalosConfig.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.0,0.0,0.0])
+v_des = np.array([0.,0.0,0.0])
 w_des = 0.0
 
 plan_freq = 0.1 # sec
@@ -62,7 +62,7 @@ lag = 0
 
 # robot.start_recording("talos_walk.mp4")
 
-for o in range(int(70*(plan_freq/sim_dt))):
+for o in range(int(150*(plan_freq/sim_dt))):
 
     # this bit has to be put in shared memory
     q, v = robot.get_state()
@@ -103,11 +103,12 @@ for o in range(int(70*(plan_freq/sim_dt))):
     # tau = robot_id_ctrl.id_joint_torques(q, v, q0, v0, v0, np.zeros(3*4), contact_configuration)
     # tau[3:] = 0
     robot.send_joint_command(tau)
-
+    # if pln_ctr == 0:
+    #     print("sim_t",sim_t)
+    #     gg.plot(q, v, plot_force=True)
     time.sleep(0.001)
     sim_t += sim_dt
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
 
 # robot.stop_recording()
-

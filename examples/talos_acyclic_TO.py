@@ -13,7 +13,7 @@ from mpc.abstract_acyclic_gen1 import TalosAcyclicGen
 from mpc.data_plotter import DataRecorder
 from robot_properties_talos.config import TalosConfig
 
-from motions.acyclic.talos_jump import plan
+from motions.acyclic.talos_jump_rotate import plan
 
 pin_robot = TalosConfig.buildRobotWrapper()
 rmodel = pin_robot.model
@@ -56,8 +56,8 @@ viz.display(q0)
 xs_plan, us_plan, f_plan = mg.optimize(q, v, np.round(sim_t,3))
 q = xs_plan[0][0:pin_robot.model.nq]
 v = xs_plan[0][pin_robot.model.nq:]
-# mg.plot(q, v, plot_force=False)
+mg.plot(q, v, plot_force=False)
 
 for ind in range(int(motion_time/sim_dt)-1):
-    if(ind%5==0):
+    if(ind%6==0):
         viz.display(xs_plan[ind][:pin_robot.model.nq])

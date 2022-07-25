@@ -454,20 +454,20 @@ class TalosAcyclicGen:
         ax_m[5].legend()
 
         # Plot Linear Momentum
-        fig, ax_am = plt.subplots(3,1)
-        ax_am[0].plot(mom_opt[:, 3], label = "Dynamics Angular Momentum around X")
-        ax_am[0].plot(ik_mom_opt[:, 3], label="Kinematic Angular Momentum around X")
-        ax_am[1].plot(mom_opt[:, 4], label = "Dynamics Angular Momentum around Y")
-        ax_am[1].plot(ik_mom_opt[:, 4], label="Kinematic Angular Momentum around Y")
-        ax_am[2].plot(mom_opt[:, 5], label = "Dynamics Angular Momentum around Z")
-        ax_am[2].plot(ik_mom_opt[:, 5], label="Kinematic Angular Momentum around Z")
-        ax_am[0].grid()
-        ax_am[0].legend()
-
-        ax_am[1].grid()
-        ax_am[1].legend()
-
-        ax_am[2].grid()
-        ax_am[2].legend()
+        # fig, ax_am = plt.subplots(3,1)
+        # ax_am[0].plot(mom_opt[:, 3], label = "Dynamics Angular Momentum around X")
+        # ax_am[0].plot(ik_mom_opt[:, 3], label="Kinematic Angular Momentum around X")
+        # ax_am[1].plot(mom_opt[:, 4], label = "Dynamics Angular Momentum around Y")
+        # ax_am[1].plot(ik_mom_opt[:, 4], label="Kinematic Angular Momentum around Y")
+        # ax_am[2].plot(mom_opt[:, 5], label = "Dynamics Angular Momentum around Z")
+        # ax_am[2].plot(ik_mom_opt[:, 5], label="Kinematic Angular Momentum around Z")
+        # ax_am[0].grid()
+        # ax_am[0].legend()
+        #
+        # ax_am[1].grid()
+        # ax_am[1].legend()
+        #
+        # ax_am[2].grid()
+        # ax_am[2].legend()
 
         plt.show()

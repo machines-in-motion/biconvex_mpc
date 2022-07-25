@@ -20,13 +20,13 @@ x0 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
 plan = ACyclicMotionParams("Talos", "walk")
 
 stance_time = 0.4 #Double support time
-flight_time = 0.8 #Single support time
+flight_time = 0.5 #Single support time
 
 HC_init_x = -.109 #the initial position of the heel contact point in x direction
 TC_init_x = .111 #the initial position of the Toe contact point in x direction
 MC_init_y = .085 #the initial position of the contact points in y direction, points are symmetric in y
 plan.T = 2*stance_time+flight_time # the total duration of the gait
-dt = 5e-2
+dt = 2e-2
 plan.n_col = int(plan.T/dt)
 plan.dt_arr = plan.n_col*[dt,]
 plan.plan_freq = [[plan.T, 0, plan.T]]
@@ -41,10 +41,10 @@ plan.cnt_plan = [[[ 1., HC_init_x, -MC_init_y,  0., 0.,  stance_time],
                   [ 0., HC_init_x,  MC_init_y,  0., stance_time,  stance_time+flight_time],
                   [ 0., TC_init_x,  MC_init_y,  0., stance_time,  stance_time+flight_time]],
 
-                 [[ 1., HC_init_x, -MC_init_y,  0., stance_time+flight_time,  plan.T],
-                  [ 1., TC_init_x, -MC_init_y,  0., stance_time+flight_time,  plan.T],
-                  [ 1., HC_init_x,  MC_init_y,  0., stance_time+flight_time,  plan.T],
-                  [ 1., TC_init_x,  MC_init_y,  0., stance_time+flight_time,  plan.T]]]
+                 [[ 1., -MC_init_y, -HC_init_x,  0., stance_time+flight_time,  plan.T],
+                  [ 1., -MC_init_y, -TC_init_x,  0., stance_time+flight_time,  plan.T],
+                  [ 1.,  MC_init_y, -HC_init_x,  0., stance_time+flight_time,  plan.T],
+                  [ 1.,  MC_init_y, -TC_init_x,  0., stance_time+flight_time,  plan.T]]]
 
 
 #  dynamic optimization params
@@ -64,18 +64,27 @@ plan.swing_wt = [[[0., 0., -MC_init_y,  0.5, stance_time+.5*flight_time, stance_
                   [0., 0., -MC_init_y,  0.5, stance_time+.5*flight_time, stance_time+.6*flight_time],
                   [0., 0.,  MC_init_y,  0.5, stance_time+.5*flight_time, stance_time+.6*flight_time],
                   [0., 0.,  MC_init_y,  0.5, stance_time+.5*flight_time, stance_time+.6*flight_time]]]
-plan.cent_wt = [1., .03]
+plan.cent_wt = [10., .04]
 plan.cnt_wt = 5e3
 
 x_reg1 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
+x_reg1[8]= 1.
+x_reg1[14]= -1.
+x_reg1[22]= 3.
+x_reg1[36]= -3.
+print(x_reg1)
+x_reg2 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
 
-state_wt_1 = np.array([1e-2, 1e-2, 1e2 ] + [5.0, 5.0, 5.0] + [1e1] * (robot.model.nv - 6) + \
+state_wt_1 = np.array([1e-2, 1e-2, 1e2 ] + [5.0, 5.0, 5.0] + [5e1] * (robot.model.nv - 6) + \
+                      [0.00, 0.00, 0.00] + [5.0, 5.0, 5.0] + [3.5] * (robot.model.nv - 6)
+                      )
+state_wt_2 = np.array([1e-2, 1e-2, 1e2 ] + [5.0, 5.0, 5.0] + [1e3] * (robot.model.nv - 6) + \
                       [0.00, 0.00, 0.00] + [5.0, 5.0, 5.0] + [3.5] * (robot.model.nv - 6)
                       )
 
-plan.state_reg = [np.hstack((x_reg1, [0, plan.T]))]
-plan.state_wt = [np.hstack((state_wt_1, [0, plan.T]))]
-plan.state_scale = [[1e-2, 0, plan.T]]
+plan.state_reg = [np.hstack((x_reg1, [0, stance_time + flight_time])), np.hstack((x_reg2, [stance_time + flight_time, plan.T]))]
+plan.state_wt = [np.hstack((state_wt_1, [0, stance_time + flight_time])), np.hstack((state_wt_2, [stance_time + flight_time, plan.T]))]
+plan.state_scale = [[1e-2, 0, stance_time + flight_time], [1e-2, stance_time + flight_time, plan.T]]
 
 ctrl_wt = [0, 0, 1] + [1, 1, 1] + [5.0] *(rmodel.nv - 6)
 plan.ctrl_wt = [np.hstack((ctrl_wt, [0, plan.T]))]

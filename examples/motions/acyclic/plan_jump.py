@@ -88,11 +88,10 @@ plan.state_scale = [[1e-3, 0, st+flight_time], [1e-3, st+flight_time, T]]
 
 ctrl_wt = [0, 0, 0] + [1e-4, 1e-4, 1e-4] + [1e-4]*(rmodel.nv-6)
 plan.ctrl_wt = [np.hstack((ctrl_wt, [0, st+flight_time])),np.hstack((ctrl_wt, [st+flight_time, T]))]
-plan.ctrl_reg = [np.hstack((np.zeros(rmodel.nv), [0, st+flight_time])), 
+plan.ctrl_reg = [np.hstack((np.zeros(rmodel.nv), [0, st+flight_time])),
                  np.hstack((np.zeros(rmodel.nv), [st+flight_time, T]))]
 plan.ctrl_scale = [[1e-4, 0, st+flight_time], [1e-2, st+flight_time, T]]
 
 # controller details
 plan.kp = [[0.0, 0, st+flight_time], [2.5, st+flight_time, T]]
 plan.kd = [[0.01, 0, st+flight_time], [0.1, st+flight_time, T]]
-

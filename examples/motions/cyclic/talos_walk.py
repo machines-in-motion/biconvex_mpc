@@ -16,10 +16,10 @@ n_eff = len(eff_names)
 walk = BiconvexMotionParams("Talos", "walk")
 
 # Cnt
-walk.gait_period = 1.
+walk.gait_period = 0.8
 walk.stance_percent = 2*[0.6,] + 2*[0.6,]
 walk.gait_dt = 0.1
-walk.phase_offset = 2*[0.,] + 2*[0.5,]
+walk.phase_offset = 2*[0.1,] + 2*[0.6,]
 
 # IK
 walk.state_wt = np.array([0., 0., 0.] + [1e5] * 3 + [2e5] * (pin_robot.model.nv - 6) \
@@ -41,11 +41,11 @@ walk.W_F = np.array(4*[1e1, 1e1, 5e1])
 walk.rho = 1e4
 
 walk.ori_correction = [0.5, 0.8, 0.2]
-walk.gait_horizon = 4.
+walk.gait_horizon = 1.
 
 # Gains
 # 12 * (6 dof leg) + 2* (hip joint ) + 2* [ 4 + 2 (arms) + 8 *(for fingers) ] + 2* (neck)
-walk.kp = np.array(12*[5e3,] + 2*[1e4,] + 4*[1e3,] + 2*[1e2,] + 8*[1e0,] + 4*[1e3,] \
+walk.kp = np.array(12*[1.5e3,] + 2*[1e4,] + 4*[1e3,] + 2*[1e2,] + 8*[1e0,] + 4*[1e3,] \
                     + 2*[1e2,] + 8*[1e0,] + 2*[1e3,] )
 walk.kd = np.array(12*[1e1,] + 2*[1.5e1,] + 4*[5e0,] + 2*[1e-1,] + 8*[0.005,] + 4*[5e0,]\
                      + 2*[1e0,] + 8*[0.005,] + 2*[5e0,] )

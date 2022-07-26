@@ -40,7 +40,7 @@ index = 0
 pln_ctr = 0
 
 ## Motion
-gait_params = jump
+gait_params = trot
 lag = int(update_time/sim_dt)
 gg = AnymalMpcGaitGen(pin_robot, urdf_path, x0, plan_freq, q0, None)
 
@@ -55,7 +55,7 @@ plot_time = 0 #Time to start plotting
 solve_times = []
 
 
-# robot.start_recording("anymal_gait_transition.mp4")
+# robot.start_recording("anymal_slow_stepping.mp4")
 
 for o in range(int(450*(plan_freq/sim_dt))):
     # this bit has to be put in shared memory
@@ -75,7 +75,7 @@ for o in range(int(450*(plan_freq/sim_dt))):
         # gg.plot(q,v)
         # Plot if necessary
         # if sim_t >= plot_time:
-            # gg.plot_plan(q, v)
+        # gg.plot_plan(q, v)
             # gg.save_plan("trot")
 
         pr_et = time.time()
@@ -102,11 +102,11 @@ for o in range(int(450*(plan_freq/sim_dt))):
     # tau = robot_id_ctrl.id_joint_torques(q, v, q0, v0, v0, np.zeros(12), contact_configuration)
     robot.send_joint_command(tau)
 
-    # time.sleep(0.01)
+    time.sleep(0.0005)
     sim_t += sim_dt
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
 
 
-# robot.stop_recording()
+robot.stop_recording()
 

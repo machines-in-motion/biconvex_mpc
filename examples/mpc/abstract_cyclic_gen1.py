@@ -379,9 +379,9 @@ class AbstractGaitGen:
         self.kd.optimize(q, v, 50, 1)
         t3 = time.time()
 
-        # print("Cost Time :", t2 - t1)
-        # print("Solve Time : ", t3 - t2)
-        # print(" ================================== ")
+        print("Cost Time :", t2 - t1)
+        print("Solve Time : ", t3 - t2)
+        print(" ================================== ")
 
         xs = self.ik.get_xs()
         us = self.ik.get_us()

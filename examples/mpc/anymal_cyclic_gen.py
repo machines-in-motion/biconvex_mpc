@@ -489,7 +489,6 @@ class AnymalMpcGaitGen:
 
         plt.show()
 
-    def save_plan(self, file_name):
         """
         This function saves the plan for later plotting
         Input:
@@ -504,11 +503,12 @@ class AnymalMpcGaitGen:
                                  xs = self.ik.get_xs(),
                                  us = self.ik.get_us(),
                                  cnt_plan = self.cnt_plan)
-                                 
+
         print("finished saving ...")
         assert False
 
     def plot_plan(self, q, v, plot_force = True):
+
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()
         F_opt = self.mp.return_opt_f()
@@ -516,17 +516,19 @@ class AnymalMpcGaitGen:
         ik_mom_opt = self.ik.return_opt_mom()
         com = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
 
+        t_arr = self.dt_arr[0]*np.arange(0, len(com_opt))
+        ik_hor = len(ik_com_opt[:, 0])
         # Plot Center of Mass
         fig, ax = plt.subplots(3,1)
-        ax[0].plot(com_opt[:, 0], label="Dyn com x")
-        ax[0].plot(ik_com_opt[:, 0], label="IK com x")
-        ax[0].plot(com[0], 'o', label="Current Center of Mass x")
-        ax[1].plot(com_opt[:, 1], label="Dyn com y")
-        ax[1].plot(ik_com_opt[:, 1], label="IK com y")
-        ax[1].plot(com[1], 'o', label="Current Center of Mass y")
-        ax[2].plot(com_opt[:, 2], label="Dyn com z")
-        ax[2].plot(ik_com_opt[:, 2], label="IK com z")
-        ax[2].plot(com[2], 'o', label="Current Center of Mass z")
+        ax[0].plot(t_arr, com_opt[:, 0], label="Dyn com x")
+        ax[0].plot(t_arr[:ik_hor], ik_com_opt[:, 0], label="IK com x")
+        ax[0].plot(t_arr[0], com[0], 'o', label="Current Center of Mass x")
+        ax[1].plot(t_arr, com_opt[:, 1], label="Dyn com y")
+        ax[1].plot(t_arr[:ik_hor], ik_com_opt[:, 1], label="IK com y")
+        ax[1].plot(t_arr[0], com[1], 'o', label="Current Center of Mass y")
+        ax[2].plot(t_arr, com_opt[:, 2], label="Dyn com z")
+        ax[2].plot(t_arr[:ik_hor], ik_com_opt[:, 2], label="IK com z")
+        ax[2].plot(t_arr[0], com[2], 'o', label="Current Center of Mass z")
 
         ax[0].grid()
         ax[0].legend()
@@ -539,26 +541,26 @@ class AnymalMpcGaitGen:
         if plot_force:
             fig, ax_f = plt.subplots(self.n_eff, 1)
             for n in range(self.n_eff):
-                ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
-                ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
-                ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
+                ax_f[n].plot(t_arr[:-1], F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
+                ax_f[n].plot(t_arr[:-1], F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
+                ax_f[n].plot(t_arr[:-1], F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
                 ax_f[n].grid()
                 ax_f[n].legend()
 
         # Plot Momentum
         fig, ax_m = plt.subplots(6,1)
-        ax_m[0].plot(mom_opt[:, 0], label = "Dyn linear_momentum x")
-        ax_m[0].plot(ik_mom_opt[:, 0], label="IK linear_momentum x")
-        ax_m[1].plot(mom_opt[:, 1], label = "linear_momentum y")
-        ax_m[1].plot(ik_mom_opt[:, 1], label="Dyn IK linear_momentum y")
-        ax_m[2].plot(mom_opt[:, 2], label = "linear_momentum z")
-        ax_m[2].plot(ik_mom_opt[:, 2], label="Dyn IK linear_momentum z")
-        ax_m[3].plot(mom_opt[:, 3], label = "Dyn Angular momentum x")
-        ax_m[3].plot(ik_mom_opt[:, 3], label="IK Angular momentum x")
-        ax_m[4].plot(mom_opt[:, 4], label = "Dyn Angular momentum y")
-        ax_m[4].plot(ik_mom_opt[:, 4], label="IK Angular momentum y")
-        ax_m[5].plot(mom_opt[:, 5], label = "Dyn Angular momentum z")
-        ax_m[5].plot(ik_mom_opt[:, 5], label="IK Angular momentum z")
+        ax_m[0].plot(t_arr, mom_opt[:, 0], label = "Dyn linear_momentum x")
+        ax_m[0].plot(t_arr[:ik_hor], ik_mom_opt[:, 0], label="IK linear_momentum x")
+        ax_m[1].plot(t_arr, mom_opt[:, 1], label = "linear_momentum y")
+        ax_m[1].plot(t_arr[:ik_hor], ik_mom_opt[:, 1], label="Dyn IK linear_momentum y")
+        ax_m[2].plot(t_arr, mom_opt[:, 2], label = "linear_momentum z")
+        ax_m[2].plot(t_arr[:ik_hor], ik_mom_opt[:, 2], label="Dyn IK linear_momentum z")
+        ax_m[3].plot(t_arr, mom_opt[:, 3], label = "Dyn Angular momentum x")
+        ax_m[3].plot(t_arr[:ik_hor], ik_mom_opt[:, 3], label="IK Angular momentum x")
+        ax_m[4].plot(t_arr, mom_opt[:, 4], label = "Dyn Angular momentum y")
+        ax_m[4].plot(t_arr[:ik_hor], ik_mom_opt[:, 4], label="IK Angular momentum y")
+        ax_m[5].plot(t_arr, mom_opt[:, 5], label = "Dyn Angular momentum z")
+        ax_m[5].plot(t_arr[:ik_hor], ik_mom_opt[:, 5], label="IK Angular momentum z")
         ax_m[0].grid()
         ax_m[0].legend()
         ax_m[1].grid()

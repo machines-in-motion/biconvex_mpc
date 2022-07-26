@@ -35,7 +35,7 @@ q0 = np.array(TalosConfig.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.,0.0,0.0])
+v_des = np.array([0.4,0.0,0.0])
 w_des = 0.0
 
 plan_freq = 0.1 # sec
@@ -60,7 +60,7 @@ index = 0
 pln_ctr = 0
 lag = 0
 
-# robot.start_recording("talos_walk.mp4")
+robot.start_recording("talos_walk.mp4")
 
 for o in range(int(150*(plan_freq/sim_dt))):
 
@@ -106,9 +106,9 @@ for o in range(int(150*(plan_freq/sim_dt))):
     # if pln_ctr == 0:
     #     print("sim_t",sim_t)
     #     gg.plot(q, v, plot_force=True)
-    time.sleep(0.001)
+    time.sleep(0.0005)
     sim_t += sim_dt
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
 
-# robot.stop_recording()
+robot.stop_recording()

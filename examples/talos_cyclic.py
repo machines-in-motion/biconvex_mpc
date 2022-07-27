@@ -36,7 +36,7 @@ q0 = np.array(TalosConfig.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.0,0.0,0.0])
+v_des = np.array([0.3,0.0,0.0])
 w_des = 0.0
 
 plan_freq = 0.5 # sec

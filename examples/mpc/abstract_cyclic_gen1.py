@@ -261,12 +261,12 @@ class AbstractGaitGen:
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
 
-        print("time", t)
-        for i in range(self.horizon):
-            print("Node#", i)
-            for j in range(len(self.eff_names)):
-                print(self.eff_names[j])
-                print(self.cnt_plan[i][j][:])
+        # print("time", t)
+        # for i in range(self.horizon):
+        #     print("Node#", i)
+        #     for j in range(len(self.eff_names)):
+        #         print(self.eff_names[j])
+        #         print(self.cnt_plan[i][j][:])
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, w_des, ori_des):

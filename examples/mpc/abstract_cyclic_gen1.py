@@ -36,7 +36,7 @@ class AbstractGaitGen:
 
         self.eff_names = eff_names
         self.hip_names = hip_names
-
+        self.n_eff = len(eff_names)
         pin.forwardKinematics(self.rmodel, self.rdata, q0, np.zeros(self.rmodel.nv))
         pin.updateFramePlacements(self.rmodel, self.rdata)
         com_init = pin.centerOfMass(self.rmodel, self.rdata, q0, np.zeros(self.rmodel.nv))
@@ -55,17 +55,33 @@ class AbstractGaitGen:
             self.offsets[i] += self.rdata.oMf[self.rmodel.getFrameId(self.eff_names[i])].translation - self.rdata.oMf[self.rmodel.getFrameId(self.hip_names[i])].translation
             self.offsets[i] = np.round(self.offsets[i], 3)
 
+        # right
         self.offsets[0][0] += 0.00 #Front right_X
-        self.offsets[0][1] -= 0.05 #Front right_Y
+        self.offsets[0][1] -= 0.15 #Front right_Y
 
         self.offsets[1][0] -= 0.00 ##Hind right_X
-        self.offsets[1][1] -= 0.05 #Hind right_Y
+        self.offsets[1][1] -= 0.15 #Hind right_Y
 
         self.offsets[2][0] += 0.00 #Front Left_X
-        self.offsets[2][1] += 0.05 #Front Left_Y
+        self.offsets[2][1] -= 0.15 #Front Left_Y
 
         self.offsets[3][0] -= 0.00 #Hind Left X
-        self.offsets[3][1] += 0.05 #Hind Left Y
+        self.offsets[3][1] -= 0.15 #Hind Left Y
+        
+        # left
+        self.offsets[0][0] += 0.00 #Front right_X
+        self.offsets[0][1] += 0.15 #Front right_Y
+
+        self.offsets[1][0] -= 0.00 ##Hind right_X
+        self.offsets[1][1] += 0.15 #Hind right_Y
+
+        self.offsets[2][0] += 0.00 #Front Left_X
+        self.offsets[2][1] += 0.15 #Front Left_Y
+
+        self.offsets[3][0] -= 0.00 #Hind Left X
+        self.offsets[3][1] += 0.15 #Hind Left Y
+        
+        
         self.apply_offset = True
 
         self.apply_offset = True
@@ -245,12 +261,12 @@ class AbstractGaitGen:
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
 
-        # print("time", t)
-        # for i in range(self.horizon):
-        #     print("Node#", i)
-        #     for j in range(len(self.eff_names)):
-        #         print(self.eff_names[j])
-        #         print(self.cnt_plan[i][j][:])
+        print("time", t)
+        for i in range(self.horizon):
+            print("Node#", i)
+            for j in range(len(self.eff_names)):
+                print(self.eff_names[j])
+                print(self.cnt_plan[i][j][:])
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, w_des, ori_des):
@@ -534,18 +550,18 @@ class AbstractGaitGen:
         com = pin.centerOfMass(self.rmodel, self.rdata, q.copy(), v.copy())
 
         t_arr = self.dt_arr[0]*np.arange(0, len(com_opt))
-
+        ik_hor = len(ik_com_opt[:, 0])
         # Plot Center of Mass
         fig, ax = plt.subplots(3,1)
         ax[0].plot(t_arr, com_opt[:, 0], label="Dyn com x")
-        ax[0].plot(t_arr, ik_com_opt[:, 0], label="IK com x")
-        ax[0].plot(t_arr, com[0], 'o', label="Current Center of Mass x")
+        ax[0].plot(t_arr[:ik_hor], ik_com_opt[:, 0], label="IK com x")
+        ax[0].plot(t_arr[0], com[0], 'o', label="Current Center of Mass x")
         ax[1].plot(t_arr, com_opt[:, 1], label="Dyn com y")
-        ax[1].plot(t_arr, ik_com_opt[:, 1], label="IK com y")
-        ax[1].plot(t_arr, com[1], 'o', label="Current Center of Mass y")
+        ax[1].plot(t_arr[:ik_hor], ik_com_opt[:, 1], label="IK com y")
+        ax[1].plot(t_arr[0], com[1], 'o', label="Current Center of Mass y")
         ax[2].plot(t_arr, com_opt[:, 2], label="Dyn com z")
-        ax[2].plot(t_arr, ik_com_opt[:, 2], label="IK com z")
-        ax[2].plot(t_arr, com[2], 'o', label="Current Center of Mass z")
+        ax[2].plot(t_arr[:ik_hor], ik_com_opt[:, 2], label="IK com z")
+        ax[2].plot(t_arr[0], com[2], 'o', label="Current Center of Mass z")
 
         ax[0].grid()
         ax[0].legend()
@@ -558,26 +574,26 @@ class AbstractGaitGen:
         if plot_force:
             fig, ax_f = plt.subplots(self.n_eff, 1)
             for n in range(self.n_eff):
-                ax_f[n].plot(t_arr, F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
-                ax_f[n].plot(t_arr, F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
-                ax_f[n].plot(t_arr, F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
+                ax_f[n].plot(t_arr[:-1], F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
+                ax_f[n].plot(t_arr[:-1], F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
+                ax_f[n].plot(t_arr[:-1], F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
                 ax_f[n].grid()
                 ax_f[n].legend()
 
         # Plot Momentum
         fig, ax_m = plt.subplots(6,1)
         ax_m[0].plot(t_arr, mom_opt[:, 0], label = "Dyn linear_momentum x")
-        ax_m[0].plot(t_arr, ik_mom_opt[:, 0], label="IK linear_momentum x")
+        ax_m[0].plot(t_arr[:ik_hor], ik_mom_opt[:, 0], label="IK linear_momentum x")
         ax_m[1].plot(t_arr, mom_opt[:, 1], label = "linear_momentum y")
-        ax_m[1].plot(t_arr, ik_mom_opt[:, 1], label="Dyn IK linear_momentum y")
+        ax_m[1].plot(t_arr[:ik_hor], ik_mom_opt[:, 1], label="Dyn IK linear_momentum y")
         ax_m[2].plot(t_arr, mom_opt[:, 2], label = "linear_momentum z")
-        ax_m[2].plot(t_arr, ik_mom_opt[:, 2], label="Dyn IK linear_momentum z")
+        ax_m[2].plot(t_arr[:ik_hor], ik_mom_opt[:, 2], label="Dyn IK linear_momentum z")
         ax_m[3].plot(t_arr, mom_opt[:, 3], label = "Dyn Angular momentum x")
-        ax_m[3].plot(t_arr, ik_mom_opt[:, 3], label="IK Angular momentum x")
+        ax_m[3].plot(t_arr[:ik_hor], ik_mom_opt[:, 3], label="IK Angular momentum x")
         ax_m[4].plot(t_arr, mom_opt[:, 4], label = "Dyn Angular momentum y")
-        ax_m[4].plot(t_arr, ik_mom_opt[:, 4], label="IK Angular momentum y")
+        ax_m[4].plot(t_arr[:ik_hor], ik_mom_opt[:, 4], label="IK Angular momentum y")
         ax_m[5].plot(t_arr, mom_opt[:, 5], label = "Dyn Angular momentum z")
-        ax_m[5].plot(t_arr, ik_mom_opt[:, 5], label="IK Angular momentum z")
+        ax_m[5].plot(t_arr[:ik_hor], ik_mom_opt[:, 5], label="IK Angular momentum z")
         ax_m[0].grid()
         ax_m[0].legend()
         ax_m[1].grid()

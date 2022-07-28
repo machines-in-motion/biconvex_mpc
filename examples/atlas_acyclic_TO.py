@@ -10,7 +10,7 @@ from robot_properties_atlas.atlaswrapper import AtlasConfig, AtlasRobot
 from mpc.abstract_acyclic_gen_atlas import AtlasAcyclicGen
 from mpc.data_plotter import DataRecorder
 
-from motions.acyclic.atlas_stand import plan
+from motions.acyclic.atlas_jump import plan
 
 pin_robot = AtlasConfig.buildRobotWrapper()
 rmodel = pin_robot.model
@@ -61,4 +61,5 @@ v = xs_plan[0][pin_robot.model.nq:]
 mg.plot(q, v, plot_force=True)
 
 for ind in range(int(plan_freq/sim_dt)):
-    viz.display(xs_plan[ind][:pin_robot.model.nq])
+    if(ind%4==0):
+        viz.display(xs_plan[ind][:pin_robot.model.nq])

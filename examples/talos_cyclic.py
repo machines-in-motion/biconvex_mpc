@@ -16,6 +16,7 @@ import pinocchio as pin
 import numpy as np
 from motions.cyclic.talos_stand import still
 from motions.cyclic.talos_walk import walk
+from motions.cyclic.talos_jump import jump
 
 
 robot = TalosConfig.buildRobotWrapper()
@@ -36,13 +37,13 @@ q0 = np.array(TalosConfig.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 
-v_des = np.array([0.3,0.0,0.0])
+v_des = np.array([0.0,0.0,0.0])
 w_des = 0.0
 
-plan_freq = 0.5 # sec
+plan_freq = 1.0 # sec
 update_time = 0.0 # sec (time of lag)
 
-gait_params = walk
+gait_params = jump
 
 
 robot = PyBulletEnv(TalosRobot, q0, v0)
@@ -61,7 +62,7 @@ index = 0
 pln_ctr = 0
 lag = 0
 
-# robot.start_recording("talos_walk.mp4")
+# robot.start_recording("talos_jump.mp4")
 
 for o in range(int(150*(plan_freq/sim_dt))):
 
@@ -107,7 +108,7 @@ for o in range(int(150*(plan_freq/sim_dt))):
     # if pln_ctr == 0:
     #     print("sim_t",sim_t)
     #     gg.plot(q, v, plot_force=True)
-    time.sleep(0.001)
+    time.sleep(0.0005)
     sim_t += sim_dt
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1

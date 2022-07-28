@@ -109,7 +109,7 @@ class AbstractGaitGen:
         # Set up constraints for Dynamics
         self.bx = 0.45
         self.by = 0.45
-        self.bz = 1.5
+        self.bz = 0.9
         self.fx_max = 15.0
         self.fy_max = 15.0
         self.fz_max = 100.0

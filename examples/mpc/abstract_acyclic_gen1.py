@@ -24,8 +24,8 @@ class TalosAcyclicGen:
         # --- Set up Dynamics ---
         self.m = pin.computeTotalMass(self.rmodel)
 
-        self.eff_names = ["leg_right_sole1_fix_joint", "leg_right_sole2_fix_joint", "leg_left_sole1_fix_joint", "leg_left_sole2_fix_joint"]
-        self.n_eff = 4
+        self.eff_names = ["leg_right_sole1_fix_joint", "leg_right_sole2_fix_joint", "leg_right_sole3_fix_joint", "leg_right_sole4_fix_joint", \
+                          "leg_left_sole1_fix_joint", "leg_left_sole2_fix_joint", "leg_left_sole3_fix_joint", "leg_left_sole4_fix_joint"]
         self.ee_frame_id = []
         for i in range(len(self.eff_names)):
             self.ee_frame_id.append(self.rmodel.getFrameId(self.eff_names[i]))
@@ -118,7 +118,7 @@ class TalosAcyclicGen:
                     dt = self.params.dt_arr[i]
             else:
                 dt = self.params.dt_arr[i]
-
+            
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
 
     def create_costs(self, q, v, t, make_cyclic = False):
@@ -306,10 +306,10 @@ class TalosAcyclicGen:
         pin.forwardKinematics(self.rmodel, self.rdata, q, np.zeros(self.rmodel.nv))
         pin.updateFramePlacements(self.rmodel, self.rdata)
         pin.framesForwardKinematics(self.rmodel, self.rdata, q)
-        # print(t)
-        # for i in range(len(self.eff_names)):
-        #     print(self.eff_names[i])
-        #     print(self.rdata.oMf[self.rmodel.getFrameId(self.eff_names[i])].translation)
+        print(t)
+        for i in range(len(self.eff_names)):
+            print(self.eff_names[i])
+            print(self.rdata.oMf[self.rmodel.getFrameId(self.eff_names[i])].translation)
 
         t1 = time.time()
         # q[0:2] -= self.q0[0:2] - [0.2,0]
@@ -418,11 +418,11 @@ class TalosAcyclicGen:
 
         # Plot End-Effector Forces
         if plot_force:
-            fig, ax_f = plt.subplots(self.n_eff, 1)
-            for n in range(self.n_eff):
-                ax_f[n].plot(optimized_forces[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
-                ax_f[n].plot(optimized_forces[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
-                ax_f[n].plot(optimized_forces[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
+            fig, ax_f = plt.subplots(len(self.eff_names), 1)
+            for n in range(len(self.eff_names)):
+                ax_f[n].plot(optimized_forces[3*n::3*len(self.eff_names)], label = self.eff_names[n] + " Fx")
+                ax_f[n].plot(optimized_forces[3*n+1::3*len(self.eff_names)], label = self.eff_names[n] + " Fy")
+                ax_f[n].plot(optimized_forces[3*n+2::3*len(self.eff_names)], label = self.eff_names[n] + " Fz")
                 ax_f[n].grid()
                 ax_f[n].legend()
 

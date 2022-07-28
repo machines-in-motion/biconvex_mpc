@@ -13,7 +13,7 @@ from mpc.abstract_acyclic_gen1 import TalosAcyclicGen
 from mpc.data_plotter import DataRecorder
 from robot_properties_talos.config import TalosConfig
 
-from motions.acyclic.talos_jump_rotate import plan
+from motions.acyclic.talos_walk import plan
 
 pin_robot = TalosConfig.buildRobotWrapper()
 rmodel = pin_robot.model
@@ -28,7 +28,8 @@ pin_robot = TalosConfig.buildRobotWrapper()
 q0 = np.array(TalosConfig.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
-f_arr = ["leg_right_sole1_fix_joint", "leg_right_sole2_fix_joint", "leg_left_sole1_fix_joint", "leg_left_sole2_fix_joint"]
+f_arr = ["leg_right_sole1_fix_joint", "leg_right_sole2_fix_joint", "leg_right_sole3_fix_joint", "leg_right_sole4_fix_joint", \
+         "leg_left_sole1_fix_joint", "leg_left_sole2_fix_joint", "leg_left_sole3_fix_joint", "leg_left_sole4_fix_joint"]
 
 motion_time = plan.T
 sim_t = 0.0

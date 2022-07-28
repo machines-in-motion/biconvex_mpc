@@ -13,7 +13,7 @@ from mpc.abstract_acyclic_gen1 import TalosAcyclicGen
 from mpc.data_plotter import DataRecorder
 from robot_properties_talos.config import TalosConfig
 
-from motions.acyclic.talos_walk import plan
+from motions.acyclic.talos_jump import plan
 
 pin_robot = TalosConfig.buildRobotWrapper()
 rmodel = pin_robot.model
@@ -24,7 +24,8 @@ q0 = np.array(TalosConfig.initial_configuration)
 v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 print("\n\n\n com:",pin.centerOfMass(rmodel, rdata, q0, v0))
-f_arr = ["leg_right_sole1_fix_joint", "leg_right_sole2_fix_joint", "leg_left_sole1_fix_joint", "leg_left_sole2_fix_joint"]
+f_arr = ["leg_right_sole1_fix_joint", "leg_right_sole2_fix_joint", "leg_right_sole3_fix_joint", "leg_right_sole4_fix_joint", \
+         "leg_left_sole1_fix_joint", "leg_left_sole2_fix_joint", "leg_left_sole3_fix_joint", "leg_left_sole4_fix_joint"]
 
 robot = PyBulletEnv(TalosRobot, q0, v0)
 robot_id_ctrl = InverseDynamicsController(pin_robot, f_arr)
@@ -59,9 +60,9 @@ for o in range(10000):
         index = 0
         dr.record_plan(xs, us, f, sim_t)
 
-        # if sim_t >= plot_time:
-        #     print(mg.cnt_plan[0:3])
-        #     # mg.plot(q, v, plot_force=True)
+
+        print(sim_t)
+        mg.plot(q, v, plot_force=True)
         #     mg.save_plan("hifive")
         #     assert False
 
@@ -80,5 +81,5 @@ for o in range(10000):
     pln_ctr = int((pln_ctr + 1)%(mg.get_plan_freq(sim_t)/sim_dt))
     index += 1
 
-dr.plot_plans()
+# dr.plot_plans()
 # dr.plot(False)

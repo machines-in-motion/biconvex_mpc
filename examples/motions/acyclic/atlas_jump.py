@@ -95,7 +95,7 @@ state_wt_1 = np.array([1e-2, 1e-2, 1e2 ] + [5.0, 5.0, 5.0] + [1e1] * (robot.mode
 
 plan.state_reg = [np.hstack((x_reg1, [0, plan.T]))]
 plan.state_wt = [np.hstack((state_wt_1, [0, plan.T]))]
-plan.state_scale = [[1e-3, 0, plan.T]]
+plan.state_scale = [[8e-3, 0, plan.T]]
 
 ctrl_wt = [0, 0, 1] + [1, 1, 1] + [.1] *(rmodel.nv - 6)
 plan.ctrl_wt = [np.hstack((ctrl_wt, [0, plan.T]))]
@@ -103,5 +103,5 @@ plan.ctrl_reg = [np.hstack((np.zeros(rmodel.nv), [0, plan.T]))]
 plan.ctrl_scale = [[1e-4, 0, plan.T]]
 
 # controller details
-plan.kp = [[100, 0., plan.T]]
-plan.kd = [[5., 0., plan.T]]
+plan.kp = [[20., 0., plan.T]]
+plan.kd = [[1., 0., plan.T]]

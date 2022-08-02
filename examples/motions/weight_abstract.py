@@ -32,7 +32,7 @@ class BiconvexMotionParams:
         ## Inverse Kinematic valuess
 
         self.swing_wt = np.zeros(2)
-        self.cent_wt = np.zeros(2)
+        self.cent_wt = [np.zeros(3), np.zeros(6)]
 
         self.state_wt = None #State Regularization
         self.ctrl_wt = None #Control Regularization

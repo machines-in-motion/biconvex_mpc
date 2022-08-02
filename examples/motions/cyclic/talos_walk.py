@@ -34,7 +34,7 @@ walk.state_wt = np.array([1e0, 1e4, 1e4] + [1e3] * 3 + \
 walk.ctrl_wt = [0, 0, 1] + [5e2, 5e2, 5e2] + [5e2] *(rmodel.nv - 6)
 
 walk.swing_wt = [1e4, 1e3]
-walk.cent_wt = [1e+6, 1e-1]
+walk.cent_wt = [3*[1e+6,], 6*[1e-1,]]
 walk.step_ht = 0.05
 walk.nom_ht = 0.9
 walk.reg_wt = [5e-2, 1e-5]

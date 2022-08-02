@@ -34,7 +34,7 @@ jump.state_wt = np.array([1e0, 1e0, 1e0] + [1e3] * 3 + \
 jump.ctrl_wt = [0, 0, 1] + [5e2, 5e2, 5e2] + [5e2] *(rmodel.nv - 6)
 
 jump.swing_wt = [1e5, 1e4]
-jump.cent_wt = [1e+8, 1e-1]
+jump.cent_wt = [3*[1e+8,], 6*[1e-1,]]
 jump.step_ht = 0.15
 jump.nom_ht = 0.65
 jump.reg_wt = [5e-2, 1e-5]

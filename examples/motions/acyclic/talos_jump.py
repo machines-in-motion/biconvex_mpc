@@ -82,7 +82,7 @@ plan.swing_wt = [[[0., 0., -MC_init_out_y,  0.5, stance_time+.5*flight_time, sta
                   [0., 0.,  MC_init_out_y,  0.5, stance_time+.5*flight_time, stance_time+.6*flight_time],
                   [0., 0.,  MC_init_in_y ,  0.5, stance_time+.5*flight_time, stance_time+.6*flight_time],
                   [0., 0.,  MC_init_in_y ,  0.5, stance_time+.5*flight_time, stance_time+.6*flight_time]]]
-plan.cent_wt = [100., .04]
+plan.cent_wt = [3*[100.,], 6*[.04,]]
 plan.cnt_wt = 5e3
 
 x_reg1 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])

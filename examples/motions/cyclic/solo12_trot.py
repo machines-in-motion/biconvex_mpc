@@ -24,8 +24,8 @@ trot.state_wt = np.array([0., 0, 10] + [1000, 1000, 1000] + [1.0] * (pin_robot.m
 
 trot.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
 
-trot.swing_wt = [1e4, 1e4]
-trot.cent_wt = [0*5e+1, 5e+2]
+trot.swing_wt = [3*[1e4,], 3*[1e4,]]
+trot.cent_wt = [3*[0*5e+1,], 6*[5e+2,]]
 trot.step_ht = 0.05
 trot.nom_ht = 0.2
 trot.reg_wt = [5e-2, 1e-5]
@@ -55,7 +55,7 @@ trot_turn.state_wt = np.array([0., 0, 10] + [1000, 1000, 10] + [1.0] * (pin_robo
 
 trot_turn.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
 
-trot_turn.swing_wt = [1e4, 1e4]
+trot_turn.swing_wt = [3*[1e4,], 3*[1e4,]]
 trot_turn.cent_wt = [0*5e+1, 5e+2]
 trot_turn.step_ht = 0.05
 trot_turn.nom_ht = 0.2

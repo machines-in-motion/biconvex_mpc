@@ -36,6 +36,30 @@ namespace ik{
         tcost_model_.get()->addCost(cost_name, goal_tracking_cost, wt);
     };
 
+    void InverseKinematics::add_position_tracking_task_single(pinocchio::FrameIndex fid, Eigen::MatrixXd traj,
+        Eigen::VectorXd weight, std::string cost_name, int time_step){
+            boost::shared_ptr<crocoddyl::ActivationModelAbstract> goal_activation =
+                                        boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(weight);
+            boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost =
+                    boost::make_shared<crocoddyl::CostModelResidual>(state_, 
+                    goal_activation,
+                    boost::make_shared<crocoddyl::ResidualModelFrameTranslation>(state_, fid, traj));
+            rcost_arr_[time_step].get()->addCost(cost_name, goal_tracking_cost, 1.0);
+    };
+
+    void InverseKinematics::add_terminal_position_tracking_task(
+                    pinocchio::FrameIndex fid, Eigen::MatrixXd traj, 
+                                Eigen::VectorXd weight, std::string cost_name){
+                            
+        boost::shared_ptr<crocoddyl::ActivationModelAbstract> goal_activation =
+                                        boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(weight);
+        boost::shared_ptr<crocoddyl::CostModelAbstract> goal_tracking_cost =
+                boost::make_shared<crocoddyl::CostModelResidual>(state_, 
+                goal_activation,
+                boost::make_shared<crocoddyl::ResidualModelFrameTranslation>(state_, fid, traj));
+        tcost_model_.get()->addCost(cost_name, goal_tracking_cost, 1.0);
+    };
+
     void InverseKinematics::add_velocity_tracking_task(
                     pinocchio::FrameIndex fid, int st, int et, 
                     Eigen::MatrixXd traj, double wt, std::string cost_name){

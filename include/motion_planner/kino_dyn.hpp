@@ -22,8 +22,8 @@ namespace motion_planner{
             void set_warm_starts();
             void optimize(Eigen::VectorXd q, Eigen::VectorXd v, int dyn_iters, int kino_dyn_iters);
 
-            void set_com_tracking_weight(double wt_com){wt_com_ = wt_com;};
-            void set_mom_tracking_weight(double wt_mom){wt_mom_ = wt_mom;};
+            void set_com_tracking_weight(Eigen::VectorXd wt_com){wt_com_ = wt_com;};
+            void set_mom_tracking_weight(Eigen::VectorXd wt_mom){wt_mom_ = wt_mom;};
             void compute_solve_times(){profile_code = 1;};
             Eigen::VectorXd return_solve_times(){return solve_times;};
 
@@ -55,8 +55,8 @@ namespace motion_planner{
             Eigen::MatrixXd ik_com_opt;
             Eigen::MatrixXd ik_mom_opt;
 
-            double wt_com_ = 0; // com tracking weight
-            double wt_mom_ = 0; // momentum tracking weight
+            Eigen::VectorXd wt_com_; // com tracking weight
+            Eigen::VectorXd wt_mom_; // momentum tracking weight
 
             // profiling the code
             bool profile_code = 0;

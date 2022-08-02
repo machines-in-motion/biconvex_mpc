@@ -66,13 +66,22 @@ namespace ik{
             void add_terminal_position_tracking_task(pinocchio::FrameIndex fid, Eigen::MatrixXd traj, double wt, 
                                                     std::string cost_name);
 
+            void add_position_tracking_task_single(pinocchio::FrameIndex fid, Eigen::MatrixXd traj,
+                                                    Eigen::VectorXd weight, std::string cost_name, int time_step);
+            
+            void add_terminal_position_tracking_task(pinocchio::FrameIndex fid, Eigen::MatrixXd traj, \
+                                                    Eigen::VectorXd weight, std::string cost_name);
+
+
             void add_velocity_tracking_task(pinocchio::FrameIndex fid, int sn, int en, 
                                                 Eigen::MatrixXd traj, double wt, std::string cost_name);
 
             void add_com_position_tracking_task(int sn, int en, Eigen::MatrixXd traj, 
-                                                double wt, std::string cost_name, bool isTerminal = false);
+                                                Eigen::VectorXd weight, std::string cost_name, bool isTerminal = false);
+
             void add_centroidal_momentum_tracking_task(int sn, int en, Eigen::MatrixXd traj, 
-                                                double wt, std::string cost_name, bool isTerminal = false);
+                                                        Eigen::VectorXd weight, \
+                                                        std::string cost_name, bool isTerminal = false);
 
             void add_state_regularization_cost(int sn, int en, double wt, 
                                         std::string cost_name, Eigen::VectorXd stateWeights, 

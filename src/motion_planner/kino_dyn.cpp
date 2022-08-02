@@ -34,6 +34,12 @@ namespace motion_planner{
 
         solve_times.resize(3);
         solve_times.setZero(3);
+
+        wt_com_.resize(6);
+        wt_com_.setZero(6);
+
+        wt_mom_.resize(6);
+        wt_mom_.setZero(6);
     };
 
     void KinoDynMP::optimize(Eigen::VectorXd q, Eigen::VectorXd v, int dyn_iters, int kino_dyn_iters){

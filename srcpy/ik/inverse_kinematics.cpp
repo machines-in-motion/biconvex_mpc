@@ -28,8 +28,14 @@ PYBIND11_MODULE(inverse_kinematics_cpp, m)
 
     // cost
     ik.def("add_position_tracking_task", &ik::InverseKinematics::add_position_tracking_task);
-    ik.def("add_position_tracking_task_single", &ik::InverseKinematics::add_position_tracking_task_single);
-    ik.def("add_terminal_position_tracking_task", &ik::InverseKinematics::add_terminal_position_tracking_task);
+    ik.def("add_position_tracking_task_single", py::overload_cast<pinocchio::FrameIndex, \
+                            Eigen::MatrixXd, double, std::string, int>(&ik::InverseKinematics::add_position_tracking_task_single));
+    ik.def("add_position_tracking_task_single", py::overload_cast<pinocchio::FrameIndex, \
+                            Eigen::MatrixXd, Eigen::VectorXd, std::string, int>(&ik::InverseKinematics::add_position_tracking_task_single));
+    ik.def("add_terminal_position_tracking_task",  py::overload_cast<pinocchio::FrameIndex, \
+                            Eigen::MatrixXd, double, std::string>(&ik::InverseKinematics::add_terminal_position_tracking_task));
+    ik.def("add_terminal_position_tracking_task",  py::overload_cast<pinocchio::FrameIndex, \
+                            Eigen::MatrixXd, Eigen::VectorXd, std::string>(&ik::InverseKinematics::add_terminal_position_tracking_task));
     ik.def("add_velocity_tracking_task", &ik::InverseKinematics::add_velocity_tracking_task);
     ik.def("add_com_position_tracking_task", &ik::InverseKinematics::add_com_position_tracking_task);
     ik.def("add_centroidal_momentum_tracking_task", &ik::InverseKinematics::add_centroidal_momentum_tracking_task);

@@ -30,7 +30,7 @@ still.state_wt = np.array([1e4, 1e4, 1e4] + [1e5] * 3 + [1e5] * (pin_robot.model
 still.ctrl_wt = [0, 0, 1] + [1, 1, 1] + [5.0] *(rmodel.nv - 6)
 
 still.swing_wt = [1e5, 2e5]
-still.cent_wt = [5e+0, 1e+1]
+still.cent_wt = [3*[5e+0,], 6*[1e+1,]]
 still.step_ht = 0.
 still.nom_ht = 0.9
 still.reg_wt = [5e-2, 1e-5]

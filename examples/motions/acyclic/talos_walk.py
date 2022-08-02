@@ -110,7 +110,7 @@ plan.swing_wt = [[[10., step_length/2, -MC_init_out_y,  0.2, DSP_time+.6*SSP_tim
                   [0.1, step_length/2,  MC_init_in_y, 0.2, 2*DSP_time+1.4*SSP_time, 2*DSP_time+1.5*SSP_time],
                   [0.1, step_length/2,  MC_init_out_y, 0.2, 2*DSP_time+1.4*SSP_time, 2*DSP_time+1.5*SSP_time],
                   [0.1, step_length/2,  MC_init_out_y, 0.2, 2*DSP_time+1.4*SSP_time, 2*DSP_time+1.5*SSP_time]]]
-plan.cent_wt = [100., .05]
+plan.cent_wt = [3*[100.,], 6*[.05,]]
 plan.cnt_wt = 5e3
 
 x_reg1 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])

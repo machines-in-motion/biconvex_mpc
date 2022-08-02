@@ -71,7 +71,7 @@ plan.bounds = [ [-0.25, -0.25, 0.1, 0.25, 0.25, 0.25, 0, st],
 
 # ik optimization params
 
-plan.cent_wt = [1e1, 1e2]  # CoM, Momentum
+plan.cent_wt = [3*[1e1,], 6*[1e2,]]  # CoM, Momentum
 plan.cnt_wt = 1e4  # End-Effector Contact Weight
 
 plan.swing_wt = [[[0e2, 0.55,   0.14695,  0.7, st + 0.4*rear_time, st + 0.5*rear_time],

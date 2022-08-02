@@ -64,7 +64,7 @@ plan.bounds = [[-0.25, -0.25, 0.1, 0.25, 0.25, 0.25, 0, st],
 
 # ik optimization params
 
-plan.cent_wt = [5e+1, 1e3]
+plan.cent_wt = [3*[5e+1,], 6*[1e3,]]
 plan.cnt_wt = 5e4
 
 plan.swing_wt = [[[1e2, 0.3946,   0.14695,  0.0, st + 0.25*flight_time, st + 0.5*flight_time],

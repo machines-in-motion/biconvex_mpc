@@ -128,7 +128,7 @@ class SoloMpcGaitGen:
         self.kd = KinoDynMP(self.r_urdf, self.m, len(self.eff_names), self.horizon, self.ik_horizon)
         self.kd.set_com_tracking_weight(self.params.cent_wt[0])
         self.kd.set_mom_tracking_weight(self.params.cent_wt[1])
-        
+            
         self.ik = self.kd.return_ik()
         self.mp = self.kd.return_dyn()
 

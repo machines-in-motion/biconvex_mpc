@@ -25,7 +25,7 @@ bound.state_wt = np.array([0., 0, 1e3] + [10, 10, 10] + [50.0] * (pin_robot.mode
 bound.ctrl_wt = [0.5, 0.5, 0.5] + [1, 1, 1] + [0.5] *(pin_robot.model.nv - 6)
 # 
 bound.swing_wt = [1e4, 1e4]
-bound.cent_wt = [5e+1, 5e+2]
+bound.cent_wt = [3*[5e+1,], 6*[5e+2,]]
 bound.step_ht = 0.07
 bound.reg_wt = [7e-3, 7e-5]
 # 

@@ -25,7 +25,7 @@ jump.state_wt = np.array([0., 0, 10] + [1000] * 3 + [1.0] * (pin_robot.model.nv 
 jump.ctrl_wt = [0, 0, 1000] + [5e2, 5e2, 5e2] + [1.0] *(pin_robot.model.nv - 6)
 
 jump.swing_wt = [1e4, 1e4]
-jump.cent_wt = [0*5e+1, 5e+2]
+jump.cent_wt = [3*[0*5e+1,], 6*[5e+2,]]
 jump.step_ht = 0.05
 jump.nom_ht = 0.25
 jump.reg_wt = [5e-2, 1e-5]

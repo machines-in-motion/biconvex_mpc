@@ -7,7 +7,7 @@ import numpy as np
 import pinocchio as pin
 
 from robot_properties_bolt.bolt_humanoid_wrapper import BoltHumanoidRobot, BoltHumanoidConfig
-from mpc.abstract_cyclic_gen import BoltHumanoidMpcGaitGen
+from mpc.abstract_cyclic_gen_bolt_humanoid import BoltHumanoidMpcGaitGen
 from motions.cyclic.bolt_humanoid_walk import walk
 from motions.cyclic.bolt_humanoid_jump import jump
 
@@ -43,7 +43,7 @@ index = 0
 pln_ctr = 0
 
 ## Motion
-gait_params = walk
+gait_params = jump
 lag = int(update_time/sim_dt)
 gg = BoltHumanoidMpcGaitGen(pin_robot, urdf_path, x0, plan_freq, q0, None)
 

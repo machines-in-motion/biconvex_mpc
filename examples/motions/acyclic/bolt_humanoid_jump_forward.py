@@ -28,7 +28,7 @@ plan.T = 2*stance_time+flight_time # the total duration of the gait
 dt = 2e-2
 plan.n_col = int(plan.T/dt)
 plan.dt_arr = plan.n_col*[dt,]
-plan.plan_freq = [[plan.T, 0., plan.T]]
+plan.plan_freq = [[.1, 0., plan.T]]
 
 plan.cnt_plan = [[[ 1.,      0.,   0.1235,    0., 0.,  stance_time],
                   [ 1.,      0.,  -0.1235,    0., 0.,  stance_time],
@@ -40,8 +40,8 @@ plan.cnt_plan = [[[ 1.,      0.,   0.1235,    0., 0.,  stance_time],
                   [ 0.,      0.23,   0.11,  0.49, stance_time, stance_time + flight_time],
                   [ 0.,      0.23,  -0.11,  0.49, stance_time, stance_time + flight_time]],
 
-                 [[ 1.,      0.,   0.1235,   0., stance_time + flight_time, plan.T],
-                  [ 1.,      0.,  -0.1235,   0., stance_time + flight_time, plan.T],
+                 [[ 1.,      0.1,   0.1235,   0., stance_time + flight_time, plan.T],
+                  [ 1.,      0.1,  -0.1235,   0., stance_time + flight_time, plan.T],
                   [ 0.,      0.23,   0.11, 0.49, stance_time + flight_time, plan.T],
                   [ 0.,      0.23,  -0.11, 0.49, stance_time + flight_time, plan.T]]]
 
@@ -54,9 +54,9 @@ plan.rho = 1e+4
 
 plan.X_nom = [[0., 0, 0.38, 0, 0, 0, 0, 0.00, 0.0, 0.0, stance_time],
               [0., 0, 0.38, 0, 0, 0, 0, 0.0, 0., stance_time, stance_time+flight_time],
-              [0., 0, 0.38, 0, 0, 0, 0, 0.0, 0., stance_time+flight_time, plan.T]]
+              [0.1, 0, 0.38, 0, 0, 0, 0, 0.0, 0., stance_time+flight_time, plan.T]]
 
-plan.X_ter = [0., 0, 0.38, 0, 0, 0, 0, 0.0, 0.0]
+plan.X_ter = [0.1, 0, 0.38, 0, 0, 0, 0, 0.0, 0.0]
 
 plan.bounds = [[-0.5, -0.5, -.5, 0.5, 0.5, 1., 0., plan.T]]
 

@@ -9,13 +9,12 @@ import pinocchio as pin
 from robot_properties_bolt.bolt_humanoid_wrapper import BoltHumanoidRobot, BoltHumanoidConfig
 from controllers.robot_id_controller import InverseDynamicsController
 from envs.pybullet_env import PyBulletEnv
-from mpc.abstract_acyclic_gen import BoltHumanoidAcyclicGen
+from mpc.abstract_acyclic_gen_bolt_humanoid import BoltHumanoidAcyclicGen
 from mpc.data_plotter import DataRecorder
 
-from motions.acyclic.bolt_humanoid_stand import plan
+from motions.acyclic.bolt_humanoid_jump import plan
 
 pin_robot = BoltHumanoidConfig.buildRobotWrapper()
-rmodel = pin_robot.model
 urdf = BoltHumanoidConfig.urdf_path
 
 viz = pin.visualize.MeshcatVisualizer(pin_robot.model, pin_robot.collision_model, pin_robot.visual_model)

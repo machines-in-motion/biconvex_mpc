@@ -8,11 +8,11 @@ namespace ik{
     {
 
         pinocchio::urdf::buildModel(rmodel_path,pinocchio::JointModelFreeFlyer(), rmodel_) ;
-        // temporaryily created 
+        // temporaryily created
         pinocchio::Data rdata_tmp(rmodel_);
         rdata_ = rdata_tmp;
         m_ = pinocchio::computeTotalMass(rmodel_);
-    
+
         state_ = boost::make_shared<crocoddyl::StateMultibody>(boost::make_shared<pinocchio::Model>(rmodel_));
 
         // actuation_ = boost::ZZZmake_shared<crocoddyl::ActuationModelFloatingBase>(state_);
@@ -25,10 +25,10 @@ namespace ik{
         }
 
         // terminal cost model
-        tcost_model_ = boost::make_shared<crocoddyl::CostModelSum>(state_);  
+        tcost_model_ = boost::make_shared<crocoddyl::CostModelSum>(state_);
         rint_arr_ = std::vector< boost::shared_ptr<crocoddyl::ActionModelAbstract>>(n_col_);
 
-        // 
+        //
         ik_com_opt_.resize(n_col+1, 3);
         ik_com_opt_.setZero();
         ik_mom_opt_.resize(n_col+1, 6);
@@ -52,7 +52,7 @@ namespace ik{
     };
 
     void InverseKinematics::optimize(const Eigen::VectorXd& x0){
-        
+
         problem_ = boost::make_shared<crocoddyl::ShootingProblem>(x0, rint_arr_, tint_model_);
         ddp_ = boost::make_shared<crocoddyl::SolverDDP>(problem_);
         ddp_->solve();
@@ -66,7 +66,7 @@ namespace ik{
         }
 
         // terminal cost model
-        tcost_model_ = boost::make_shared<crocoddyl::CostModelSum>(state_);  
+        tcost_model_ = boost::make_shared<crocoddyl::CostModelSum>(state_);
 
     };
 
@@ -77,7 +77,7 @@ namespace ik{
             pinocchio::computeCentroidalMomentum(rmodel_, rdata_, xs_[i].head(rmodel_.nq), xs_[i].tail(rmodel_.nv));
             opt_com.row(i) = rdata_.com[0];
             opt_mom.row(i) = rdata_.hg.toVector();
-            opt_mom(i,0) /= m_; 
+            opt_mom(i,0) /= m_;
             opt_mom(i,1) /= m_;
             opt_mom(i,2) /= m_;
         }

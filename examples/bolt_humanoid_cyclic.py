@@ -7,7 +7,7 @@ import numpy as np
 import pinocchio as pin
 
 from robot_properties_bolt.bolt_humanoid_wrapper import BoltHumanoidRobot, BoltHumanoidConfig
-from mpc.abstract_cyclic_gen import BoltHumanoidMpcGaitGen
+from mpc.abstract_cyclic_gen_bolt_humanoid import BoltHumanoidMpcGaitGen
 from motions.cyclic.bolt_humanoid_walk import walk
 from motions.cyclic.bolt_humanoid_jump import jump
 
@@ -26,7 +26,7 @@ v0 = pin.utils.zero(pin_robot.model.nv)
 x0 = np.concatenate([q0, pin.utils.zero(pin_robot.model.nv)])
 f_arr = ["FL_ANKLE", "FR_ANKLE", "L_WRIST", "R_WRIST"]
 
-v_des = np.array([-0.0, 0.0, 0.0])
+v_des = np.array([-0.025, 0.0, 0.0])
 w_des = 0.0
 
 plan_freq = 0.05 # sec
@@ -38,7 +38,7 @@ index = 0
 pln_ctr = 0
 
 ## Motion
-gait_params = walk
+gait_params = jump
 lag = int(update_time/sim_dt)
 gg = BoltHumanoidMpcGaitGen(pin_robot, urdf_path, x0, plan_freq, q0, None)
 
@@ -52,7 +52,7 @@ plot_time = 0 #Time to start plotting
 
 solve_times = []
 
-for o in range(500):
+for o in range(4000):
     # this bit has to be put in shared memory
     q, v = robot.get_state()
 
@@ -69,12 +69,15 @@ for o in range(500):
 
         # Plot if necessary
         # if sim_t >= .0:
-        gg.plot(q, v)
+        # gg.plot(q, v)
         #     gg.save_plan("jump")
 
         pr_et = time.time()
         solve_times.append(pr_et - pr_et)
 
+    if pln_ctr == 0 or sim_t == 0:
+        # gg.plot_plan(q, v)
+        gg.plot_feet_plan(q,v)
     # first loop assume that trajectory is planned
     if o < int(plan_freq/sim_dt) - 1:
         xs = xs_plan
@@ -100,5 +103,5 @@ for o in range(500):
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
 # gg.plot(q, v)
-np.savez("./jump_" + str(gg.horizon))
+# np.savez("./jump_" + str(gg.horizon))
 print("done")

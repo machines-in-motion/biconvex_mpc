@@ -9,13 +9,14 @@ import pinocchio as pin
 from robot_properties_bolt.bolt_humanoid_wrapper import BoltHumanoidRobot, BoltHumanoidConfig
 from controllers.robot_id_controller import InverseDynamicsController
 from envs.pybullet_env import PyBulletEnv
-from mpc.abstract_acyclic_gen import BoltHumanoidAcyclicGen
+from mpc.abstract_acyclic_gen_bolt_humanoid import BoltHumanoidAcyclicGen
 from mpc.data_plotter import DataRecorder
 
-from motions.acyclic.bolt_humanoid_stand import plan
+from motions.acyclic.bolt_humanoid_jump import plan
 
 pin_robot = BoltHumanoidConfig.buildRobotWrapper()
 rmodel = pin_robot.model
+rdata = pin_robot.data
 urdf = BoltHumanoidConfig.urdf_path
 
 q0 = np.array(BoltHumanoidConfig.initial_configuration)
@@ -40,14 +41,15 @@ mg.update_motion_params(plan, q, sim_t)
 
 plot_time = np.inf
 
-for o in range(500):
-    # print(o)
+for o in range(10000):
+
     contact_configuration = robot.get_current_contacts()
     q, v = robot.get_state()
     kp, kd = mg.get_gains(sim_t)
     robot_id_ctrl.set_gains(kp, kd)
 
     if pln_ctr == 0 or sim_t == 0:
+
         xs, us, f = mg.optimize(q, v, sim_t)
         xs = xs[lag:]
         us = us[lag:]
@@ -55,28 +57,28 @@ for o in range(500):
         index = 0
         dr.record_plan(xs, us, f, sim_t)
 
-        if sim_t >= plot_time:
-            print(mg.cnt_plan[0:3])
-            # mg.plot(q, v, plot_force=True)
-            mg.save_plan("hifive")
-            assert False
+
+        print(sim_t)
+        mg.plot(q, v, plot_force=True)
+        mg.plot_feet_plan(q,v)
+        #     mg.save_plan("hifive")
+        #     assert False
 
     # controller
     q_des = xs[index][:pin_robot.model.nq].copy()
     dq_des = xs[index][pin_robot.model.nq:].copy()
-    # print("u:", us[index])
-    # print("f:", f[index])
     tau = robot_id_ctrl.id_joint_torques(q, v, q_des, dq_des, us[index], f[index], contact_configuration)
+    # tau = np.zeros(len(v[6:]))
     robot.send_joint_command(tau)
 
     # plotting
     # grf = robot.get_ground_reaction_forces()
-    dr.record_data(q, v, tau, f[index], q_des, dq_des, us[index], f[index])
+    dr.record_data(q, v, tau,  f[index], q_des, dq_des, us[index], f[index])
     time.sleep(0.001)
 
     sim_t += np.round(sim_dt,3)
     pln_ctr = int((pln_ctr + 1)%(mg.get_plan_freq(sim_t)/sim_dt))
     index += 1
 
-dr.plot_plans()
-dr.plot(False)
+# dr.plot_plans()
+# dr.plot(False)

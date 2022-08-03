@@ -1,6 +1,6 @@
-## This file creates the costs and contact planner for the kino-dyn planner
-## Author : Avadesh Meduri, Paarth Shah
-## Date : 23/09/2021
+## This file creates the costs and contact planner for the kino-dyn planner for bolt humanoid
+## Author : Majid Khadiv
+## Date : 29/07/2022
 
 import time
 import numpy as np
@@ -10,7 +10,7 @@ from biconvex_mpc_cpp import KinoDynMP
 
 from matplotlib import pyplot as plt
 
-class SoloAcyclicGen:
+class BoltHumanoidAcyclicGen:
 
     def __init__(self, robot, r_urdf):
         """
@@ -24,8 +24,7 @@ class SoloAcyclicGen:
         # --- Set up Dynamics ---
         self.m = pin.computeTotalMass(self.rmodel)
 
-        self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
-        len(self.eff_names) = 4
+        self.eff_names = ["FL_ANKLE", "FR_ANKLE", "L_WRIST", "R_WRIST"]
         self.ee_frame_id = []
         for i in range(len(self.eff_names)):
             self.ee_frame_id.append(self.rmodel.getFrameId(self.eff_names[i]))
@@ -162,7 +161,6 @@ class SoloAcyclicGen:
                     pass
 
             i += 1
-
         self.bounds = np.zeros((self.horizon, 6))
         ft = t - self.params.dt_arr[0] - self.t0
         i = 0
@@ -182,7 +180,6 @@ class SoloAcyclicGen:
                     pass
 
             i += 1
-
         X_nom[0:9] = X_init
 
         self.mp.create_bound_constraints(self.bounds, self.fx_max, self.fy_max, self.fz_max)
@@ -306,7 +303,11 @@ class SoloAcyclicGen:
         pin.forwardKinematics(self.rmodel, self.rdata, q, np.zeros(self.rmodel.nv))
         pin.updateFramePlacements(self.rmodel, self.rdata)
         pin.framesForwardKinematics(self.rmodel, self.rdata, q)
-
+        com_init = pin.centerOfMass(self.rmodel, self.rdata, q, np.zeros(self.rmodel.nv))
+        print("com:", com_init)
+        for i in range(len(self.eff_names)):
+            print(self.eff_names[i])
+            print(self.rdata.oMf[self.rmodel.getFrameId(self.eff_names[i])].translation)
         t1 = time.time()
         # q[0:2] -= self.q0[0:2] - [0.2,0]
 
@@ -385,6 +386,43 @@ class SoloAcyclicGen:
         print("finished saving ...")
         assert False
 
+    def plot_feet_plan(self, q, v):
+        print("base_x",q)
+        print("FL_HFE", self.rdata.oMf[self.rmodel.getFrameId("FL_HFE")].translation)
+        print("base_x_pin:",self.rdata.oMf[self.rmodel.getFrameId("base_link")].translation[0])
+        xs = self.ik.get_xs()
+        # xs[index][:pin_robot.model.nq]
+        foot_trajectory = np.zeros((3 * len(self.eff_names), self.ik_horizon), float)
+        des_contact = np.zeros((3 * len(self.eff_names), self.ik_horizon), float)
+        # print(foot_trajectory)
+        for i in range(self.ik_horizon):
+            q = xs[i][:self.rmodel.nq]
+            v = xs[i][self.rmodel.nq:]
+            pin.forwardKinematics(self.rmodel, self.rdata, q, v)
+            pin.updateFramePlacements(self.rmodel, self.rdata)
+            for j in range(len(self.eff_names)):
+                for k in range(3):
+                    foot_trajectory[3*j+k][i] = self.rdata.oMf[self.ee_frame_id[j]].translation[k]
+                    des_contact[3*j+k][i] = self.cnt_plan[i][j][k+1]
+
+
+
+        fig, ax = plt.subplots(3,1)
+        for j in range(len(self.eff_names)-2):
+            ax[0].plot(foot_trajectory[3*j][:], label=str(self.eff_names[j]))
+            ax[0].plot(des_contact[3*j][:], 'o', label="des_"+str(self.eff_names[j]))
+            ax[1].plot(foot_trajectory[3*j+1][:])
+            ax[1].plot(des_contact[3*j+1][:], 'o')
+            ax[2].plot(foot_trajectory[3*j+2][:])
+            ax[2].plot(des_contact[3*j+2][:], 'o')
+        # ax[0].plot(v[2], 'o', label="Current base velocity x")
+        # ax[0].plot(.65*v[2]*self.params.gait_period*self.params.stance_percent[0], '*', label="raibert step x")
+        ax[0].legend()
+        ax[0].set(ylabel='x')
+        ax[1].set(ylabel='y')
+        ax[2].set(xlabel='node', ylabel='z')
+        plt.show()
+
     def plot(self, q, v, plot_force = True):
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()
@@ -448,22 +486,5 @@ class SoloAcyclicGen:
         ax_m[4].legend()
         ax_m[5].grid()
         ax_m[5].legend()
-
-        # Plot Linear Momentum
-        fig, ax_am = plt.subplots(3,1)
-        ax_am[0].plot(mom_opt[:, 3], label = "Dynamics Angular Momentum around X")
-        ax_am[0].plot(ik_mom_opt[:, 3], label="Kinematic Angular Momentum around X")
-        ax_am[1].plot(mom_opt[:, 4], label = "Dynamics Angular Momentum around Y")
-        ax_am[1].plot(ik_mom_opt[:, 4], label="Kinematic Angular Momentum around Y")
-        ax_am[2].plot(mom_opt[:, 5], label = "Dynamics Angular Momentum around Z")
-        ax_am[2].plot(ik_mom_opt[:, 5], label="Kinematic Angular Momentum around Z")
-        ax_am[0].grid()
-        ax_am[0].legend()
-
-        ax_am[1].grid()
-        ax_am[1].legend()
-
-        ax_am[2].grid()
-        ax_am[2].legend()
 
         plt.show()

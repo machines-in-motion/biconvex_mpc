@@ -1,7 +1,3 @@
-## This file creates the contact plan for different gaits in an MPC fashion
-## Author : Avadesh Meduri & Paarth Shah
-## Date : 6/05/2021
-
 import time
 import numpy as np
 import pinocchio as pin
@@ -10,7 +6,8 @@ from biconvex_mpc_cpp import BiconvexMP, KinoDynMP
 from gait_planner_cpp import GaitPlanner
 from matplotlib import pyplot as plt
 
-class SoloMpcGaitGen:
+
+class BoltHumanoidMpcGaitGen:
 
     def __init__(self, robot, r_urdf, x_reg, planning_time, q0, height_map = None):
         """
@@ -26,15 +23,14 @@ class SoloMpcGaitGen:
         self.rmodel = robot.model
         self.rdata = robot.data
         self.r_urdf = r_urdf
-        self.foot_size = 0.018
+        self.foot_size = 0.033
 
         #TODO: DEPRECATE THIS...
         #Use for a fixed frequency planning time
         self.planning_time = planning_time
 
-        self.eff_names = ["FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"]
-        self.hip_names = ["FL_HFE", "FR_HFE", "HL_HFE", "HR_HFE"]
-        self.n_eff = 4
+        self.eff_names = ["FL_ANKLE", "FR_ANKLE", "L_WRIST", "R_WRIST"]
+        self.hip_names = ["FL_HFE", "FR_HFE", "L_SFE", "R_SFE"]
 
         pin.forwardKinematics(self.rmodel, self.rdata, q0, np.zeros(self.rmodel.nv))
         pin.updateFramePlacements(self.rmodel, self.rdata)
@@ -54,17 +50,12 @@ class SoloMpcGaitGen:
             self.offsets[i] = np.round(self.offsets[i], 3)
 
         # Contact-planning offsets
-        self.offsets[0][0] -= 0.00 #Front Left_X
-        self.offsets[0][1] += 0.04 #Front Left_Y
+        self.offsets[0][0] -= 0.00 #Left_X
+        self.offsets[0][1] += 0.06 #Left_Y
 
-        self.offsets[1][0] -= 0.00 #Front Right_X
-        self.offsets[1][1] -= 0.04 #Front Right_Y
+        self.offsets[1][0] -= 0.00 #Right_X
+        self.offsets[1][1] -= 0.06 #Right_Y
 
-        self.offsets[2][0] += 0.00 #Hind Left_X
-        self.offsets[2][1] += 0.04 #Hind Left_Y
-
-        self.offsets[3][0] += 0.00 #Hind Right X
-        self.offsets[3][1] -= 0.04 #Hind Right Y
         self.apply_offset = True
 
         #Rotate offsets to local frame
@@ -89,10 +80,10 @@ class SoloMpcGaitGen:
         # Set up constraints for Dynamics
         self.bx = 0.45
         self.by = 0.45
-        self.bz = 0.45
+        self.bz = 1.
         self.fx_max = 15.0
         self.fy_max = 15.0
-        self.fz_max = 15.0
+        self.fz_max = 25.0
 
         # For plotting
         self.com_traj = []
@@ -161,6 +152,7 @@ class SoloMpcGaitGen:
 
         # vtrack = v_des[0:2] # this effects the step location (if set to vcom it becomes raibert)
         vtrack = vcom[0:2]
+        vtrack[1] = v_des[1]
 
         self.cnt_plan = np.zeros((self.horizon, len(self.eff_names), 4))
         # This array determines when the swing foot cost should be enforced in the ik
@@ -170,8 +162,9 @@ class SoloMpcGaitGen:
         # Contact Plan Matrix: horizon x num_eef x 4: The '4' gives the contact plan and location:
         # i.e. the last vector should be [1/0, x, y, z] where 1/0 gives a boolean for contact (1 = contact, 0 = no cnt)
 
+        print("time", t)
         for i in range(self.horizon):
-            for j in range(len(self.eff_names)):
+            for j in range(len(self.eff_names) - 2): # -2 since we are not making contact with hands
                 if i == 0:
                     if self.gait_planner.get_phase(t, j) == 1:
                         self.cnt_plan[i][j][0] = 1
@@ -194,7 +187,7 @@ class SoloMpcGaitGen:
                             self.cnt_plan[i][j][1:4] = self.cnt_plan[i-1][j][1:4]
                         else:
                             hip_loc = com + np.matmul(R, self.offsets[j])[0:2] + i*self.params.gait_dt*vtrack
-                            raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.0*(vtrack - v_des[0:2])
+                            raibert_step = .65*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.0*(vtrack - v_des[0:2])
                             ang_step = 0.5*np.sqrt(z_height/self.gravity)*vtrack
                             ang_step = np.cross(ang_step, [0.0, 0.0, w_des])
 
@@ -219,12 +212,12 @@ class SoloMpcGaitGen:
                         if per_ph < 0.5:
                             self.cnt_plan[i][j][1:3] = hip_loc + ang_step[0:2]
                         else:
-                            raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
-                            self.cnt_plan[i][j][1:3] = hip_loc + ang_step[0:2]
+                            raibert_step = .65*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.0*(vtrack - v_des[0:2])
+                            self.cnt_plan[i][j][1:3] = raibert_step + hip_loc + ang_step[0:2]
 
-                        #What is this?
-                        if per_ph - 0.5 < 0.02:
-                            self.swing_time[i][j] = 1
+                        # if per_ph - 0.5 < 0.02:
+                            # print("swing", i)
+                        self.swing_time[i][j] = 1
 
                         if self.height_map != None:
                             self.cnt_plan[i][j][3] = self.height_map.getHeight(self.cnt_plan[i][j][1], self.cnt_plan[i][j][2]) + \
@@ -241,6 +234,11 @@ class SoloMpcGaitGen:
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
 
+        # for i in range(self.horizon):
+        #     for j in range(len(self.eff_names) - 2):
+        #         print(self.eff_names[j])
+        #         print(self.cnt_plan[i][j][:])
+        # print("swing_time",self.swing_time)
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, w_des, ori_des):
@@ -257,7 +255,7 @@ class SoloMpcGaitGen:
         # --- Set Up IK --- #
         #Right now this is only setup to go for the *next* gait period only
         for i in range(self.ik_horizon):
-            for j in range(len(self.eff_names)):
+            for j in range(len(self.eff_names) - 2): # no need to set this task for hands
                 if self.cnt_plan[i][j][0] == 1:
                     self.ik.add_position_tracking_task_single(self.ee_frame_id[j], self.cnt_plan[i][j][1:4], self.params.swing_wt[0],
                                                               "cnt_" + str(0) + self.eff_names[j], i)
@@ -431,11 +429,11 @@ class SoloMpcGaitGen:
 
         # Plot End-Effector Forces
         if plot_force:
-            fig, ax_f = plt.subplots(self.n_eff, 1)
-            for n in range(self.n_eff):
-                ax_f[n].plot(optimized_forces[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
-                ax_f[n].plot(optimized_forces[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
-                ax_f[n].plot(optimized_forces[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
+            fig, ax_f = plt.subplots(len(self.eff_names), 1)
+            for n in range(len(self.eff_names)):
+                ax_f[n].plot(optimized_forces[3*n::3*len(self.eff_names)], label = self.eff_names[n] + " Fx")
+                ax_f[n].plot(optimized_forces[3*n+1::3*len(self.eff_names)], label = self.eff_names[n] + " Fy")
+                ax_f[n].plot(optimized_forces[3*n+2::3*len(self.eff_names)], label = self.eff_names[n] + " Fz")
                 ax_f[n].grid()
                 ax_f[n].legend()
 
@@ -475,41 +473,9 @@ class SoloMpcGaitGen:
 
         plt.show()
 
-    def plot_joints(self):
-        self.xs_traj = np.array(self.xs_traj)
-        self.xs_traj = self.xs_traj[:,:,:self.rmodel.nq]
-        self.q_traj = np.array(self.q_traj)
-        x = self.dt*np.arange(0, len(self.xs_traj[1]) + len(self.xs_traj), 1)
-        # com plots
-        fig, ax = plt.subplots(3,1)
-        for i in range(len(self.xs_traj)):
-            st_hor = i*int(self.planning_time/self.dt)
-            ax[0].plot(x[st_hor], self.q_traj[i][10], 'o')
-            ax[0].plot(x[st_hor:st_hor + len(self.xs_traj[i])], self.xs_traj[i][:,10])
-
-        plt.show()
-
-    def save_plan(self, file_name):
-        """
-        This function saves the plan for later plotting
-        Input:
-            file_name : name of the file
-        """
-
-        np.savez("./"+file_name, com_opt = self.mp.return_opt_com(),\
-                                 mom_opt = self.mp.return_opt_mom(),\
-                                 F_opt = self.mp.return_opt_f(), \
-                                 ik_com_opt = self.ik.return_opt_com(),\
-                                 ik_mom_opt = self.ik.return_opt_mom(),\
-                                 xs = self.ik.get_xs(),
-                                 us = self.ik.get_us(),
-                                 cnt_plan = self.cnt_plan)
-
-        print("finished saving ...")
-        assert False
-
     def plot_feet_plan(self, q, v):
-        print("base_x",q[0])
+        print("base_x",q)
+        print("FL_HFE", self.rdata.oMf[self.rmodel.getFrameId("FL_HFE")].translation)
         print("base_x_pin:",self.rdata.oMf[self.rmodel.getFrameId("base_link")].translation[0])
         xs = self.ik.get_xs()
         # xs[index][:pin_robot.model.nq]
@@ -544,6 +510,39 @@ class SoloMpcGaitGen:
         ax[2].set(xlabel='node', ylabel='z')
         plt.show()
 
+    def plot_joints(self):
+        self.xs_traj = np.array(self.xs_traj)
+        self.xs_traj = self.xs_traj[:,:,:self.rmodel.nq]
+        self.q_traj = np.array(self.q_traj)
+        x = self.dt*np.arange(0, len(self.xs_traj[1]) + len(self.xs_traj), 1)
+        # com plots
+        fig, ax = plt.subplots(3,1)
+        for i in range(len(self.xs_traj)):
+            st_hor = i*int(self.planning_time/self.dt)
+            ax[0].plot(x[st_hor], self.q_traj[i][10], 'o')
+            ax[0].plot(x[st_hor:st_hor + len(self.xs_traj[i])], self.xs_traj[i][:,10])
+
+        plt.show()
+
+    def save_plan(self, file_name):
+        """
+        This function saves the plan for later plotting
+        Input:
+            file_name : name of the file
+        """
+
+        np.savez("./"+file_name, com_opt = self.mp.return_opt_com(),\
+                                 mom_opt = self.mp.return_opt_mom(),\
+                                 F_opt = self.mp.return_opt_f(), \
+                                 ik_com_opt = self.ik.return_opt_com(),\
+                                 ik_mom_opt = self.ik.return_opt_mom(),\
+                                 xs = self.ik.get_xs(),
+                                 us = self.ik.get_us(),
+                                 cnt_plan = self.cnt_plan)
+
+        print("finished saving ...")
+        assert False
+
     def plot_plan(self, q, v, plot_force = True):
         com_opt = self.mp.return_opt_com()
         mom_opt = self.mp.return_opt_mom()
@@ -572,40 +571,40 @@ class SoloMpcGaitGen:
         ax[2].legend()
 
         # Plot End-Effector Forces
-        if plot_force:
-            fig, ax_f = plt.subplots(self.n_eff, 1)
-            for n in range(self.n_eff):
-                ax_f[n].plot(F_opt[3*n::3*self.n_eff], label = self.eff_names[n] + " Fx")
-                ax_f[n].plot(F_opt[3*n+1::3*self.n_eff], label = self.eff_names[n] + " Fy")
-                ax_f[n].plot(F_opt[3*n+2::3*self.n_eff], label = self.eff_names[n] + " Fz")
-                ax_f[n].grid()
-                ax_f[n].legend()
+        # if plot_force:
+        #     fig, ax_f = plt.subplots(len(self.eff_names), 1)
+        #     for n in range(len(self.eff_names)):
+        #         ax_f[n].plot(F_opt[3*n::3*len(self.eff_names)], label = self.eff_names[n] + " Fx")
+        #         ax_f[n].plot(F_opt[3*n+1::3*len(self.eff_names)], label = self.eff_names[n] + " Fy")
+        #         ax_f[n].plot(F_opt[3*n+2::3*len(self.eff_names)], label = self.eff_names[n] + " Fz")
+        #         ax_f[n].grid()
+        #         ax_f[n].legend()
 
         # Plot Momentum
-        fig, ax_m = plt.subplots(6,1)
-        ax_m[0].plot(mom_opt[:, 0], label = "Dyn linear_momentum x")
-        ax_m[0].plot(ik_mom_opt[:, 0], label="IK linear_momentum x")
-        ax_m[1].plot(mom_opt[:, 1], label = "linear_momentum y")
-        ax_m[1].plot(ik_mom_opt[:, 1], label="Dyn IK linear_momentum y")
-        ax_m[2].plot(mom_opt[:, 2], label = "linear_momentum z")
-        ax_m[2].plot(ik_mom_opt[:, 2], label="Dyn IK linear_momentum z")
-        ax_m[3].plot(mom_opt[:, 3], label = "Dyn Angular momentum x")
-        ax_m[3].plot(ik_mom_opt[:, 3], label="IK Angular momentum x")
-        ax_m[4].plot(mom_opt[:, 4], label = "Dyn Angular momentum y")
-        ax_m[4].plot(ik_mom_opt[:, 4], label="IK Angular momentum y")
-        ax_m[5].plot(mom_opt[:, 5], label = "Dyn Angular momentum z")
-        ax_m[5].plot(ik_mom_opt[:, 5], label="IK Angular momentum z")
-        ax_m[0].grid()
-        ax_m[0].legend()
-        ax_m[1].grid()
-        ax_m[1].legend()
-        ax_m[2].grid()
-        ax_m[2].legend()
-        ax_m[3].grid()
-        ax_m[3].legend()
-        ax_m[4].grid()
-        ax_m[4].legend()
-        ax_m[5].grid()
-        ax_m[5].legend()
+        # fig, ax_m = plt.subplots(6,1)
+        # ax_m[0].plot(mom_opt[:, 0], label = "Dyn linear_momentum x")
+        # ax_m[0].plot(ik_mom_opt[:, 0], label="IK linear_momentum x")
+        # ax_m[1].plot(mom_opt[:, 1], label = "linear_momentum y")
+        # ax_m[1].plot(ik_mom_opt[:, 1], label="Dyn IK linear_momentum y")
+        # ax_m[2].plot(mom_opt[:, 2], label = "linear_momentum z")
+        # ax_m[2].plot(ik_mom_opt[:, 2], label="Dyn IK linear_momentum z")
+        # ax_m[3].plot(mom_opt[:, 3], label = "Dyn Angular momentum x")
+        # ax_m[3].plot(ik_mom_opt[:, 3], label="IK Angular momentum x")
+        # ax_m[4].plot(mom_opt[:, 4], label = "Dyn Angular momentum y")
+        # ax_m[4].plot(ik_mom_opt[:, 4], label="IK Angular momentum y")
+        # ax_m[5].plot(mom_opt[:, 5], label = "Dyn Angular momentum z")
+        # ax_m[5].plot(ik_mom_opt[:, 5], label="IK Angular momentum z")
+        # ax_m[0].grid()
+        # ax_m[0].legend()
+        # ax_m[1].grid()
+        # ax_m[1].legend()
+        # ax_m[2].grid()
+        # ax_m[2].legend()
+        # ax_m[3].grid()
+        # ax_m[3].legend()
+        # ax_m[4].grid()
+        # ax_m[4].legend()
+        # ax_m[5].grid()
+        # ax_m[5].legend()
 
         plt.show()

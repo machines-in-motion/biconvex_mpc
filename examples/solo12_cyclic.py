@@ -74,6 +74,9 @@ for o in range(int(150*(plan_freq/sim_dt))):
         pr_et = time.time()
         solve_times.append(pr_et - pr_et)
 
+    # if pln_ctr == 0 or sim_t == 0:
+        # gg.plot_plan(q, v)
+        # gg.plot_feet_plan(q,v)
     # first loop assume that trajectory is planned
     if o < int(plan_freq/sim_dt) - 1:
         xs = xs_plan

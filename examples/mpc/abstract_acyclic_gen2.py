@@ -141,7 +141,7 @@ class TalosAcyclicGen:
 
         ## Dynamics Costs ##
         X_nom = np.zeros((9*self.horizon))
-        if self.params.use_offline_centroidal_traj:
+        if self.params.use_offline_traj:
             if (int(t/self.params.dt) < len(self.X_centroidal_offline[0::9])):
                 if (int(t/self.params.dt) + self.horizon <= len(self.X_centroidal_offline[0::9])):
                     X_nom[0 : 9*self.horizon] =\
@@ -256,7 +256,7 @@ class TalosAcyclicGen:
         counter = 0
         print("time_kin:", t)
         while i < self.ik_horizon + 1:
-            if self.params.use_offline_kinematic_traj:
+            if self.params.use_offline_traj:
                 self.dt_arr[min(i,self.ik_horizon-1)] = self.params.dt_arr[min(i,self.ik_horizon-1)]
                 print("lookahead:", i)
                 if (int(t/self.params.dt) < len(self.X_kinematics_offline[:][:])):

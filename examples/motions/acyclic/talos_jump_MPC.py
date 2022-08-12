@@ -30,9 +30,8 @@ plan.dt = 2e-2
 plan.n_col = int(plan.T/plan.dt)
 plan.dt_arr = plan.n_col*[plan.dt,]
 plan.plan_freq = [[plan.T, 0., plan.T]]
-# replanning around offline trajectory (if centroidal offline is not used, kinematics offline will e neither)
-plan.use_offline_centroidal_traj = True
-plan.use_offline_kinematic_traj = True
+# replanning around offline trajectory
+plan.use_offline_traj = False
 
 plan.cnt_plan = [[[ 1., HC_init_x, -MC_init_out_y,  0., 0.,  plan.stance_time],
                   [ 1., TC_init_x, -MC_init_out_y,  0., 0.,  plan.stance_time],

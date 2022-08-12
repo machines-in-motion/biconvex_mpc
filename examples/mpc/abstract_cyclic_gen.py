@@ -27,7 +27,7 @@ class SoloMpcGaitGen:
         self.rdata = robot.data
         self.r_urdf = r_urdf
         self.foot_size = 0.018
-        
+
         #TODO: DEPRECATE THIS...
         #Use for a fixed frequency planning time
         self.planning_time = planning_time
@@ -56,13 +56,13 @@ class SoloMpcGaitGen:
         # Contact-planning offsets
         self.offsets[0][0] -= 0.00 #Front Left_X
         self.offsets[0][1] += 0.04 #Front Left_Y
-        
+
         self.offsets[1][0] -= 0.00 #Front Right_X
         self.offsets[1][1] -= 0.04 #Front Right_Y
-        
+
         self.offsets[2][0] += 0.00 #Hind Left_X
         self.offsets[2][1] += 0.04 #Hind Left_Y
-        
+
         self.offsets[3][0] += 0.00 #Hind Right X
         self.offsets[3][1] -= 0.04 #Hind Right Y
         self.apply_offset = True
@@ -110,7 +110,7 @@ class SoloMpcGaitGen:
         Input:
             weight_abstract : the parameters of the gaits
             t : time
-            ik_hor_ratio : ik horion/dyn horizon 
+            ik_hor_ratio : ik horion/dyn horizon
         """
         self.params = weight_abstract
         # --- Set up gait parameters ---
@@ -119,7 +119,7 @@ class SoloMpcGaitGen:
         #Different horizon parameterizations; only self.params.gait_horizon works for now
         self.gait_horizon = self.params.gait_horizon
         self.horizon = int(np.round(self.params.gait_horizon*self.params.gait_period/self.params.gait_dt,2))
-        
+
         # --- Set up Inverse Kinematics ---
         self.ik_horizon = int(np.round(ik_hor_ratio*self.params.gait_horizon*self.params.gait_period/self.params.gait_dt, 2))
         self.dt_arr = np.zeros(self.horizon)
@@ -128,13 +128,13 @@ class SoloMpcGaitGen:
         self.kd = KinoDynMP(self.r_urdf, self.m, len(self.eff_names), self.horizon, self.ik_horizon)
         self.kd.set_com_tracking_weight(self.params.cent_wt[0])
         self.kd.set_mom_tracking_weight(self.params.cent_wt[1])
-            
+
         self.ik = self.kd.return_ik()
         self.mp = self.kd.return_dyn()
 
         self.mp.set_rho(self.params.rho)
 
-        # --- Set up other variables ---        
+        # --- Set up other variables ---
         self.X_nom = np.zeros((9*self.horizon))
         # For interpolation (should be moved to the controller)
         self.size = min(self.ik_horizon, int(self.planning_time/self.params.gait_dt) + 2)
@@ -189,7 +189,7 @@ class SoloMpcGaitGen:
                     if self.gait_planner.get_phase(ft, j) == 1:
                         #If foot will be in contact
                         self.cnt_plan[i][j][0] = 1
-                        
+
                         if self.cnt_plan[i-1][j][0] == 1:
                             self.cnt_plan[i][j][1:4] = self.cnt_plan[i-1][j][1:4]
                         else:
@@ -197,7 +197,7 @@ class SoloMpcGaitGen:
                             raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
                             ang_step = 0.5*np.sqrt(z_height/self.gravity)*vtrack
                             ang_step = np.cross(ang_step, [0.0, 0.0, w_des])
-                        
+
                             self.cnt_plan[i][j][1:3] = raibert_step[0:2] + hip_loc + ang_step[0:2]
 
                             if self.height_map != None:
@@ -215,7 +215,7 @@ class SoloMpcGaitGen:
                         hip_loc = com + np.matmul(R,self.offsets[j])[0:2] + i*self.params.gait_dt*vtrack
                         ang_step = 0.5*np.sqrt(z_height/self.gravity)*vtrack
                         ang_step = np.cross(ang_step, [0.0, 0.0, w_des])
-                        
+
                         if per_ph < 0.5:
                             self.cnt_plan[i][j][1:3] = hip_loc + ang_step[0:2]
                         else:
@@ -231,7 +231,7 @@ class SoloMpcGaitGen:
                                                     self.foot_size
                         else:
                             self.cnt_plan[i][j][3] = self.foot_size
-            
+
             if i == 0:
                 dt = self.params.gait_dt - np.round(np.remainder(t,self.params.gait_dt),2)
                 if dt == 0:
@@ -240,7 +240,7 @@ class SoloMpcGaitGen:
                 dt = self.params.gait_dt
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
-        
+
         return self.cnt_plan
 
     def create_costs(self, q, v, v_des, w_des, ori_des):
@@ -341,7 +341,7 @@ class SoloMpcGaitGen:
         return omega
 
     def optimize(self, q, v, t, v_des, w_des, X_wm = None, F_wm = None, P_wm = None):
-        
+
         # reseting origin (causes scaling issues I think otherwise)
         q[0:2] = 0
         ## TODO: Needs to be done properly so it is not in the demo file
@@ -362,7 +362,7 @@ class SoloMpcGaitGen:
 
         t2 = time.time()
 
-        # pinocchio complains otherwise 
+        # pinocchio complains otherwise
         q = pin.normalize(self.rmodel, q)
 
         self.kd.optimize(q, v, 100, 1)
@@ -504,7 +504,7 @@ class SoloMpcGaitGen:
                                  xs = self.ik.get_xs(),
                                  us = self.ik.get_us(),
                                  cnt_plan = self.cnt_plan)
-                                 
+
         print("finished saving ...")
         assert False
 

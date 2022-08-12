@@ -10,7 +10,7 @@ from biconvex_mpc_cpp import KinoDynMP
 
 from matplotlib import pyplot as plt
 
-class TalosAcyclicGen:
+class BoltHumanoidAcyclicGen:
 
     def __init__(self, robot, r_urdf):
         """
@@ -24,16 +24,15 @@ class TalosAcyclicGen:
         # --- Set up Dynamics ---
         self.m = pin.computeTotalMass(self.rmodel)
 
-        self.eff_names = ["leg_right_sole1_fix_joint", "leg_right_sole2_fix_joint", "leg_right_sole3_fix_joint", "leg_right_sole4_fix_joint", \
-                          "leg_left_sole1_fix_joint", "leg_left_sole2_fix_joint", "leg_left_sole3_fix_joint", "leg_left_sole4_fix_joint"]
+        self.eff_names = ["FL_ANKLE", "FR_ANKLE", "L_WRIST", "R_WRIST"]
         self.ee_frame_id = []
         for i in range(len(self.eff_names)):
             self.ee_frame_id.append(self.rmodel.getFrameId(self.eff_names[i]))
 
         # Set up constraints for Dynamics
-        self.fx_max = 1000.0
-        self.fy_max = 1000.0
-        self.fz_max = 10000.0
+        self.fx_max = 25.0
+        self.fy_max = 25.0
+        self.fz_max = 25.0
 
         # Set up optional parameters for updating contact plan
         self.use_current_eef_location = False
@@ -142,6 +141,7 @@ class TalosAcyclicGen:
         ## Dynamics Costs ##
         X_nom = np.zeros((9*self.horizon))
         if self.params.use_offline_centroidal_traj:
+            print("time:", t)
             if (int(t/self.params.dt) < len(self.X_centroidal_offline[0::9])):
                 if (int(t/self.params.dt) + self.horizon <= len(self.X_centroidal_offline[0::9])):
                     X_nom[0 : 9*self.horizon] =\
@@ -200,7 +200,7 @@ class TalosAcyclicGen:
 
             i += 1
 
-        X_nom[0:9] = X_init
+        # X_nom[0:9] = X_init
         # fig, ax = plt.subplots(3,1)
         # ax[0].plot(X_nom[0::9], label="Dyn com x")
         # ax[1].plot(X_nom[1::9], label="Dyn com y")
@@ -253,88 +253,38 @@ class TalosAcyclicGen:
         ## State regularization
         ft = t - self.params.dt_arr[0] - self.t0
         i = 0
-        counter = 0
-        print("time_kin:", t)
         while i < self.ik_horizon + 1:
-            if self.params.use_offline_kinematic_traj:
-                self.dt_arr[min(i,self.ik_horizon-1)] = self.params.dt_arr[min(i,self.ik_horizon-1)]
-                print("lookahead:", i)
-                if (int(t/self.params.dt) < len(self.X_kinematics_offline[:][:])):
-                    if (int(t/self.params.dt) + self.horizon <= len(self.X_kinematics_offline[:][:])):
-                        print("inside horizon")
-                        if i < self.horizon:
-                            print("running within horizon")
-                            self.ik.add_state_regularization_cost_single(i, self.params.state_scale[0][0], \
-                                        "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
-                                                self.X_kinematics_offline[counter+i])
-                        else:
-                            print("terminal within horizon")
-                            # account for terminal here.
-                            self.ik.add_state_regularization_cost(0, i, self.params.state_scale[0][0], \
-                                                                "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
-                                                                        self.X_kinematics_offline[counter+i], True)
-                    else:
-                        if i < self.horizon:
-                            print("running intersecting with horizon")
-                            if (i < len(self.X_kinematics_offline[:][:]) - int(t/self.params.dt)):
-                                self.ik.add_state_regularization_cost_single(i, self.params.state_scale[0][0], \
-                                            "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
-                                                    self.X_kinematics_offline[counter+i])
-                            else:
-                                self.ik.add_state_regularization_cost_single(i, self.params.state_scale[0][0], \
-                                            "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
-                                                    self.X_kinematics_offline[-1])
-                        else:
-                            print("terminal intersecting with horizon")
-                            self.ik.add_state_regularization_cost(0, i, self.params.state_scale[0][0], \
-                                                                "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
-                                                                        self.X_kinematics_offline[-1], True)
-                else:
-                    if i < self.horizon:
-                        print("running out of horizon")
-                        self.ik.add_state_regularization_cost_single(i, self.params.state_scale[0][0], \
-                                    "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
-                                            self.X_kinematics_offline[-1])
-                        # print("last element of the list", self.X_kinematics_offline[-1])
-                        # print("initial configuration", self.params.x0)
-                    else:
-                        print("terminal out of horizon")
-                        self.ik.add_state_regularization_cost(0, i, self.params.state_scale[0][0], \
-                                                            "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
-                                                                    self.X_kinematics_offline[-1], True)
-                counter += 1
-            else:
-                ## is there a more effecient way to handle terminal states?
-                ## TODO: have to make sure that dt is picked from the right index.
-                ft += self.params.dt_arr[min(i,self.ik_horizon-1)]
-                self.dt_arr[min(i,self.ik_horizon-1)] = self.params.dt_arr[min(i,self.ik_horizon-1)]
-                ft = np.round(ft, 3)
-                if ft < self.params.state_reg[-1][-1]:
-                    for k in range(len(self.params.state_reg)):
-                        if ft >= self.params.state_scale[k][1] and ft < self.params.state_scale[k][2]:
-                            if i < self.params.n_col:
-                                self.ik.add_state_regularization_cost_single(i, self.params.state_scale[k][0], \
-                                            "xReg", self.params.state_wt[k][0:2*self.rmodel.nv],\
-                                                        self.params.state_reg[k][0:self.rmodel.nq + self.rmodel.nv])
-                            else:
-                                # account for terminal here.
-                                self.ik.add_state_regularization_cost(0, i, self.params.state_scale[k][0], \
-                                                                    "xReg", self.params.state_wt[k][0:2*self.rmodel.nv],\
-                                                                                self.params.state_reg[k][0:self.rmodel.nq + self.rmodel.nv], True)
-                            break
-                else:
-                    if not make_cyclic:
+            ## is there a more effecient way to handle terminal states?
+            ## TODO: have to make sure that dt is picked from the right index.
+            ft += self.params.dt_arr[min(i,self.ik_horizon-1)]
+            self.dt_arr[min(i,self.ik_horizon-1)] = self.params.dt_arr[min(i,self.ik_horizon-1)]
+            ft = np.round(ft, 3)
+            if ft < self.params.state_reg[-1][-1]:
+                for k in range(len(self.params.state_reg)):
+                    if ft >= self.params.state_scale[k][1] and ft < self.params.state_scale[k][2]:
                         if i < self.params.n_col:
-                            self.ik.add_state_regularization_cost_single(i, self.params.state_scale[-1][0], \
-                                            "xReg", self.params.state_wt[-1][0:2*self.rmodel.nv], \
-                                                        self.params.state_reg[-1][0:self.rmodel.nq + self.rmodel.nv])
+                            self.ik.add_state_regularization_cost_single(i, self.params.state_scale[k][0], \
+                                        "xReg", self.params.state_wt[k][0:2*self.rmodel.nv],\
+                                                    self.params.state_reg[k][0:self.rmodel.nq + self.rmodel.nv])
                         else:
-                            self.ik.add_state_regularization_cost(0, i, self.params.state_scale[-1][0], \
-                                                                    "xReg", self.params.state_wt[-1][0:2*self.rmodel.nv],\
-                                                                                self.params.state_reg[-1][0:self.rmodel.nq + self.rmodel.nv], True)
+                            # account for terminal here.
+                            self.ik.add_state_regularization_cost(0, i, self.params.state_scale[k][0], \
+                                                                "xReg", self.params.state_wt[k][0:2*self.rmodel.nv],\
+                                                                            self.params.state_reg[k][0:self.rmodel.nq + self.rmodel.nv], True)
+                        break
+            else:
+                if not make_cyclic:
+                    if i < self.params.n_col:
+                        self.ik.add_state_regularization_cost_single(i, self.params.state_scale[-1][0], \
+                                        "xReg", self.params.state_wt[-1][0:2*self.rmodel.nv], \
+                                                    self.params.state_reg[-1][0:self.rmodel.nq + self.rmodel.nv])
                     else:
-                        # make this cyclic later
-                        pass
+                        self.ik.add_state_regularization_cost(0, i, self.params.state_scale[-1][0], \
+                                                                "xReg", self.params.state_wt[-1][0:2*self.rmodel.nv],\
+                                                                            self.params.state_reg[-1][0:self.rmodel.nq + self.rmodel.nv], True)
+                else:
+                    # make this cyclic later
+                    pass
 
             i += 1
 
@@ -386,10 +336,10 @@ class TalosAcyclicGen:
         pin.forwardKinematics(self.rmodel, self.rdata, q, np.zeros(self.rmodel.nv))
         pin.updateFramePlacements(self.rmodel, self.rdata)
         pin.framesForwardKinematics(self.rmodel, self.rdata, q)
-        # print(t)
-        # for i in range(len(self.eff_names)):
-        #     print(self.eff_names[i])
-        #     print(self.rdata.oMf[self.rmodel.getFrameId(self.eff_names[i])].translation)
+        print(t)
+        for i in range(len(self.eff_names)):
+            print(self.eff_names[i])
+            print(self.rdata.oMf[self.rmodel.getFrameId(self.eff_names[i])].translation)
 
         t1 = time.time()
         # q[0:2] -= self.q0[0:2] - [0.2,0]
@@ -397,6 +347,7 @@ class TalosAcyclicGen:
         self.create_contact_plan(q, v, t)
         #Creates costs for IK and Dynamics
         self.create_costs(q, v, t)
+
         t2 = time.time()
 
         self.kd.optimize(q, v, 50, 1)

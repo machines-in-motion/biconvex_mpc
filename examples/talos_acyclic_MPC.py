@@ -41,52 +41,73 @@ lag = int(update_time/sim_dt)
 mg = TalosAcyclicGen(pin_robot, urdf)
 q, v = robot.get_state()
 
-if plan.use_offline_nom_traj:
-    print("offline trajectory is used.......")
+kin_flag = False
+if plan.use_offline_centroidal_traj:
+    print("offline centroidal trajectory is used.......")
     #perform one full offline planning
-    plan.use_offline_nom_traj = False
+    plan.use_offline_centroidal_traj = False
+    if plan.use_offline_kinematic_traj:
+        plan.use_offline_kinematic_traj = False
+        kin_flag = True
     mg.update_motion_params(plan, q, 0.)
     mg.optimize(q, v, 0.)
     com_opt = mg.mp.return_opt_com()
     mom_opt = mg.mp.return_opt_mom()
-    mg.X_nom_offline = np.zeros((9*plan.n_col), float)
+    mg.X_centroidal_offline = np.zeros((9*plan.n_col), float)
+    if kin_flag:
+        mg.X_kinematics_offline = mg.ik.get_xs()
+        plan.use_offline_kinematic_traj = True
+        state_wt_1 = np.array([1e0, 1e-2, 1e2 ] + [5.0, 10.0, 5.0] + [2e2] * (rmodel.nv - 6) + \
+                              [0.00, 0.00, 0.00] + [5.0, 5.0, 5.0] + [3.] * (rmodel.nv - 6)
+                              )
+        plan.state_wt = [np.hstack((state_wt_1, [0, plan.T]))]
+        # plan.state_scale = [[1e-2, 0, plan.T]]
+        # plan.cent_wt = [3*[200.,], 6*[.04,]]
+
     for i in range(plan.n_col):
-        mg.X_nom_offline[9*i:9*i+3] = com_opt[i,:]
-        mg.X_nom_offline[9*i+3:9*i+9] = mom_opt[i,:]
+        mg.X_centroidal_offline[9*i:9*i+3] = com_opt[i,:]
+        mg.X_centroidal_offline[9*i+3:9*i+9] = mom_opt[i,:]
 
-    plan.plan_freq = [[.2, 0., plan.T]]
-    plan.use_offline_nom_traj = True
-    # plan.use_offline_nom_traj = False
-    plan.W_X = np.array([1e3, 1e3, 1e3, 1., 1., 1., .1, .1, .1])
-    plan.W_X_ter = np.array([0., 0., 0., 1., 1., 1., 0.1, 0.1, 0.1])
+    #new dyn weights for tracking MPC
+    plan.plan_freq = [[.1, 0., plan.T]]
+    plan.use_offline_centroidal_traj = True
+    plan.W_X = np.array([.1, .1, 1., .55, .0, .55, 0., .1, .0])
+    plan.W_X_ter = np.array([0., 0., 0., 0., .0, .0, .0, .0, .0])
     plan.W_F = np.array(24*[0.,])
-    plan.n_col = 60
+    plan.n_col = 10
+    #new kin weights for tracking MPC
 
+# Using only offline kinematic as nominal
+# if not plan.use_offline_centroidal_traj and plan.use_offline_kinematic_traj:
+#     plan.use_offline_kinematic_traj = False
+#     mg.update_motion_params(plan, q, 0.)
+#     mg.optimize(q, v, 0.)
+#     mg.X_kinematics_offline = mg.ik.get_xs()
+#     plan.use_offline_kinematic_traj = True
+#     plan.plan_freq = [[.1, 0., plan.T]]
+#     plan.n_col = 10
+    # plan.cent_wt = [[200., 200., 200.], 6*[.04,]]
+    # state_wt_1 = np.array([1e0, 1e-2, 1e4 ] + [5.0, 10.0, 5.0] + [2e2] * (rmodel.nv - 6) + \
+    #                       [0.00, 0.00, 0.00] + [5.0, 5.0, 5.0] + [3.] * (rmodel.nv - 6)
+    #                       )
+    # plan.state_wt = [np.hstack((state_wt_1, [0, plan.T]))]
 
 mg.update_motion_params(plan, q, 0.)
-# mg.optimize(q, v, 0.)
 
-for o in range(int(2.5*plan.T/sim_dt)):
-
+for o in range(int(2*plan.T/sim_dt)):
     contact_configuration = robot.get_current_contacts()
     q, v = robot.get_state()
     kp, kd = mg.get_gains(sim_t)
     robot_id_ctrl.set_gains(kp, kd)
 
     if pln_ctr == 0 or sim_t == 0:
-
         xs, us, f = mg.optimize(q, v, sim_t)
+        # print("solution:",xs[0])
         xs = xs[lag:]
         us = us[lag:]
         f = f[lag:]
         index = 0
-        dr.record_plan(xs, us, f, sim_t)
-
-
-        # print(sim_t)
-        # mg.plot(q, v, plot_force=True)
-        #     mg.save_plan("hifive")
-        #     assert False
+        # mg.plot(q, v, plot_force=False)
 
     # controller
     q_des = xs[index][:pin_robot.model.nq].copy()

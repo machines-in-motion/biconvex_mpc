@@ -9,11 +9,11 @@ import pinocchio as pin
 from robot_properties_talos.taloswrapper import TalosRobot
 from controllers.robot_id_controller import InverseDynamicsController
 from envs.pybullet_env import PyBulletEnv
-from mpc.abstract_acyclic_gen1 import TalosAcyclicGen
+from mpc.abstract_acyclic_gen2 import TalosAcyclicGen
 from mpc.data_plotter import DataRecorder
 from robot_properties_talos.config import TalosConfig
 
-from motions.acyclic.talos_walk import plan
+from motions.acyclic.talos_jump import plan
 
 pin_robot = TalosConfig.buildRobotWrapper()
 rmodel = pin_robot.model
@@ -40,7 +40,7 @@ lag = int(update_time/sim_dt)
 mg = TalosAcyclicGen(pin_robot, urdf)
 q, v = q0, v0
 mg.update_motion_params(plan, q, sim_t)
-
+mg.params.use_offline_traj = False
 
 try:
     viz.initViewer(open=True)

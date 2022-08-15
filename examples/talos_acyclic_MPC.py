@@ -14,7 +14,7 @@ from mpc.abstract_acyclic_gen2 import TalosAcyclicGen
 from mpc.data_plotter import DataRecorder
 from robot_properties_talos.config import TalosConfig
 
-from motions.acyclic.talos_jump_MPC import plan
+from motions.acyclic.talos_jump import plan
 
 pin_robot = TalosConfig.buildRobotWrapper()
 rmodel = pin_robot.model
@@ -42,7 +42,7 @@ mg = TalosAcyclicGen(pin_robot, urdf)
 q, v = robot.get_state()
 
 if plan.use_offline_traj:
-    print("offline centroidal trajectory is used.......")
+    print("offline trajectory is used.......")
     #perform one full offline planning
     plan.use_offline_traj = False
     mg.update_motion_params(plan, q, 0.)

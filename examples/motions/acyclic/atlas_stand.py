@@ -57,8 +57,7 @@ plan.X_ter = [0.01423163, 0.00103309, 1.12, 0, 0, 0, 0, 0.0, 0.0]
 plan.bounds = [[-0.5, -0.5, 1.1, 0.5, 0.5, 1.14, 0., T]]
 
 # ik optimization params
-
-plan.cent_wt = [1e1, 1e0]
+plan.cent_wt = [3*[100.,], 6*[.04,]]
 plan.cnt_wt = 1e2
 
 x_reg1 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])

@@ -38,27 +38,36 @@ lag = int(update_time/sim_dt)
 mg = BoltHumanoidAcyclicGen(pin_robot, urdf)
 q, v = robot.get_state()
 
-if plan.use_offline_centroidal_traj:
+if plan.use_offline_traj:
     print("offline trajectory is used.......")
     #perform one full offline planning
-    plan.use_offline_centroidal_traj = False
+    plan.use_offline_traj = False
     mg.update_motion_params(plan, q, 0.)
     mg.optimize(q, v, 0.)
     com_opt = mg.mp.return_opt_com()
     mom_opt = mg.mp.return_opt_mom()
     mg.X_centroidal_offline = np.zeros((9*plan.n_col), float)
+    mg.X_kinematics_offline = mg.ik.get_xs()
+
     for i in range(plan.n_col):
         mg.X_centroidal_offline[9*i:9*i+3] = com_opt[i,:]
         mg.X_centroidal_offline[9*i+3:9*i+9] = mom_opt[i,:]
 
+    plan.use_offline_traj = True
+    #new dyn weights for tracking MPC
     plan.plan_freq = [[.1, 0., plan.T]]
-    plan.use_offline_centroidal_traj = True
-    # plan.use_offline_centroidal_traj = False
-    plan.W_X = np.array([1e3, 1e0, 1e3, .1, .1, 1., .0, .1, .0])
-    plan.W_X_ter = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0.])
-    plan.W_F = np.array(24*[0.,])
-    plan.n_col = 60
-    plan.state_scale = [[2e-2, 0, plan.T]]
+    plan.W_X = np.array([1e-5, 1e-5, 1e-5, 1e-4, 1e-4, 2e3, 3e+4, 3e+4, 3e+4])
+    plan.W_X_ter = 0.*np.array([1e5, 1e5, 1e+5, 1e-1, 1e-1, 2e2, 1e+5, 1e+5, 1e+5])
+    plan.W_F = np.array(4*[1e+1, 1e+1, 1e+1])
+    plan.n_col = 10
+    #new kin weights for tracking MPC
+    state_wt_1 = np.array([0., 0., 0. ] + [.0, .0, .0] + [10.] * (rmodel.nv - 6) + \
+                          [0.0, 0.0, 0.0] + [.0, 0., .0] + [1.] * (rmodel.nv - 6)
+                          )
+    plan.state_wt = [np.hstack((state_wt_1, [0, plan.T]))]
+    plan.state_scale = [[1e0, 0, plan.T]]
+    plan.cent_wt = [[500., 10., 500.], [.1, .1, 5., .1, 100., .1]]
+    plan.cnt_wt = 5e4
 
 
 mg.update_motion_params(plan, q, 0.)
@@ -82,7 +91,7 @@ for o in range(int(2.5*plan.T/sim_dt)):
 
 
         # print(sim_t)
-        mg.plot(q, v, plot_force=True)
+        # mg.plot(q, v, plot_force=True)
         #     mg.save_plan("hifive")
         #     assert False
 

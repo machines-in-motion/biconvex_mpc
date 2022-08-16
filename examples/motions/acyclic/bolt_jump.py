@@ -20,14 +20,14 @@ x0 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
 plan = ACyclicMotionParams("bolt", "jump")
 
 plan.stance_time = 0.4
-plan.flight_time = 0.6
+plan.flight_time = 0.4
 
 plan.T = 2*plan.stance_time+plan.flight_time # the total duration of the gait
 plan.dt = 1e-2
 plan.n_col = int(plan.T/plan.dt)
 plan.dt_arr = plan.n_col*[plan.dt,]
 plan.plan_freq = [[plan.T, 0., plan.T]]
-plan.use_offline_centroidal_traj = False
+plan.use_offline_traj = True
 
 plan.cnt_plan = [[[ 1.,      0.,   0.1235,    0., 0.,  plan.stance_time],
                   [ 1.,      0.,  -0.1235,    0., 0.,  plan.stance_time],
@@ -53,7 +53,7 @@ plan.rho = 1e+4
 
 plan.X_nom = [[0., 0, 0.38, 0, 0, 0, 0, 0.00, 0.0, 0.0, plan.stance_time],
               [0., 0, 0.38, 0, 0, 0, 0, 0.0, 0., plan.stance_time, plan.stance_time+plan.flight_time],
-              [0., 0, 0.38, 0, 0, 0, 0, 0.0, 0., plan.stance_time+plan.flight_time, plan.T]]
+              [0., 0, 0.45, 0, 0, 0, 0, 0.0, 0., plan.stance_time+plan.flight_time, plan.T]]
 
 plan.X_ter = [0., 0, 0.38, 0, 0, 0, 0, 0.0, 0.0]
 plan.bounds = [[-0.5, -0.5, -.5, 0.5, 0.5, 1., 0., plan.T]]
@@ -65,13 +65,13 @@ plan.swing_wt = [[[0., 0.3946,   0.14695,  0.2, plan.stance_time + 0.*plan.fligh
                   [0.,  0.0054,   0.14695,  0., plan.stance_time + 0.*plan.flight_time, plan.stance_time + 0.5*plan.flight_time],
                   [0.,  0.0054,   -0.14695,  0., plan.stance_time + 0.*plan.flight_time, plan.stance_time + 0.5*plan.flight_time]]]
 
-plan.cent_wt = [[100., 10., 100.], [.1, .1, 5., .1, 50., .1]]
+plan.cent_wt = [[500., 10., 500.], [.1, .1, 5., .1, 50., .1]]
 plan.cnt_wt = 5e3
 
 x_reg1 = np.concatenate([q0, pin.utils.zero(rmodel.nv)])
 
-state_wt_1 = np.array([1e-2, 1e-2, 1e-2 ] + [5.0, 5., 5.0] + [1.] * (robot.model.nv - 6) + \
-                      [0.00, 0.00, 0.00] + [5.0, 0.01, 5.0] + [.05] * (robot.model.nv - 6)
+state_wt_1 = np.array([1e-2, 1e-2, 1e-2 ] + [5.0, 5., 5.0] + [1.] * (robot.model.nv - 9) + [10., 1., 1.] + \
+                      [0.00, 0.00, 0.00] + [5.0, 0.01, 5.0] + [.1] * (robot.model.nv - 6)
                       )
 
 plan.state_reg = [np.hstack((x_reg1, [0, plan.T]))]

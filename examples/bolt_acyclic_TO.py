@@ -37,7 +37,7 @@ lag = int(update_time/sim_dt)
 mg = BoltHumanoidAcyclicGen(pin_robot, urdf)
 q, v = q0, v0
 mg.update_motion_params(plan, q, sim_t)
-
+mg.params.use_offline_traj = False
 
 try:
     viz.initViewer(open=True)

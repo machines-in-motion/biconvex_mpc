@@ -2,7 +2,7 @@
 ## Author : Avadesh Meduri
 ## Date : 7/05/2021
 
-import pybullet 
+import pybullet
 from bullet_utils.env import BulletEnvWithGround
 
 class PyBulletEnv:
@@ -13,7 +13,7 @@ class PyBulletEnv:
         self.env = BulletEnvWithGround()
         self.robot = self.env.add_robot(robot())
         self.robot.reset_state(q0, v0)
-
+        # pybullet.resetDebugVisualizerCamera( cameraDistance=-1.5, cameraYaw=45, cameraPitch=-10, cameraTargetPosition=[0,0,.8])
         ## For data recording
         self.q_arr = []
         self.v_arr = []
@@ -54,5 +54,3 @@ class PyBulletEnv:
 
     def stop_recording(self):
         pybullet.stopStateLogging(pybullet.STATE_LOGGING_VIDEO_MP4, self.file_name)
-
-

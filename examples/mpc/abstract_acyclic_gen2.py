@@ -254,28 +254,28 @@ class TalosAcyclicGen:
         ft = t - self.params.dt_arr[0] - self.t0
         i = 0
         counter = 0
-        print("time_kin:", t)
+        # print("time_kin:", t)
         while i < self.ik_horizon + 1:
             if self.params.use_offline_traj:
                 self.dt_arr[min(i,self.ik_horizon-1)] = self.params.dt_arr[min(i,self.ik_horizon-1)]
-                print("lookahead:", i)
+                # print("lookahead:", i)
                 if (int(t/self.params.dt) < len(self.X_kinematics_offline[:][:])):
                     if (int(t/self.params.dt) + self.horizon <= len(self.X_kinematics_offline[:][:])):
-                        print("inside horizon")
+                        # print("inside horizon")
                         if i < self.horizon:
-                            print("running within horizon")
+                            # print("running within horizon")
                             self.ik.add_state_regularization_cost_single(i, self.params.state_scale[0][0], \
                                         "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
                                                 self.X_kinematics_offline[counter+i])
                         else:
-                            print("terminal within horizon")
+                            # print("terminal within horizon")
                             # account for terminal here.
                             self.ik.add_state_regularization_cost(0, i, self.params.state_scale[0][0], \
                                                                 "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
                                                                         self.X_kinematics_offline[counter+i], True)
                     else:
                         if i < self.horizon:
-                            print("running intersecting with horizon")
+                            # print("running intersecting with horizon")
                             if (i < len(self.X_kinematics_offline[:][:]) - int(t/self.params.dt)):
                                 self.ik.add_state_regularization_cost_single(i, self.params.state_scale[0][0], \
                                             "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
@@ -285,20 +285,20 @@ class TalosAcyclicGen:
                                             "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
                                                     self.X_kinematics_offline[-1])
                         else:
-                            print("terminal intersecting with horizon")
+                            # print("terminal intersecting with horizon")
                             self.ik.add_state_regularization_cost(0, i, self.params.state_scale[0][0], \
                                                                 "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
                                                                         self.X_kinematics_offline[-1], True)
                 else:
                     if i < self.horizon:
-                        print("running out of horizon")
+                        # print("running out of horizon")
                         self.ik.add_state_regularization_cost_single(i, self.params.state_scale[0][0], \
                                     "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
                                             self.X_kinematics_offline[-1])
                         # print("last element of the list", self.X_kinematics_offline[-1])
                         # print("initial configuration", self.params.x0)
                     else:
-                        print("terminal out of horizon")
+                        # print("terminal out of horizon")
                         self.ik.add_state_regularization_cost(0, i, self.params.state_scale[0][0], \
                                                             "xReg", self.params.state_wt[0][0:2*self.rmodel.nv],\
                                                                     self.X_kinematics_offline[-1], True)

@@ -7,7 +7,7 @@ import numpy as np
 import pinocchio as pin
 
 from robot_properties_solo.solo12wrapper import Solo12Robot, Solo12Config
-from mpc.abstract_cyclic_gen import SoloMpcGaitGen
+from mpc.abstract_cyclic_gen_terminal import SoloMpcGaitGen
 from motions.cyclic.solo12_jump import jump
 
 from envs.pybullet_env import PyBulletEnv
@@ -99,9 +99,4 @@ for o in range(int(150*(plan_freq/sim_dt))):
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
 
-np.save('terminal_state.npy', gg.terminal_state)
-np.save('terminal_cost.npy', gg.terminal_cost)
-np.save('time_index.npy', gg.time_index)
-
-# np.savez("./bound_" + str(gg.horizon))
 print("done")

@@ -9,7 +9,7 @@
 #include "OsqpEigen/OsqpEigen.h"
 #endif
 
-#include <stdio.h> 
+#include <stdio.h>
 #include <iostream>
 
 #include "dynamics/centroidal.hpp"
@@ -28,28 +28,28 @@ class BiConvexMP{
 
 
         Eigen::MatrixXd return_A_x(Eigen::VectorXd X){
-            centroidal_dynamics.compute_x_mat(X);  
+            centroidal_dynamics.compute_x_mat(X);
             return centroidal_dynamics.A_x;
         }
-    
+
         Eigen::MatrixXd return_b_x(Eigen::VectorXd X){
-            centroidal_dynamics.compute_x_mat(X);  
+            centroidal_dynamics.compute_x_mat(X);
             return centroidal_dynamics.b_x;
         }
-    
+
 
         Eigen::MatrixXd return_A_f(Eigen::VectorXd F, Eigen::VectorXd x_init){
-            centroidal_dynamics.compute_f_mat(F);  
+            centroidal_dynamics.compute_f_mat(F);
             centroidal_dynamics.update_x_init(x_init);
             return centroidal_dynamics.A_f;
         }
 
         Eigen::MatrixXd return_b_f(Eigen::VectorXd F, Eigen::VectorXd x_init){
-            centroidal_dynamics.compute_f_mat(F);  
+            centroidal_dynamics.compute_f_mat(F);
             centroidal_dynamics.update_x_init(x_init);
             return centroidal_dynamics.b_f;
         }
-    
+
         // function to set cost function
         void set_cost_x(Eigen::SparseMatrix<double> Q_x, Eigen::VectorXd q_x){
             prob_data_x.Q_ = Q_x; prob_data_x.q_ = q_x;
@@ -58,30 +58,31 @@ class BiConvexMP{
         void set_cost_f(Eigen::SparseMatrix<double> Q_f, Eigen::VectorXd q_f){
             prob_data_f.Q_ = Q_f; prob_data_f.q_ = q_f;
         }
-        
+
         void set_rho(double rho){
             rho_ = rho;
         }
-        
+
         void set_warm_start_vars(Eigen::VectorXd x_wm, Eigen::VectorXd f_wm, Eigen::VectorXd P_wm){
             prob_data_x.set_warm_x(x_wm);
             prob_data_f.set_warm_x(f_wm);
             P_k_ = P_wm;
         }
 
-        void set_bounds_x(Eigen::VectorXd lb, Eigen::VectorXd ub) 
+        void set_bounds_x(Eigen::VectorXd lb, Eigen::VectorXd ub)
                 {prob_data_x.lb_ = lb; prob_data_x.ub_ = ub;}
 
-        void set_bounds_f(Eigen::VectorXd lb, Eigen::VectorXd ub) 
+        void set_bounds_f(Eigen::VectorXd lb, Eigen::VectorXd ub)
                 {prob_data_f.lb_ = lb; prob_data_f.ub_ = ub;}
 
         // box constraints created on parameters and contact plan
         void create_bound_constraints(Eigen::MatrixXd b, double fx_max, double fy_max, double fz_max);
         // creates basic quadratic costs for optimizing X
         void create_cost_X(Eigen::VectorXd W_X, Eigen::VectorXd W_X_ter, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom);
+        void create_cost_X_terminal(Eigen::VectorXd W_X, Eigen::VectorXd P_terminal, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom);
         void create_cost_F(Eigen::VectorXd W_F);
         void update_nomimal_com_mom(Eigen::MatrixXd opt_com, Eigen::MatrixXd opt_mom);
- 
+
         void set_rotation_matrix_f(Eigen::MatrixXd rot_matrix)
         {
             prob_data_f.rotation_matrices.push_back(rot_matrix);
@@ -99,7 +100,7 @@ class BiConvexMP{
 
         //Update bounds on X (states) for MPC
         //Inputs: lb_fin = new final lower bound constraints, not ALL bounds (i.e. should be length = 9)
-        //      : ub_fin = new final upper bound constraints, not ALL bounds (i.e. should be length 
+        //      : ub_fin = new final upper bound constraints, not ALL bounds (i.e. should be length
         void update_bounds_x(Eigen::VectorXd lb_fin, Eigen::VectorXd ub_fin);
 
         //Update constraint Matrix A_x, and b_x
@@ -107,7 +108,7 @@ class BiConvexMP{
 
         //Shift cost functions, constraints, and solutions
         void shift_horizon();
-        
+
 
         Eigen::VectorXd return_opt_x(){
             return prob_data_x.x_k;
@@ -135,12 +136,12 @@ class BiConvexMP{
         void set_robot_mass(double m) {
             m_ = m;
         };
-        
+
         void collect_statistics(){log_statistics = 1;};
 
 
     private:
-        // mass of the robot 
+        // mass of the robot
         double m_;
         // centroidal dynamics class
         dynamics::CentroidalDynamics centroidal_dynamics;
@@ -162,7 +163,7 @@ class BiConvexMP{
         int n_col_ = 0;
         int n_eff_ = 0;
         double T_;
-        
+
         // problem data for x optimization (Used in optimization for Forces)
         function::ProblemData prob_data_x;
         // solver for x optimization
@@ -176,7 +177,7 @@ class BiConvexMP{
         // optimal CoM and Momentum trajectory (required for IK)
         Eigen::MatrixXd com_opt_;
         Eigen::MatrixXd mom_opt_;
-        
+
         #ifdef USE_OSQP
             OsqpEigen::Solver osqp_x;
             OsqpEigen::Solver osqp_f;

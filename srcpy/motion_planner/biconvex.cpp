@@ -26,6 +26,7 @@ PYBIND11_MODULE(biconvex_mpc_cpp, m)
     mp.def("return_b_f", &motion_planner::BiConvexMP::return_b_f);
     mp.def("set_cost_x", &motion_planner::BiConvexMP::set_cost_x);
     mp.def("create_cost_X", &motion_planner::BiConvexMP::create_cost_X);
+    mp.def("create_cost_X_terminal", &motion_planner::BiConvexMP::create_cost_X_terminal);
     mp.def("set_cost_f", &motion_planner::BiConvexMP::set_cost_f);
     mp.def("create_cost_F", &motion_planner::BiConvexMP::create_cost_F);
     mp.def("set_bounds_x", &motion_planner::BiConvexMP::set_bounds_x);

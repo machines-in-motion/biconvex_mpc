@@ -7,10 +7,10 @@ namespace motion_planner{
         m_(m), n_eff_(n_eff), n_col_(n_col), centroidal_dynamics(m, n_col, n_eff),
         prob_data_x(9, n_col+1), prob_data_f(3*n_eff, n_col),
         fista_x(), fista_f(){
-    
+
             com_opt_.resize(n_col_ + 1, 3); com_opt_.setZero();
             mom_opt_.resize(n_col_ + 1, 6); mom_opt_.setZero();
-        
+
             dyn_violation.resize(9*(n_col_+1));
             dyn_violation.setZero();
             P_k_.resize(9*(n_col_+1));
@@ -25,15 +25,15 @@ namespace motion_planner{
     };
 
     void BiConvexMP::create_bound_constraints(Eigen::MatrixXd b, double fx_max, double fy_max, double fz_max){
-        
-        prob_data_x.lb_ = -1*std::numeric_limits<double>::infinity()*Eigen::VectorXd::Ones(prob_data_x.lb_.size());        
-        prob_data_x.ub_ = std::numeric_limits<double>::infinity()*Eigen::VectorXd::Ones(prob_data_x.lb_.size());        
-        
+
+        prob_data_x.lb_ = -1*std::numeric_limits<double>::infinity()*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
+        prob_data_x.ub_ = std::numeric_limits<double>::infinity()*Eigen::VectorXd::Ones(prob_data_x.lb_.size());
+
         // TODO: Throw errors here
         if (b.cols() != 6){
             std::cout << "bound constraints wrong size. Expected 6 ..." << std::endl;
         }
-                
+
         for (unsigned i = 0; i < centroidal_dynamics.cnt_arr_.rows(); ++i){
             // this can be done once and never done again
             for(unsigned j = 0; j < n_eff_; ++j){
@@ -43,15 +43,15 @@ namespace motion_planner{
 
                 prob_data_f.ub_[3*n_eff_*i + j*3] = fx_max;
                 prob_data_f.ub_[3*n_eff_*i+ j*3 + 1] = fy_max;
-                prob_data_f.ub_[3*n_eff_*i+ j*3 + 2] = fz_max;                    
+                prob_data_f.ub_[3*n_eff_*i+ j*3 + 2] = fz_max;
             }
             if (centroidal_dynamics.cnt_arr_.row(i).sum() > 0){
-                prob_data_x.lb_[9*i] = centroidal_dynamics.r_[i].col(0).maxCoeff() + b(i,0);                 
-                prob_data_x.lb_[9*i+1] = centroidal_dynamics.r_[i].col(1).maxCoeff() + b(i,1);                 
+                prob_data_x.lb_[9*i] = centroidal_dynamics.r_[i].col(0).maxCoeff() + b(i,0);
+                prob_data_x.lb_[9*i+1] = centroidal_dynamics.r_[i].col(1).maxCoeff() + b(i,1);
                 prob_data_x.lb_[9*i+2] = centroidal_dynamics.r_[i].col(2).maxCoeff() + b(i,2);
 
-                prob_data_x.ub_[9*i] = centroidal_dynamics.r_[i].col(0).minCoeff() + b(i,3);                 
-                prob_data_x.ub_[9*i+1] = centroidal_dynamics.r_[i].col(1).minCoeff() + b(i,4);                 
+                prob_data_x.ub_[9*i] = centroidal_dynamics.r_[i].col(0).minCoeff() + b(i,3);
+                prob_data_x.ub_[9*i+1] = centroidal_dynamics.r_[i].col(1).minCoeff() + b(i,4);
                 prob_data_x.ub_[9*i+2] = centroidal_dynamics.r_[i].col(2).minCoeff() + b(i,5);
             }
         };
@@ -65,10 +65,26 @@ namespace motion_planner{
         for (unsigned i = prob_data_x.num_vars_-9; i < prob_data_x.num_vars_ ; ++i){
             prob_data_x.Q_.coeffRef(i,i) = W_X_ter[i - prob_data_x.num_vars_ + 9];
         }
-        
+
         prob_data_x.q_.head(prob_data_x.num_vars_ - 9) = -2*X_nom.cwiseProduct(W_X);
         prob_data_x.q_.tail(9) = -2*X_ter.cwiseProduct(W_X_ter);
 
+    };
+
+    void BiConvexMP::create_cost_X_terminal(Eigen::VectorXd W_X, Eigen::VectorXd P_terminal, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom){
+        for (unsigned i = 0; i < prob_data_x.num_vars_ - 9; ++i){
+            prob_data_x.Q_.coeffRef(i,i) = W_X[i];
+        }
+        for (unsigned i = prob_data_x.num_vars_-9; i < prob_data_x.num_vars_ ; ++i){
+          for (unsigned j = prob_data_x.num_vars_-9; j < prob_data_x.num_vars_ ; ++j){
+            prob_data_x.Q_.coeffRef(i,j) = P_terminal[i - prob_data_x.num_vars_ + 9 + 9 * (j - prob_data_x.num_vars_ + 9)];
+          }
+        }
+        // std::cout<<"Q:"<<prob_data_x.Q_.block(prob_data_x.num_vars_-9,prob_data_x.num_vars_-9,9,9)<<std::endl;
+        prob_data_x.q_.head(prob_data_x.num_vars_ - 9) = -2*X_nom.cwiseProduct(W_X);
+        prob_data_x.q_.tail(9) = -2 * prob_data_x.Q_.block(prob_data_x.num_vars_-9,prob_data_x.num_vars_-9,9,9) * X_ter;
+        // std::cout<<"x_ter:"<<X_ter<<std::endl;
+        // std::cout<<"q:"<<prob_data_x.q_.tail(9)<<std::endl;
     };
 
     void BiConvexMP::create_cost_F(Eigen::VectorXd W_F){
@@ -94,7 +110,7 @@ namespace motion_planner{
             centroidal_dynamics.compute_f_mat(prob_data_f.x_k);
             prob_data_x.set_data(centroidal_dynamics.A_f, centroidal_dynamics.b_f, P_k_, rho_);
             fista_x.optimize(prob_data_x, maxit, tol);
-            
+
             dyn_violation = centroidal_dynamics.A_f * prob_data_x.x_k - centroidal_dynamics.b_f;
             P_k_ += dyn_violation;
             // std::cout << dyn_violation.norm() << std::endl;
@@ -113,7 +129,7 @@ namespace motion_planner{
                 break;
             };
         }
-    
+
         centroidal_dynamics.r_.clear();
 
         std::cout << "Maximum iterations reached " << std::endl << "Final norm: " << dyn_violation.norm() << std::endl;
@@ -125,7 +141,7 @@ namespace motion_planner{
             com_opt_(i,1) = prob_data_x.x_k[9*i+1];
             com_opt_(i,2) = prob_data_x.x_k[9*i+2];
         };
-    
+
         return com_opt_;
     };
 
@@ -145,7 +161,7 @@ namespace motion_planner{
 
         // Todo : set it up for kino dyn iterations
         // for (unsigned i = 0; i < opt_mom.rows(); ++i){
-        //     prob_data_x.Q_(i,i) =         
+        //     prob_data_x.Q_(i,i) =
         // }
     };
 };

@@ -51,7 +51,7 @@ plot_time = 0 #Time to start plotting
 
 solve_times = []
 
-for o in range(int(150*(plan_freq/sim_dt))):
+for o in range(int(gg.simulation_step*(plan_freq/sim_dt))):
     # this bit has to be put in shared memory
     q, v = robot.get_state()
 
@@ -59,7 +59,6 @@ for o in range(int(150*(plan_freq/sim_dt))):
     #     gait_params = trot
     #     gg.update_gait_params(gait_params, sim_t)
     #     robot_id_ctrl.set_gains(gait_params.kp, gait_params.kd)
-
     if pln_ctr == 0:
         contact_configuration = robot.get_current_contacts()
 
@@ -99,9 +98,13 @@ for o in range(int(150*(plan_freq/sim_dt))):
     pln_ctr = int((pln_ctr + 1)%(plan_freq/sim_dt))
     index += 1
 
-np.save('terminal_state.npy', gg.terminal_state)
-np.save('terminal_cost.npy', gg.terminal_cost)
+# np.save('terminal_state.npy', gg.terminal_state)
+# np.save('terminal_cost.npy', gg.terminal_cost)
+np.save('terminal_hessian.npy', gg.terminal_hessian)
+np.save('terminal_gradient.npy', gg.terminal_gradient)
 np.save('time_index.npy', gg.time_index)
+np.save('simulation_step.npy', gg.simulation_step)
+
 
 # np.savez("./bound_" + str(gg.horizon))
 print("done")

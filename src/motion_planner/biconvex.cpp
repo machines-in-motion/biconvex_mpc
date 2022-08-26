@@ -71,18 +71,18 @@ namespace motion_planner{
 
     };
 
-    void BiConvexMP::create_cost_X_terminal(Eigen::VectorXd W_X, Eigen::VectorXd P_terminal, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom){
+    void BiConvexMP::create_cost_X_terminal(Eigen::VectorXd W_X, Eigen::MatrixXd hes_terminal, Eigen::VectorXd grad_terminal, Eigen::VectorXd X_nom){
         for (unsigned i = 0; i < prob_data_x.num_vars_ - 9; ++i){
             prob_data_x.Q_.coeffRef(i,i) = W_X[i];
         }
         for (unsigned i = prob_data_x.num_vars_-9; i < prob_data_x.num_vars_ ; ++i){
           for (unsigned j = prob_data_x.num_vars_-9; j < prob_data_x.num_vars_ ; ++j){
-            prob_data_x.Q_.coeffRef(i,j) = P_terminal[i - prob_data_x.num_vars_ + 9 + 9 * (j - prob_data_x.num_vars_ + 9)];
+            prob_data_x.Q_.coeffRef(i,j) = hes_terminal(i-prob_data_x.num_vars_+9,j-prob_data_x.num_vars_+9);
           }
         }
         // std::cout<<"Q:"<<prob_data_x.Q_.block(prob_data_x.num_vars_-9,prob_data_x.num_vars_-9,9,9)<<std::endl;
         prob_data_x.q_.head(prob_data_x.num_vars_ - 9) = -2*X_nom.cwiseProduct(W_X);
-        prob_data_x.q_.tail(9) = -2 * prob_data_x.Q_.block(prob_data_x.num_vars_-9,prob_data_x.num_vars_-9,9,9) * X_ter;
+        prob_data_x.q_.tail(9) = grad_terminal;
         // std::cout<<"x_ter:"<<X_ter<<std::endl;
         // std::cout<<"q:"<<prob_data_x.q_.tail(9)<<std::endl;
     };

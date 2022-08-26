@@ -51,7 +51,7 @@ plot_time = 0 #Time to start plotting
 
 solve_times = []
 
-for o in range(int(150*(plan_freq/sim_dt))):
+for o in range(int(np.load("simulation_step.npy")*(plan_freq/sim_dt))):
     # this bit has to be put in shared memory
     q, v = robot.get_state()
 

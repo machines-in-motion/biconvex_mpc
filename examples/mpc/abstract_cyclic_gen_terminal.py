@@ -145,9 +145,13 @@ class SoloMpcGaitGen:
         self.f_int = np.zeros((4*len(self.eff_names), self.size))
 
         #Terminal cost
-        self.terminal_cost = np.load('terminal_cost.npy')
-        self.terminal_state = np.load('terminal_state.npy')
-        self.params.P_terminal = np.zeros(9*9)
+        # self.terminal_cost = np.load('terminal_cost.npy')
+        # self.terminal_state = np.load('terminal_state.npy')
+        # self.params.P_terminal = np.zeros(9*9)
+        self.terminal_hessian = np.load('terminal_hessian.npy')
+        self.terminal_gradient = np.load('terminal_gradient.npy')
+        self.params.hes_terminal = np.zeros(9*9)
+        self.params.grad_terminal = np.zeros(9)
 
     def create_cnt_plan(self, q, v, t, v_des, w_des):
         pin.forwardKinematics(self.rmodel, self.rdata, q, v)
@@ -329,7 +333,8 @@ class SoloMpcGaitGen:
             # Setup dynamic optimization costs
         bounds = np.tile([-self.bx, -self.by, 0, self.bx, self.by, self.bz], (self.horizon,1))
         self.mp.create_bound_constraints(bounds, self.fx_max, self.fy_max, self.fz_max)
-        self.mp.create_cost_X_terminal(np.tile(self.params.W_X, self.horizon), self.params.P_terminal, self.params.X_terminal, self.X_nom)
+        # self.mp.create_cost_X_terminal(np.tile(self.params.W_X, self.horizon), self.params.P_terminal, self.params.X_terminal, self.X_nom)
+        self.mp.create_cost_X_terminal(np.tile(self.params.W_X, self.horizon), self.params.hes_terminal, self.params.grad_terminal, self.X_nom)
         self.mp.create_cost_F(np.tile(self.params.W_F, self.horizon))
 
     def compute_ori_correction(self, q, des_quat):
@@ -364,8 +369,12 @@ class SoloMpcGaitGen:
         self.create_cnt_plan(q, v, t, v_des, w_des)
         print("time:",t)
         print("horizon", self.horizon)
-        self.params.P_terminal = self.terminal_cost[int(t/.05)].reshape(9*9)
-        self.params.X_terminal = self.terminal_state[int(t/.05)]
+        # self.params.P_terminal = self.terminal_cost[int(t/.05)].reshape(9*9)
+        # self.params.X_terminal = self.terminal_state[int(t/.05)]
+        self.params.hes_terminal = self.terminal_hessian[int(t/.05)]
+        self.params.grad_terminal = self.terminal_gradient[int(t/.05)]
+        print("hessian:", self.terminal_hessian [int(t/.05)])
+        print("grad:", self.terminal_gradient [int(t/.05)])
         #Creates costs for IK and Dynamics
         self.create_costs(q, v, v_des, w_des, ori_des)
 

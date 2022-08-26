@@ -144,8 +144,11 @@ class SoloMpcGaitGen:
         self.f_int = np.zeros((4*len(self.eff_names), self.size))
 
         #Terminal cost
-        self.terminal_cost = np.zeros((150, 9, 9))
-        self.terminal_state = np.zeros((150, 9))
+        self.simulation_step = 50
+        self.terminal_cost = np.zeros((self.simulation_step, 9, 9))
+        self.terminal_state = np.zeros((self.simulation_step, 9))
+        self.terminal_hessian = np.zeros((self.simulation_step, 9, 9))
+        self.terminal_gradient = np.zeros((self.simulation_step, 9))
 
     def create_cnt_plan(self, q, v, t, v_des, w_des):
         pin.forwardKinematics(self.rmodel, self.rdata, q, v)
@@ -323,7 +326,7 @@ class SoloMpcGaitGen:
             self.X_nom[8::9] = yaw_momentum
             X_ter[8] = yaw_momentum
             #print(yaw_momentum)
-        print("x_terminal actual", X_ter)
+
             # Setup dynamic optimization costs
         bounds = np.tile([-self.bx, -self.by, 0, self.bx, self.by, self.bz], (self.horizon,1))
         self.mp.create_bound_constraints(bounds, self.fx_max, self.fy_max, self.fz_max)
@@ -357,9 +360,9 @@ class SoloMpcGaitGen:
     def linearized_centroidal_dynamics(self, com, mom, force, time_index):
         A = np.identity(9)
         B = np.zeros((9, 3*len(self.eff_names)))
+        # Bx = np.zeros((9, 9, 3*len(self.eff_names)))
         A[0:3, 3:6] = self.params.gait_dt * np.identity(3)
         sum_skew_force = np.zeros((3,3))
-        self.m = 2.5
         for i in range(len(self.eff_names)):
             # print("force", force)
             sum_skew_force += self.skew_symmetric(force[3*i : 3*(i+1)])
@@ -367,28 +370,61 @@ class SoloMpcGaitGen:
                                     self.params.gait_dt/self.m
             B[6:9, 3*i:3*(i+1)] += self.cnt_plan[time_index][i][0] * \
                     self.skew_symmetric(self.cnt_plan[time_index][i][1:4]-com) * self.params.gait_dt
+            # Bx[0, 6:9, 3*i:3*(i+1)] = self.cnt_plan[time_index][i][0] * \
+            #                           np.array([[0., 0., 0.],[0. ,0. , -1.],[0., 1., 0.]])
+            # Bx[1, 6:9, 3*i:3*(i+1)] = self.cnt_plan[time_index][i][0] * \
+            #                           np.array([[0., 0., 1.],[0. ,0. , 0.],[-1., 0., 0.]])
+            # Bx[2, 6:9, 3*i:3*(i+1)] = self.cnt_plan[time_index][i][0] * \
+                                      # np.array([[0., -1., 0.],[1. ,0. , 0.],[0., 0., 0.]])
         A[6:9, 0:3] = sum_skew_force
         return A, B
 
 
-    def compute_optimal_dyn_cost(self, index, com_opt, mom_opt, F_opt):
+    # def compute_optimal_dyn_cost_ricatti(self, index, com_opt, mom_opt, F_opt):
+    #     num_eff = len(self.eff_names)
+    #     i = self.horizon-1
+    #     P = np.diag(self.params.W_X_ter)
+    #     while i >= self.horizon - index:
+    #         print("i_ricatti:", i)
+    #         # print("optimal_force:", F_opt[3*num_eff*i : 3*num_eff*(i+1)])
+    #         # print("optimal_momentum:", mom_opt[i])
+    #         # print("optimal com:", com_opt[i])
+    #         A, B = self.linearized_centroidal_dynamics(com_opt[i], mom_opt[i],\
+    #          F_opt[3*num_eff*i : 3*num_eff*(i+1)], i)
+    #         inv_term = np.linalg.inv(np.diag(self.params.W_F) + B.T @ P @ B)
+    #         P = np.diag(self.params.W_X) + A.T @ P @ A - A.T @ P @ B @ inv_term @ B.T @ P @ A
+    #         # print("A:", A)
+    #         # print("B:", B)
+    #         i -= 1
+    #
+    #     return P
+
+    def compute_optimal_dyn_cost_ilqr(self, index, com_opt, mom_opt, F_opt):
         num_eff = len(self.eff_names)
         i = self.horizon-1
-        P = np.diag(self.params.W_X_ter)
+        cent_opt = np.concatenate([com_opt[-1], mom_opt[-1]])
+        Vx = -2 * np.diag(self.params.W_X_ter) @ cent_opt
+        Vxx = np.diag(self.params.W_X_ter)
+        # cross_term = np.zeros((12, 9))
         while i >= self.horizon - index:
-            # print("i:", i)
-            # print("optimal_force:", F_opt[3*num_eff*i : 3*num_eff*(i+1)])
-            # print("optimal_momentum:", mom_opt[i])
-            # print("optimal com:", com_opt[i])
+            # print("i_ilqr:", i)
             A, B = self.linearized_centroidal_dynamics(com_opt[i], mom_opt[i],\
              F_opt[3*num_eff*i : 3*num_eff*(i+1)], i)
-            inv_term = np.linalg.inv(np.diag(self.params.W_F) + B.T @ P @ B)
-            P += np.diag(self.params.W_X) + A.T @ P @ A - A.T @ P @ B @ inv_term @ B.T @ P @ A
-            # print("A:", A)
-            # print("B:", B)
+            cent_opt = np.concatenate([com_opt[i], mom_opt[i]])
+            Qx = -2 * np.diag(self.params.W_X) @ cent_opt + A.T @ Vx
+            Qu = -2 * np.diag(self.params.W_F) @ F_opt[3*num_eff*i : 3*num_eff*(i+1)] + B.T @ Vx
+            Qxx = np.diag(self.params.W_X) + A.T @ Vxx @ A
+            # for j in range(9):
+            #     print("b",Bx[j].T @ Vx)
+            #     cross_term += Bx[j].T @ Vx
+            Qux = B.T @ Vxx @ A
+            Quu = np.diag(self.params.W_F) + B.T @ Vxx @ B
+            Vx = Qx - Qu @ np.linalg.inv(Quu) @ Qux
+            Vxx = Qxx - Qux.T @ np.linalg.inv(Quu) @ Qux
             i -= 1
+            # print("cross_term", cross_term)
 
-        return P
+        return Vx, Vxx
 
     def optimize(self, q, v, t, v_des, w_des, X_wm = None, F_wm = None, P_wm = None):
 
@@ -430,12 +466,19 @@ class SoloMpcGaitGen:
         xs = self.ik.get_xs()
         us = self.ik.get_us()
 
-        self.time_index = 3 # how many steps from the terminal point
-        P = self.compute_optimal_dyn_cost(self.time_index, com_opt, mom_opt, F_opt)
-        # print("P_otimal", P)
-        self.terminal_cost [int(t/.05)] = P
-        self.terminal_state [int(t/.05)] = np.concatenate([com_opt[-(self.time_index+1)], mom_opt[-(self.time_index+1)]])
-        print("terminal_des",self.terminal_state [int(t/.05)])
+        self.time_index = 0 # how many steps from the terminal point
+        #ricatti
+        # P = self.compute_optimal_dyn_cost_ricatti(self.time_index, com_opt, mom_opt, F_opt)
+        # print("P:", np.round(P, 1))
+        # self.terminal_cost [int(t/.05)] = P
+        # self.terminal_state [int(t/.05)] = np.concatenate([com_opt[-(self.time_index+1)], mom_opt[-(self.time_index+1)]])
+        #ilqr
+        Vx, Vxx = self.compute_optimal_dyn_cost_ilqr(self.time_index, com_opt, mom_opt, F_opt)
+        # print("vxx:", np.round(Vxx, 1))
+        self.terminal_hessian [int(t/.05)] = Vxx
+        self.terminal_gradient [int(t/.05)] = Vx
+        # print("difference:", np.round(Vx-2*P@self.terminal_state[int(t/.05)], 1))
+
 
 
         n_eff = 3*len(self.eff_names)

@@ -79,7 +79,7 @@ class BiConvexMP{
         void create_bound_constraints(Eigen::MatrixXd b, double fx_max, double fy_max, double fz_max);
         // creates basic quadratic costs for optimizing X
         void create_cost_X(Eigen::VectorXd W_X, Eigen::VectorXd W_X_ter, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom);
-        void create_cost_X_terminal(Eigen::VectorXd W_X, Eigen::VectorXd P_terminal, Eigen::VectorXd X_ter, Eigen::VectorXd X_nom);
+        void create_cost_X_terminal(Eigen::VectorXd W_X, Eigen::MatrixXd hes_terminal, Eigen::VectorXd grad_terminal, Eigen::VectorXd X_nom);
         void create_cost_F(Eigen::VectorXd W_F);
         void update_nomimal_com_mom(Eigen::MatrixXd opt_com, Eigen::MatrixXd opt_mom);
 

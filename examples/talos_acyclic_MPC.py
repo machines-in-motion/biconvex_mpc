@@ -72,10 +72,13 @@ if plan.use_offline_traj:
     # plan.cent_wt = [3*[200.,], 6*[.04,]]
 
 mg.update_motion_params(plan, q, 0.)
-
-for o in range(int(2*plan.T/sim_dt)):
+des_pos=np.zeros((int(1.8*plan.T/sim_dt), pin_robot.model.nq))
+des_vel=np.zeros((int(1.8*plan.T/sim_dt), pin_robot.model.nv))
+for o in range(int(1.8*plan.T/sim_dt)):
     contact_configuration = robot.get_current_contacts()
     q, v = robot.get_state()
+    des_pos[o] = q
+    des_vel[o] = v
     kp, kd = mg.get_gains(sim_t)
     robot_id_ctrl.set_gains(kp, kd)
 
@@ -102,6 +105,7 @@ for o in range(int(2*plan.T/sim_dt)):
     sim_t += np.round(sim_dt,3)
     pln_ctr = int((pln_ctr + 1)%(mg.get_plan_freq(sim_t)/sim_dt))
     index += 1
+# np.savez("des_states.npz", des_pos, des_vel)
 
 # dr.plot_plans()
 # dr.plot(False)

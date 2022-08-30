@@ -222,11 +222,11 @@ class SoloMpcGaitGen:
                         ang_step = 0.5*np.sqrt(z_height/self.gravity)*vtrack
                         ang_step = np.cross(ang_step, [0.0, 0.0, w_des])
 
-                        if per_ph < 0.5:
-                            self.cnt_plan[i][j][1:3] = hip_loc + ang_step[0:2]
-                        else:
-                            raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
-                            self.cnt_plan[i][j][1:3] = hip_loc + ang_step[0:2]
+                        # if per_ph < 0.5:
+                        #     self.cnt_plan[i][j][1:3] = hip_loc + ang_step[0:2]
+                        # else:
+                        raibert_step = 0.5*vtrack*self.params.gait_period*self.params.stance_percent[j] - 0.05*(vtrack - v_des[0:2])
+                        self.cnt_plan[i][j][1:3] = hip_loc + ang_step[0:2]
 
                         #What is this?
                         if per_ph - 0.5 < 0.02:
@@ -246,6 +246,7 @@ class SoloMpcGaitGen:
                 dt = self.params.gait_dt
             self.mp.set_contact_plan(self.cnt_plan[i], dt)
             self.dt_arr[i] = dt
+            # print("self.cnt_plan", self.cnt_plan[i])
 
         return self.cnt_plan
 
@@ -360,24 +361,26 @@ class SoloMpcGaitGen:
     def linearized_centroidal_dynamics(self, com, mom, force, time_index):
         A = np.identity(9)
         B = np.zeros((9, 3*len(self.eff_names)))
-        # Bx = np.zeros((9, 9, 3*len(self.eff_names)))
+        Bx = np.zeros((9, 9, 3*len(self.eff_names)))
         A[0:3, 3:6] = self.params.gait_dt * np.identity(3)
         sum_skew_force = np.zeros((3,3))
         for i in range(len(self.eff_names)):
             # print("force", force)
-            sum_skew_force += self.skew_symmetric(force[3*i : 3*(i+1)])
-            B[3:6, 3*i:3*(i+1)] +=  np. identity(3) * self.cnt_plan[time_index][i][0] * \
-                                    self.params.gait_dt/self.m
-            B[6:9, 3*i:3*(i+1)] += self.cnt_plan[time_index][i][0] * \
-                    self.skew_symmetric(self.cnt_plan[time_index][i][1:4]-com) * self.params.gait_dt
-            # Bx[0, 6:9, 3*i:3*(i+1)] = self.cnt_plan[time_index][i][0] * \
-            #                           np.array([[0., 0., 0.],[0. ,0. , -1.],[0., 1., 0.]])
-            # Bx[1, 6:9, 3*i:3*(i+1)] = self.cnt_plan[time_index][i][0] * \
-            #                           np.array([[0., 0., 1.],[0. ,0. , 0.],[-1., 0., 0.]])
-            # Bx[2, 6:9, 3*i:3*(i+1)] = self.cnt_plan[time_index][i][0] * \
-                                      # np.array([[0., -1., 0.],[1. ,0. , 0.],[0., 0., 0.]])
+            sum_skew_force += self.cnt_plan[time_index][i][0] * \
+                              self.skew_symmetric(force[3*i : 3*(i+1)])
+            B[3:6, 3*i:3*(i+1)] =  np. identity(3) * self.cnt_plan[time_index][i][0] * \
+                                   self.params.gait_dt/ self.m
+            B[6:9, 3*i:3*(i+1)] = self.cnt_plan[time_index][i][0] * \
+                            self.skew_symmetric(self.cnt_plan[time_index][i][1:4]-com) *\
+                            self.params.gait_dt
+            Bx[0, 6:9, 3*i:3*(i+1)] = self.cnt_plan[time_index][i][0] * \
+                                      np.array([[0., 0., 0.],[0. ,0. , -1.],[0., 1., 0.]])
+            Bx[1, 6:9, 3*i:3*(i+1)] = self.cnt_plan[time_index][i][0] * \
+                                      np.array([[0., 0., 1.],[0. ,0. , 0.],[-1., 0., 0.]])
+            Bx[2, 6:9, 3*i:3*(i+1)] = self.cnt_plan[time_index][i][0] * \
+                                      np.array([[0., -1., 0.],[1. ,0. , 0.],[0., 0., 0.]])
         A[6:9, 0:3] = sum_skew_force
-        return A, B
+        return A, B, Bx
 
 
     # def compute_optimal_dyn_cost_ricatti(self, index, com_opt, mom_opt, F_opt):
@@ -405,19 +408,18 @@ class SoloMpcGaitGen:
         cent_opt = np.concatenate([com_opt[-1], mom_opt[-1]])
         Vx = -2 * np.diag(self.params.W_X_ter) @ cent_opt
         Vxx = np.diag(self.params.W_X_ter)
-        # cross_term = np.zeros((12, 9))
+        # cross_term = np.zeros((9, 3*len(self.eff_names)))
         while i >= self.horizon - index:
             # print("i_ilqr:", i)
-            A, B = self.linearized_centroidal_dynamics(com_opt[i], mom_opt[i],\
+            A, B, Bx = self.linearized_centroidal_dynamics(com_opt[i], mom_opt[i],\
              F_opt[3*num_eff*i : 3*num_eff*(i+1)], i)
             cent_opt = np.concatenate([com_opt[i], mom_opt[i]])
             Qx = -2 * np.diag(self.params.W_X) @ cent_opt + A.T @ Vx
             Qu = -2 * np.diag(self.params.W_F) @ F_opt[3*num_eff*i : 3*num_eff*(i+1)] + B.T @ Vx
             Qxx = np.diag(self.params.W_X) + A.T @ Vxx @ A
-            # for j in range(9):
-            #     print("b",Bx[j].T @ Vx)
-            #     cross_term += Bx[j].T @ Vx
-            Qux = B.T @ Vxx @ A
+            cross_term = Vx @ Bx
+            # print("cross", cross_term)
+            Qux = B.T @ Vxx @ A #+ cross_term.T
             Quu = np.diag(self.params.W_F) + B.T @ Vxx @ B
             Vx = Qx - Qu @ np.linalg.inv(Quu) @ Qux
             Vxx = Qxx - Qux.T @ np.linalg.inv(Quu) @ Qux
@@ -466,7 +468,7 @@ class SoloMpcGaitGen:
         xs = self.ik.get_xs()
         us = self.ik.get_us()
 
-        self.time_index = 0 # how many steps from the terminal point
+        self.time_index = 5 # how many steps from the terminal point
         #ricatti
         # P = self.compute_optimal_dyn_cost_ricatti(self.time_index, com_opt, mom_opt, F_opt)
         # print("P:", np.round(P, 1))
@@ -477,7 +479,6 @@ class SoloMpcGaitGen:
         # print("vxx:", np.round(Vxx, 1))
         self.terminal_hessian [int(t/.05)] = Vxx
         self.terminal_gradient [int(t/.05)] = Vx
-        # print("difference:", np.round(Vx-2*P@self.terminal_state[int(t/.05)], 1))
 
 
 

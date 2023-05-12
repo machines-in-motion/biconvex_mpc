@@ -2,6 +2,8 @@
 
 This repository is the implentation of the BiConMP solver. The BiConMP is an online whole body trajectory optimizer for legged robots. The trajectory optimizer has generated various dyanmic behaviorus on Quadrupeds (Solo12, AnYmal), Humanoids (Talos)...
 
+The corresponding paper was published in the [IEEE Transactions on Robotics](https://ieeexplore.ieee.org/document/10008229) and is freely accessible [here](https://arxiv.org/abs/2201.07601)
+
 ## Dependencies
 ### Required
 - Pinocchio (Version 2.6.4 or greater)
@@ -48,14 +50,17 @@ export PYTHONPATH=$PYTHONPATH:path/to/the/biconvex/build/folder
 @article{meduri2022biconmp,
   title={BiConMP: A Nonlinear Model Predictive Control Framework for Whole Body Motion Planning},
   author={Meduri, Avadesh and Shah, Paarth and Viereck, Julian and Khadiv, Majid and Havoutis, Ioannis and Righetti, Ludovic},
-  journal={arXiv preprint arXiv:2201.07601},
-  year={2022}
+  journal={IEEE Transactions on Robotics},
+  pages = {905--922},
+  volume = {39},
+  issue = {2},
+  year={2023}
 }
 ```
 
 ## Copyrights
 
-Copyright(c) 2019-2020 New York University, Max Planck Gesellschaft
+Copyright(c) 2019-2023 New York University
 
 ## License
 
